@@ -1,0 +1,40 @@
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar herramientas de prueba
+        run: |
+          pip install playwright==1.48.0 opencv-python-headless numpy
+          python -m playwright install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/axe" axe-core@4.10.2
+          echo "AXE_JS=$RUNNER_TEMP/axe/node_modules/axe-core/axe.min.js" >> "$GITHUB_ENV"
+
+      - name: Ejecutar pruebas
+        run: bash tests/run_all.sh
+
+      - name: Guardar capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: tests/output/
+          retention-days: 7

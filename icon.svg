@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <pattern id="hz" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="28" height="56" fill="#F5B800"/><rect x="28" width="28" height="56" fill="#1B2A20"/>
+    </pattern>
+  </defs>
+  <rect width="512" height="512" fill="#22382A"/>
+  <rect y="400" width="512" height="112" fill="url(#hz)"/>
+  <text x="256" y="190" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, Arial, sans-serif" font-weight="800" font-size="120" fill="#FFFFFF" letter-spacing="4">USAR</text>
+  <rect x="96" y="218" width="320" height="150" rx="18" fill="#F5B800"/>
+  <text x="256" y="332" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, Arial, sans-serif" font-weight="800" font-size="132" fill="#1B2A20">242</text>
+</svg>

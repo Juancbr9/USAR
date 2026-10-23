@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Aplica el tema antes de pintar para evitar parpadeo
+  try { const p = JSON.parse(localStorage.getItem('USAR_V4_PREFS') || '{}'), t = p.theme, r = document.documentElement;
+    r.dataset.theme = t === 'sun' ? 'light' : t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (t === 'sun') r.dataset.sun = '1'; if (p.big) r.classList.add('big'); } catch {}
+</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org; media-src 'self' data: blob:; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#22382A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="USAR 242">
+<meta name="description" content="Operaciones USAR con el método UME e INSARAG: worksites, víctimas, seguridad, material y EPI del equipo USAR 242">
+<title>USAR 242</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=JetBrains+Mono:wght@600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=JetBrains+Mono:wght@600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=JetBrains+Mono:wght@600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"></noscript>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <button id="menuBtn" class="icon-btn menu-btn" aria-label="Menú: todas las secciones" aria-expanded="false" aria-controls="drawer" onclick="toggleDrawer()"><span class="burger"><i></i><i></i><i></i></span><span id="menuCount" class="menu-count hidden"></span></button>
+    <div class="brand">
+      <div>
+        <div class="wordmark" aria-label="USAR 242">USAR <span class="plate">242</span></div>
+        <span id="syncBadge" class="sync"></span>
+      </div>
+    </div>
+    <nav id="nav" class="nav" aria-label="Secciones"></nav>
+    <button class="icon-btn" aria-label="Buscar" onclick="toggleSearch()" data-icon="search" data-cls="i-lg"></button>
+  </div>
+  <div id="searchbar" class="searchbar hidden">
+    <div class="wrap"><input id="search" class="input" type="search" placeholder="¿Dónde está…? Material, cajas, personas, documentos, operaciones…" autocomplete="off" oninput="renderSearch()"></div>
+  </div>
+  <div class="hazard" aria-hidden="true"></div>
+</header>
+
+<div id="drawer" class="drawer hidden" onclick="if (event.target === this) toggleDrawer(false)">
+  <nav class="drawer-panel" aria-label="Todas las secciones" id="drawerPanel"></nav>
+</div>
+
+<div class="wrap">
+  <div id="results" class="panel hidden" style="margin-top:16px"></div>
+  <main id="view"></main>
+</div>
+
+<div id="modal" class="modal hidden" onclick="if (event.target === this) closeModal()">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="sheet-head between">
+      <h3 id="modalTitle"></h3>
+      <button onclick="closeModal()" aria-label="Cerrar" data-icon="x" data-cls="i-lg"></button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="print"></div>
+
+<script src="qr.js"></script>
+<!-- El orden importa: cada archivo usa lo definido en los anteriores -->
+<script src="js/config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/data.js"></script>
+<script src="js/metodo.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/sesion.js"></script>
+<script src="js/areas.js"></script>
+<script src="js/catalogos.js"></script>
+<script src="js/marcaje.js"></script>
+<script src="js/views/contenedor.js"></script>
+<script src="js/views/cajas.js"></script>
+<script src="js/views/revista.js"></script>
+<script src="js/views/epi.js"></script>
+<script src="js/views/operaciones.js"></script>
+<script src="js/views/mision.js"></script>
+<script src="js/views/seguridad.js"></script>
+<script src="js/views/confinados.js"></script>
+<script src="js/views/worksites.js"></script>
+<script src="js/views/victimas.js"></script>
+<script src="js/views/informes.js"></script>
+<script src="js/views/guia.js"></script>
+<script src="js/views/registros.js"></script>
+<script src="js/views/exportar.js"></script>
+<script src="js/views/despliegue.js"></script>
+<script src="js/views/patrimonio.js"></script>
+<script src="js/views/persona.js"></script>
+<script src="js/views/campo.js"></script>
+<script src="js/views/calendario.js"></script>
+<script src="js/views/mapa.js"></script>
+<script src="js/views/manual.js"></script>
+<script src="js/views/fichaje.js"></script>
+<script src="js/views/plantillas.js"></script>
+<script src="js/views/puestos.js"></script>
+<script src="js/views/stock.js"></script>
+<script src="js/views/entregas.js"></script>
+<script src="js/views/ajustes.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
