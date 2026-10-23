@@ -92,7 +92,7 @@ with sync_playwright() as p:
     # Acceso con usuario: jefe y miembro (servidor de prueba)
     req = urllib.request.Request(MOCK + '/rest/v1/usar_members', data=json.dumps([{'email': 'jefe@usar.es', 'role': 'jefe'}, {'email': 'rescate@usar.es', 'role': 'miembro'}]).encode(), method='POST', headers={'Content-Type': 'application/json'})
     urllib.request.urlopen(req)
-    more('Ajustes'); a.fill('[name=url]', MOCK); a.fill('[name=key]', 'clave-prueba'); a.click('button:has-text("Conectar")'); a.wait_for_timeout(2500)
+    more('Ajustes'); a.fill('[name=url]', MOCK); a.fill('[name=key]', 'sb_publishable_prueba'); a.click('button:has-text("Conectar")'); a.wait_for_timeout(2500)
     a.click('summary:has-text("Entrar con usuario")'); a.fill('[name=email]', 'jefe@usar.es'); a.fill('[name=password]', 'secreto1')
     a.click('button:has-text("Crear cuenta")'); a.wait_for_timeout(1500)
     assert a.evaluate("Sync.role") == 'jefe', a.evaluate("Sync.error")
@@ -102,7 +102,7 @@ with sync_playwright() as p:
     a.keyboard.press('Escape')
     # Miembro en otro móvil: también recibe la documentación del personal (de momento todos acceden a todo)
     B = br.new_context(**phone); b = B.new_page(); watch(b, 'B'); b.goto(APP); b.wait_for_selector('#view > *')
-    b.evaluate(f"Sync.connect('{MOCK}', 'clave-prueba')"); b.wait_for_timeout(1000)
+    b.evaluate(f"Sync.connect('{MOCK}', 'sb_publishable_prueba')"); b.wait_for_timeout(1000)
     b.evaluate("Sync.signUp('rescate@usar.es', 'secreto2')"); b.wait_for_timeout(300)
     b.evaluate("Sync.signIn('rescate@usar.es', 'secreto2')"); b.wait_for_timeout(2500)
     assert b.evaluate("Sync.role") == 'miembro'

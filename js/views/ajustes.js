@@ -24,11 +24,11 @@ function viewAjustes() {
     <ol class="muted" style="margin:0 0 14px; padding-left:18px">
       <li>Crea un proyecto gratis en <b>supabase.com</b>.</li>
       <li>En <b>SQL Editor</b> pega y ejecuta el contenido de <a href="supabase.sql" target="_blank">supabase.sql</a>.</li>
-      <li>En <b>Project Settings → API</b> copia la URL y la clave <b>anon public</b> aquí.</li>
+      <li>En <b>Project Settings → API</b> copia la URL y la clave pública (<b>publishable</b>, o <b>anon</b> en proyectos antiguos) aquí.</li>
     </ol>
     <form class="form" onsubmit="event.preventDefault(); connectSync(this)">
       <label class="lbl wide">URL del proyecto<input class="input" name="url" placeholder="https://xxxx.supabase.co" required></label>
-      <label class="lbl wide">Clave anon public<input class="input" name="key" placeholder="eyJhbGciOi…" required></label>
+      <label class="lbl wide">Clave pública<input class="input" name="key" placeholder="sb_publishable_… o eyJhbGciOi…" required></label>
       <button class="btn btn-a wide">${ic('cloud')} Conectar</button>
     </form>
     `;

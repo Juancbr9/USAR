@@ -11,14 +11,15 @@ const Sync = (() => {
   const cfg = () => readJSON(KEY.sync);
   const setStatus = s => { status = s; renderSyncBadge(); };
 
-  // Con usuario (modo seguro) se usa su sesión; sin usuario, la clave pública del proyecto
+  // Con usuario (modo seguro) va su sesión en Authorization; sin usuario, solo la clave pública en «apikey»
+  // (las claves nuevas «sb_publishable_…» no son JWT y Supabase las rechaza en Authorization)
   async function api(path, options = {}, retried = false) {
     const c = cfg();
     if (c.session && c.session.expires_at - Date.now() < 60000) await refresh();
-    const token = cfg().session?.access_token || c.key;
+    const token = cfg().session?.access_token;
     const res = await fetch(`${c.url}/rest/v1/${path}`, {
       ...options,
-      headers: { apikey: c.key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...options.headers }
+      headers: { apikey: c.key, ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json', ...options.headers }
     });
     if (res.status === 401 && c.session && !retried) { await refresh(); return api(path, options, true); }
     if (!res.ok) throw new Error(`Servidor ${res.status}: ${(await res.text()).slice(0, 140)}`);
@@ -195,7 +196,7 @@ const Sync = (() => {
   async function connect(url, key) {
     url = url.trim().replace(/\/+$/, '');
     if (!/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+$/.test(url)) throw new Error('La URL debe empezar por https://');
-    if (!key.trim()) throw new Error('Falta la clave pública (anon key)');
+    if (!key.trim()) throw new Error('Falta la clave pública (publishable o anon)');
     writeJSON(KEY.sync, { url, key: key.trim(), joined: false, since: '' });
     outbox = {}; writeJSON(KEY.outbox, outbox);
     try { await api(`${TABLE}?select=id&limit=1`); }

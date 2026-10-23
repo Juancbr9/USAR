@@ -77,7 +77,7 @@ Sin configurar nada, los datos se guardan solo en cada dispositivo. Para que tod
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
 2. En **SQL Editor**, ejecuta el contenido de [`supabase.sql`](supabase.sql).
-3. En **Project Settings → API**, copia la *Project URL* y la clave *anon public*.
+3. En **Project Settings → API**, copia la *Project URL* y la clave pública (*publishable*, `sb_publishable_…`; en proyectos antiguos, *anon public*).
 4. En la app: **Ajustes → Datos compartidos del equipo**, pega ambos datos y pulsa **Conectar**.
 5. Pulsa **Invitar al equipo** y comparte el QR o el enlace con los compañeros.
 
