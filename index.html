@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <script>
   // Aplica el tema antes de pintar para evitar parpadeo
-  try { const p = JSON.parse(localStorage.getItem('USAR_V4_PREFS') || '{}'), t = p.theme, r = document.documentElement;
+  try { const pr = /pruebas/i.test(location.pathname), p = JSON.parse(localStorage.getItem((pr ? 'PRUEBAS_' : '') + 'USAR_V4_PREFS') || '{}'), t = p.theme, r = document.documentElement;
+    if (pr) r.classList.add('pruebas');
     r.dataset.theme = t === 'sun' ? 'light' : t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     if (t === 'sun') r.dataset.sun = '1'; if (p.big) r.classList.add('big'); } catch {}
 </script>
@@ -19,6 +20,10 @@
 <meta name="description" content="Operaciones USAR con el método UME e INSARAG: worksites, víctimas, seguridad, material y EPI del equipo USAR 242">
 <title>USAR 242</title>
 <link rel="manifest" href="manifest.webmanifest">
+<script>
+  // Copia de pruebas: otro nombre en la pestaña y al instalarla, para no confundirla con la estable
+  if (/pruebas/i.test(location.pathname)) { document.title = 'USAR 242 · PRUEBAS'; document.querySelector('link[rel=manifest]').href = 'manifest-pruebas.webmanifest'; }
+</script>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">

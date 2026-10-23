@@ -109,3 +109,13 @@ Al cambiar cualquier archivo, sube la versión de `CACHE` en `sw.js` para que lo
 ## Pruebas
 
 `bash tests/run_all.sh` ejecuta todas las pruebas: generador de QR, sincronización entre dos móviles (con un servidor que imita Supabase), una operación completa, plantillas y fichaje, el método de trabajo (fases, señales y recuento, worksites, víctimas, confinados, informes y guía), las mejoras INSARAG (alistamiento, PAR, salidas, bienestar, informes por periodo, vigilancia, croquis y exportación) personal y listas, uso sin conexión, **seguridad** (código metido en todos los campos y datos manipulados de la nube: no se ejecuta nada ni se rompe ninguna pantalla) y **accesibilidad** (nombres para el lector de pantalla, contraste en claro, noche y sol, botones de 44 px para usar con guantes, letra de 16 px en los campos; en GitHub también con axe-core). GitHub las ejecuta solas en cada subida; el resultado aparece en la pestaña **Actions**.
+
+## Copia de pruebas (para experimentar sin tocar la estable)
+
+La misma app, publicada en una dirección que contenga **«pruebas»** (por ejemplo `https://juancbr9.github.io/USAR-pruebas/`), funciona como copia de pruebas totalmente separada:
+
+- Guarda sus datos del móvil aparte (claves `PRUEBAS_…`, fotos en `pruebas242-img` y cachés `pruebas242-…`), aunque esté en el mismo dominio que la estable. Ninguna de las dos borra ni lee lo de la otra.
+- Se conecta a **su propia base de datos**: en la copia de pruebas, *Ajustes → Datos compartidos del equipo* se configura con un proyecto de Supabase distinto (créalo igual que el de la estable, ejecutando `supabase.sql`). La conexión de la estable no pasa a la de pruebas.
+- Se distingue a simple vista: etiqueta ámbar «PRUEBAS» en la cabecera, «USAR 242 · PRUEBAS» en la pestaña y «USAR PRUEBAS» como nombre al instalarla en el móvil.
+
+Para montarla: crea un repositorio `USAR-pruebas` con este código, activa GitHub Pages (rama `main`, carpeta raíz) y conecta en él el proyecto de Supabase de pruebas. Lo que funcione bien se pasa a este repositorio.

@@ -76,11 +76,11 @@ const Sync = (() => {
     clearTimeout(debounce);
     debounce = setTimeout(flush, 400);
   }
-  const imgU = readJSON('USAR_IMG_U') || {};
+  const imgU = readJSON(KEY.imgU) || {};
   function mergeImage(row) {
     const u = row.data?._u || 0;
     if (outbox['images|' + row.id] || (imgU[row.id] || 0) >= u && !row.deleted) return false;
-    imgU[row.id] = u; writeJSON('USAR_IMG_U', imgU);
+    imgU[row.id] = u; writeJSON(KEY.imgU, imgU);
     if (!row.deleted && row.data?.data && !/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(row.data.data)) return false;   // solo fotos
     if (row.deleted || !row.data?.data) Img.del(row.id, true).catch(() => {});
     else Img.put(row.id, row.data.data, true).catch(() => {});
@@ -171,7 +171,7 @@ const Sync = (() => {
           body: JSON.stringify(body.filter(r => r.deleted || r.kind !== 'images' || r.data.data))
         });
         batch.filter(([, r]) => r.img).forEach(([, r]) => { imgU[r.id] = r._u; });
-        writeJSON('USAR_IMG_U', imgU);
+        writeJSON(KEY.imgU, imgU);
         batch.forEach(([k, r]) => { if (outbox[k] === r) delete outbox[k]; });
         writeJSON(KEY.outbox, outbox);
       }

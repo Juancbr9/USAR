@@ -1,7 +1,9 @@
 // Permite usar la app sin conexión.
 // Con conexión siempre se descarga la última versión; la copia guardada solo se usa sin red.
-const CACHE = 'usar242-v34';
-const FILES = ['./', 'index.html', 'styles.css', 'qr.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'img/contenedor-lateral.webp', 'img/veh/v-ab.webp', 'img/veh/v-ab-lcif.webp', 'img/veh/v-sangyong.webp', 'img/veh/v-amarok.webp', 'img/veh/v-amb.webp', 'img/veh/v-cam-verde.webp', 'img/veh/v-cupra.webp', 'img/veh/v-guagua-g.webp',
+// La copia de pruebas (dirección con «pruebas») guarda en sus propias cachés y solo borra las suyas
+const PRE = /pruebas/i.test(location.pathname) ? 'pruebas242-' : 'usar242-';
+const CACHE = PRE + 'v35';
+const FILES = ['./', 'index.html', 'styles.css', 'qr.js', 'manifest.webmanifest', 'manifest-pruebas.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'img/contenedor-lateral.webp', 'img/veh/v-ab.webp', 'img/veh/v-ab-lcif.webp', 'img/veh/v-sangyong.webp', 'img/veh/v-amarok.webp', 'img/veh/v-amb.webp', 'img/veh/v-cam-verde.webp', 'img/veh/v-cupra.webp', 'img/veh/v-guagua-g.webp',
   'js/config.js', 'js/icons.js', 'js/utils.js', 'js/geo.js', 'js/pdf.js', 'js/data.js', 'js/metodo.js', 'js/sync.js', 'js/ui.js', 'js/sesion.js', 'js/areas.js', 'js/catalogos.js', 'js/marcaje.js', 'js/views/contenedor.js', 'js/views/cajas.js', 'js/views/revista.js', 'js/views/epi.js', 'js/views/operaciones.js', 'js/views/mision.js', 'js/views/seguridad.js', 'js/views/confinados.js', 'js/views/worksites.js', 'js/views/victimas.js', 'js/views/informes.js', 'js/views/guia.js', 'js/views/registros.js', 'js/views/exportar.js', 'js/views/despliegue.js', 'js/views/patrimonio.js', 'js/views/persona.js', 'js/views/campo.js', 'js/views/calendario.js', 'js/views/mapa.js', 'js/views/manual.js', 'vendor/jsQR.js', 'js/views/fichaje.js', 'js/views/plantillas.js', 'js/views/puestos.js', 'js/views/stock.js', 'js/views/entregas.js', 'js/views/ajustes.js', 'js/main.js'];
 
 self.addEventListener('install', e => {
@@ -10,12 +12,12 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== TILES && k !== FONTS).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k.startsWith(PRE) && k !== CACHE && k !== TILES && k !== FONTS).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
 // Teselas del mapa (OpenStreetMap): se guardan las que se van viendo para poder verlas sin conexión (máx. ~1500)
-const TILES = 'usar242-tiles';
+const TILES = PRE + 'tiles';
 async function tile(req) {
   const cache = await caches.open(TILES);
   const hit = await cache.match(req);
@@ -31,7 +33,7 @@ async function tile(req) {
 }
 
 // Tipografías (Google Fonts): se guardan la primera vez para verlas igual sin conexión
-const FONTS = 'usar242-fonts';
+const FONTS = PRE + 'fonts';
 async function font(req) {
   const cache = await caches.open(FONTS);
   const hit = await cache.match(req);
