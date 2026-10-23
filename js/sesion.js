@@ -16,6 +16,36 @@ async function checkPin(o, pin) { return !!o.pin?.h && (await pinHash(pin, b64Bu
 const me = () => { const o = get('operators', prefs.session); return o && o.active !== false ? o : null; };
 const loggedIn = () => !!me();
 
+// Mantenimiento: mientras está activo solo ADMIN usa la app y el resto ve el aviso al entrar.
+// Activo por defecto; ADMIN lo quita o lo vuelve a poner en Ajustes y llega a todos los móviles con los datos compartidos.
+const isAdmin = () => me()?.name === ADMIN;
+const enMantenimiento = () => (get('meta', 'mantenimiento')?.value ?? MANT_DEFECTO) !== false;
+const bloqueado = () => enMantenimiento() && !isAdmin();
+function renderMantenimiento() {
+  document.body.classList.add('login-on');
+  $('view').innerHTML = `
+    <div class="login">
+      <div class="login-brand"><span class="wordmark">USAR <span class="plate">242</span></span></div>
+      <div class="panel login-card mant-card" role="status">
+        <h2>${ic('wrench')} En mantenimiento</h2>
+        <p class="mant-msg">${esc(MANT_MSG)}</p>
+        <p class="muted">Vuelve a entrar más tarde. Tus datos no se pierden.</p>
+        <button class="btn btn-g full" onclick="logout()">${ic('out')} Cerrar sesión</button>
+      </div>
+    </div>`;
+}
+function setMantenimiento(on) { put('meta', { id: 'mantenimiento', value: on }, on ? 'Mantenimiento activado' : 'Mantenimiento terminado'); toast(on ? 'Solo tú tienes acceso' : 'Todo el equipo tiene acceso'); }
+function mantenimientoPanel() {
+  if (!isAdmin()) return '';
+  const on = enMantenimiento();
+  return `
+    <div class="panel">
+      <h3 class="sec-title">${ic('wrench')} Mantenimiento</h3>
+      <p class="muted" style="margin-bottom:10px">${on ? `Activo: solo ${esc(ADMIN)} usa la app. El resto ve «${esc(MANT_MSG)}».` : 'Desactivado: todo el equipo usa la app.'}</p>
+      <button class="btn ${on ? 'btn-a' : 'btn-bad'} full" onclick="setMantenimiento(${!on})">${on ? 'Dar acceso a todo el equipo' : 'Activar mantenimiento (solo yo)'}</button>
+    </div>`;
+}
+
 // Pantalla de entrada (sustituye a toda la app hasta que alguien entra)
 function renderLogin() {
   document.body.classList.add('login-on');

@@ -164,6 +164,7 @@ function remind(key, everyMs, msg) {
   systemNotify(msg);
 }
 setInterval(() => {
+  if (bloqueado()) return;
   list('missions').filter(m => m.status === 'active').forEach(m => {
     if (parOverdue(m)) remind('par' + m.id, 5 * 6e4, `${m.title}: toca recuento de personal`);
     outingsOf(m.id).filter(outingLate).forEach(o => remind('out' + o.id, 10 * 6e4, `${names(o.who).join(', ')} no ha vuelto de ${o.dest}`));

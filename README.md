@@ -56,6 +56,7 @@ La app está ordenada en **cuatro áreas, cada una con su color** (la cabecera t
 - **Cajas Peli**: código, modelo, color (negra o amarilla, se cambia con un toque), medidas, peso en vacío, peso calculado con lo de dentro o pesado y mercancías peligrosas; etiqueta imprimible con QR y lista de contenido.
 - **Revista**: se elige qué se revista (laterales, sin ubicar, pasillo, armarios, otros) y el motivo; de cada equipo: correcto, con fallo, en el taller, en otro sitio (cambia su ubicación), de baja o no se revista; «solo lo que falta».
 - **Coordenadas** en latitud/longitud, UTM o MGRS (se escriben en cualquiera y se ven en la que elijas en Ajustes → Unidades) y distancias en m, km o cm.
+- **Modo mantenimiento**: activo de serie. Solo **RODRI** usa la app; el resto, al entrar, ve «RODRI ESTÁ HACIENDO LABORES DE MANTENIMIENTO EN USAR 242» y puede cerrar sesión. RODRI lo quita o lo vuelve a poner en **Ajustes → Mantenimiento** y el cambio llega a todos los móviles con los datos compartidos.
 - **Inicio de sesión**: cada persona entra con su nombre y su contraseña, asignada por el jefe o creada por ella la primera vez. Solo se guarda una huella cifrada (PBKDF2), nunca la contraseña; bloqueo de 30 s tras 5 intentos; cambiar o restablecer la contraseña. Lo que hace cada uno queda con su nombre.
 - **Guía de campo**: un apartado abierto a la vez.
 - **Códigos QR**: cada equipo tiene su QR; al escanearlo con la cámara se abre su ficha. Se pueden imprimir las etiquetas de una puerta entera.

@@ -5,9 +5,14 @@ from playwright.sync_api import Browser
 LOGIN = """try { const k = 'USAR_V4_PREFS', p = JSON.parse(localStorage.getItem(k) || '{}');
   if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; localStorage.setItem(k, JSON.stringify(p)); } } catch (e) {}"""
 _new_context = Browser.new_context
-def new_context(self, *args, autologin=True, **kw):
+# Las pruebas arrancan sin el modo mantenimiento (solo RODRI); test_mantenimiento.py lo prueba con mant=True
+def _sin_mant(route):
+    r = route.fetch()
+    route.fulfill(response=r, body=r.text().replace('const MANT_DEFECTO = true', 'const MANT_DEFECTO = false'))
+def new_context(self, *args, autologin=True, mant=False, **kw):
     c = _new_context(self, *args, **kw)
     if autologin: c.add_init_script(LOGIN)
+    if not mant: c.route('**/js/config.js', _sin_mant)
     return c
 Browser.new_context = new_context
 
