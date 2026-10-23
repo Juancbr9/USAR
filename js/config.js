@@ -50,15 +50,11 @@ const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections'
 const LOCAL_KINDS = [];   // ahora todo se comparte con el equipo (antes: datos de salud solo en el móvil)
 // Con usuarios y permisos, la documentación del personal solo la ven y editan los jefes
 const JEFE_KINDS = [];   // de momento todo el personal accede a todo
-// Copia de pruebas (se publica en una dirección con «pruebas», p. ej. …/USAR-pruebas/): usa sus propios datos en el móvil
-// y su propia base de datos, así se puede experimentar sin tocar la versión estable aunque estén en el mismo dominio.
-const PRUEBAS = /pruebas/i.test(location.pathname);
-const NS = PRUEBAS ? 'PRUEBAS_' : '';
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
 const MANT_MSG = 'RODRI ESTÁ HACIENDO LABORES DE MANTENIMIENTO EN USAR 242';
-const KEY = { db: NS + 'USAR_V5_DB', prefs: NS + 'USAR_V4_PREFS', sync: NS + 'USAR_V4_SYNC', outbox: NS + 'USAR_V4_OUTBOX', imgU: NS + 'USAR_IMG_U' };
+const KEY = { db: 'USAR_V5_DB', prefs: 'USAR_V4_PREFS', sync: 'USAR_V4_SYNC', outbox: 'USAR_V4_OUTBOX' };
 
 // Un puesto por integrante, en el mismo orden que TEAM ("Célula|Puesto")
 const PRESETS = {

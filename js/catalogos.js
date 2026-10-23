@@ -104,7 +104,7 @@ function catalogNew(sel) {
 const Img = (() => {
   let dbp = null;
   const open = () => dbp ||= new Promise((res, rej) => {
-    const r = indexedDB.open(PRUEBAS ? 'pruebas242-img' : 'usar242-img', 1);
+    const r = indexedDB.open('usar242-img', 1);
     r.onupgradeneeded = () => r.result.createObjectStore('img');
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
   });

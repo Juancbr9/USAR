@@ -1208,7 +1208,3 @@ img.doc-full, .gal img, img.art-lg, .person-photo { cursor: zoom-in; }
 @media (hover: hover) and (pointer: fine) { .nav .dr-item:hover, .nav .dr-group-head:hover { background: rgba(255,255,255,.08); } }
 .nav .dr-item .count { margin-left: auto; }
 .op-new.one { grid-template-columns: 1fr; } .op-new.one .op-tile { min-height: 88px; }
-
-/* Copia de pruebas: franja ámbar y etiqueta en la cabecera para no confundirla con la estable */
-.pruebas .topbar { box-shadow: inset 0 -5px 0 #E0A800; }
-.pruebas .wordmark::after { content: 'PRUEBAS'; margin-left: 8px; padding: 1px 6px; border-radius: 4px; background: #E0A800; color: #111; font-size: .55em; vertical-align: middle; letter-spacing: .04em; }
