@@ -95,8 +95,8 @@ async function connectSync(form) {
   const btn = form.querySelector('button');
   btn.disabled = true; btn.textContent = 'Conectando…';
   try {
-    await Sync.connect(form.url.value, form.key.value);
-    toast('Conectado. Los datos se comparten con el equipo.');
+    const r = await Sync.connect(form.url.value, form.key.value);
+    toast(r === 'login' ? 'Conectado. Este equipo usa el modo seguro: entra con tu usuario.' : 'Conectado. Los datos se comparten con el equipo.');
   } catch (e) {
     toast(e.message, 'bad');
   }
@@ -165,7 +165,7 @@ function accountPanel() {
       ${Sync.role === 'jefe' ? `<button class="btn btn-g full" style="margin-top:10px" onclick="membersModal()">${ic('users')} Miembros y permisos</button>` : ''}
     </div>`;
   return `
-    <details class="well" style="margin-top:14px"><summary><b>${ic('lock', 'i-sm')} Entrar con usuario (modo seguro)</b></summary>
+    <details class="well" style="margin-top:14px" ${Sync.locked ? 'open' : ''}><summary><b>${ic('lock', 'i-sm')} Entrar con usuario (modo seguro)</b></summary>
       <p class="muted" style="margin:8px 0">Si el equipo ha activado el modo seguro en Supabase (ver supabase.sql), cada persona entra con su correo y contraseña y solo el personal dado de alta ve los datos. Todos ven todo; los jefes además dan de alta a los miembros.</p>
       <form class="form" onsubmit="event.preventDefault(); accountSubmit(this, event.submitter?.value)">
         <label class="lbl wide">Correo<input class="input" type="email" name="email" required autocomplete="username"></label>
