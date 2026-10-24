@@ -10,6 +10,7 @@ const Sync = (() => {
   let status = 'local', error = '', busy = false, poller = null, debounce = null;
   const cfg = () => readJSON(KEY.sync);
   const setStatus = s => { status = s; renderSyncBadge(); };
+  const locked = () => !!(cfg()?.secure && !cfg().session);   // modo seguro y sin usuario: no se puede leer ni enviar
 
   // Con usuario (modo seguro) va su sesión en Authorization; sin usuario, solo la clave pública en «apikey»
   // (las claves nuevas «sb_publishable_…» no son JWT y Supabase las rechaza en Authorization)
@@ -126,6 +127,7 @@ const Sync = (() => {
     const c = cfg();
     if (!c) return;
     if (!navigator.onLine) return setStatus('offline');
+    if (locked()) { error = 'Modo seguro: entra con tu usuario para ver y compartir los datos del equipo.'; return setStatus('error'); }
     try {
       if (!c.joined) {
         // Primera conexión: si la nube está vacía se suben los datos de este móvil;
@@ -154,7 +156,7 @@ const Sync = (() => {
 
   async function flush() {
     const items = Object.entries(outbox);
-    if (!cfg() || busy || !items.length) return;
+    if (!cfg() || busy || !items.length || locked()) return;
     if (!navigator.onLine) return setStatus('offline');
     busy = true; setStatus('syncing');
     try {
@@ -201,6 +203,8 @@ const Sync = (() => {
     outbox = {}; writeJSON(KEY.outbox, outbox);
     try { await api(`${TABLE}?select=id&limit=1`); }
     catch (e) {
+      // Modo seguro: sin usuario el servidor no deja leer nada (42501). La conexión vale; falta entrar con usuario.
+      if (/42501|permission denied/.test(e.message)) { writeJSON(KEY.sync, { ...cfg(), secure: true }); start(); return 'login'; }
       localStorage.removeItem(KEY.sync);
       throw new Error(/404|PGRST205|relation/.test(e.message)
         ? 'Conecta, pero falta la tabla: ejecuta supabase.sql en el SQL Editor de Supabase.'
@@ -223,7 +227,7 @@ const Sync = (() => {
 
   return {
     start, connect, disconnect, queue, queueImage, pull, cfg, signIn, signUp, signOut, members, setMember, removeMember,
-    get status() { return status; }, get error() { return error; }, get pending() { return Object.keys(outbox).length; },
+    get status() { return status; }, get locked() { return locked(); }, get error() { return error; }, get pending() { return Object.keys(outbox).length; },
     get role() { return cfg()?.session ? role : null; }, get email() { return cfg()?.session?.email || ''; }
   };
 })();

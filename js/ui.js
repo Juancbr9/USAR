@@ -415,7 +415,7 @@ function handleHash() {
     try { c = JSON.parse(unb64(value)); } catch { return toast('Enlace de invitación no válido', 'bad'); }
     if (Sync.cfg()?.url === c.url) return toast('Este dispositivo ya está conectado al equipo');
     if (!confirm('¿Conectar este dispositivo a los datos compartidos del equipo? Se usarán los datos del equipo en lugar de los de este móvil.')) return;
-    Sync.connect(c.url, c.key).then(() => { toast('Conectado al equipo'); render(); }).catch(e => toast(e.message, 'bad'));
+    Sync.connect(c.url, c.key).then(r => { toast(r === 'login' ? 'Conectado al equipo: entra con tu usuario en Ajustes' : 'Conectado al equipo'); render(); }).catch(e => toast(e.message, 'bad'));
   }
 }
 

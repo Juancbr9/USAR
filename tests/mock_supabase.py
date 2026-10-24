@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 rows = {}; users = {}; members = {}; lock = threading.Lock()
+SECURE = [False]   # GET /_secure lo activa: como el modo seguro de supabase.sql, sin usuario no se lee ni se escribe usar_records
 JEFE_KINDS = set()   # ahora todo el personal accede a todo
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -26,16 +27,21 @@ class H(BaseHTTPRequestHandler):
         a = self.headers.get('Authorization')
         if a and not a.startswith('Bearer tok:'): self.reply(401, {'message': 'Invalid JWT'}); return True
         return False
+    def denied(self, email):
+        if SECURE[0] and not email: self.reply(401, {'code': '42501', 'message': 'permission denied for table usar_records'}); return True
+        return False
     def do_OPTIONS(self): self.reply(204)
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         if u.path == '/_dump': return self.reply(200, list(rows.values()))
+        if u.path == '/_secure': SECURE[0] = True; return self.reply(200, {})
         if self.bad_jwt(): return
         if u.path.endswith('/usar_members'):
             f = q.get('email', [None])[0]
             data = [m for m in members.values() if not f or m['email'] == f[3:]]
             return self.reply(200, data)
         email, role = self.who()
+        if self.denied(email): return
         with lock: data = sorted(rows.values(), key=lambda r: r['updated_at'])
         if role == 'miembro': data = [r for r in data if r['kind'] not in JEFE_KINDS]
         f = q.get('updated_at', [None])[0]
@@ -59,6 +65,7 @@ class H(BaseHTTPRequestHandler):
             for m in body: members[m['email']] = m
             return self.reply(201)
         email, role = self.who()
+        if self.denied(email): return
         if role == 'miembro' and any(r['kind'] in JEFE_KINDS for r in body): return self.reply(403, {'message': 'permiso denegado'})
         with lock:
             for r in body:
