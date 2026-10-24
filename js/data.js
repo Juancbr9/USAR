@@ -92,7 +92,7 @@ function defaultData() {
     ],
     vehicles: DEFAULT_VEHICLES,
     logs: [], inspections: [], missions: [], mlog: [],
-    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 4 }]
+    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 5 }]
   };
 }
 
@@ -110,6 +110,8 @@ const DEFAULT_VEHICLES = [
   veh('V-AB-LCIF', 'Autobomba Renault (módulo LCIF)'),
   veh('V-AB-CONT', 'Autobomba Renault (contenedor pequeño)'),
   veh('V-AB', 'Autobomba'),
+  veh('V-ATB-M1', 'ATB Iveco M1'),
+  veh('V-ATB-M2', 'ATB Iveco M2'),
   veh('V-CAM-ROJO', 'Camión rojo'),
   veh('V-CAM-VERDE', 'Camión verde'),
   veh('V-GRUA', 'Grúa'),
@@ -273,12 +275,18 @@ function seedDefaults(share = false) {
     stampIt('meta', { id: 'vehbase', value: 3 });
   }
   // v4: el material ya no se guarda en vehículos (ni «con el jefe»): pasa a «sin ubicar». Se carga en cada actividad.
-  if (get('meta', 'vehbase')?.value !== 4) {
+  if (!(get('meta', 'vehbase')?.value >= 4)) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     list('boxes').filter(b => b.vehicle).forEach(b => stampIt('boxes', { ...b, vehicle: '', door: 0 }));
     list('gear').filter(g => g.vehicle).forEach(g => stampIt('gear', { ...g, vehicle: '', door: get('boxes', g.box) ? get('boxes', g.box).door : 0 }));
     list('vehicles').filter(v => /vehículo del jefe/i.test(v.notes || '')).forEach(v => stampIt('vehicles', { ...v, notes: '' }));
     stampIt('meta', { id: 'vehbase', value: 4 });
+  }
+  // v5: autobombas todoterreno Iveco M1 y M2. Solo se añaden si faltan: los vehículos ya editados no se tocan
+  if (!(get('meta', 'vehbase')?.value >= 5)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    DEFAULT_VEHICLES.filter(v => ['V-ATB-M1', 'V-ATB-M2'].includes(v.id) && !db.vehicles[v.id]).forEach(v => stampIt('vehicles', { ...v }));
+    stampIt('meta', { id: 'vehbase', value: 5 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
