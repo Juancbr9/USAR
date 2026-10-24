@@ -103,19 +103,19 @@ const MANUAL = [
     tips: ['Los datos personales solo si los pide la autoridad; no salen en los mensajes.'] },
 
   { id: 'confinados', area: 'ops', icon: 'wind', title: 'Espacios confinados',
-    what: 'Registro de mediciones (O₂, explosividad, CO, H₂S) con la decisión de entrada, quién entra y cuánto aire le queda al ERA.',
+    what: 'Función avanzada: se activa en Ajustes → General → «Funciones avanzadas». Registro de mediciones (O₂, explosividad, CO, H₂S) con la decisión de entrada, quién entra y cuánto aire le queda al ERA.',
     parts: [{ steps: ['Seguridad → Espacios confinados → «Entrada»: lugar, botella y presión, quién entra, respaldo y vigilante.', 'Mide y guarda: la app dice si la entrada está permitida, limitada o prohibida.', '«Entran»: arranca la cuenta atrás hasta el silbato. «Salen todos» al terminar.'],
       img: ['confinado', 'Mediciones y decisión de entrada', []] }],
     example: 'Sótano: O₂ 18 %, LEL 6 % → limitada a emergencias, con ERA. Botella de 6 l a 300 bar: 30 min hasta el silbato.',
     tips: ['Mide siempre en este orden: oxígeno, explosividad y tóxicos; arriba, en medio y abajo.'] },
 
   { id: 'informes', area: 'ops', icon: 'file', title: 'Informes y exportación',
-    what: 'Informe de situación, de worksite, fichas de víctimas, necesidades de la población, desmovilización y post-misión. Exporta a CSV, GeoJSON y KML.',
+    what: 'Informe de situación, de worksite, fichas de víctimas, necesidades de la población, desmovilización y post-misión. Con las funciones avanzadas activadas (Ajustes → General), exporta a CSV, GeoJSON y KML.',
     parts: [{ steps: ['Operación → Informes → «Preparar y enviar» el informe de situación.', 'Toca un worksite o una víctima para enviar su ficha.', 'Exporta las posiciones para Google Earth, CalTopo o ATAK.'], img: ['informes', 'Informes de la operación', []] }],
     example: 'Cada 12 h se envía al mando el informe: 2 worksites en trabajo, 1 rescatada con vida, objetivos del siguiente periodo.', tips: [] },
 
   { id: 'bic', area: 'ops', icon: 'landmark', title: 'Patrimonio (BIC)',
-    what: 'Para poner a salvo los bienes culturales de una iglesia, convento o museo ante incendio, lava, inundación o terremoto.',
+    what: 'Función avanzada: se activa en Ajustes → General → «Funciones avanzadas». Para poner a salvo los bienes culturales de una iglesia, convento o museo ante incendio, lava, inundación o terremoto.',
     parts: [
       { h: 'Inventario y prioridades', steps: ['Crea la operación con la plantilla «Salvaguarda de patrimonio (BIC)».', 'Patrimonio → Inmueble y amenaza: responsable del bien, depósito y hora a la que llega la amenaza (cuenta atrás).', '«Bien»: nombre, tipo, dónde está, foto con la cámara, valor, riesgo y si se puede mover → prioridad P1, P2, P3 o in situ.'],
         img: ['bic', 'Inventario y recorrido de los bienes', [[1, 'Cuántos bienes hay en cada paso del recorrido.']]] },

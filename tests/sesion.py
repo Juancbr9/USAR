@@ -3,7 +3,7 @@ Para probar la propia pantalla de entrada: br.new_context(..., autologin=False).
 from playwright.sync_api import Browser
 
 LOGIN = """try { const k = 'USAR_V4_PREFS', p = JSON.parse(localStorage.getItem(k) || '{}');
-  if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; localStorage.setItem(k, JSON.stringify(p)); } } catch (e) {}"""
+  if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; p.avanzado ??= true; localStorage.setItem(k, JSON.stringify(p)); } } catch (e) {}"""
 _new_context = Browser.new_context
 # Las pruebas arrancan sin el modo mantenimiento (solo RODRI); test_mantenimiento.py lo prueba con mant=True (y RODRI de ADMIN).
 # Además, GRANADOS (la sesión de las pruebas) hace de ADMIN para dar de alta material y vehículos; test_flota.py prueba

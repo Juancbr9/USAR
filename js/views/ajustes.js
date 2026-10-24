@@ -49,6 +49,7 @@ function viewAjustes() {
           <h3 class="sec-title">${ic('sun')} Pantalla y avisos</h3>
           <div class="seg-row" role="group" aria-label="Modo de pantalla" style="margin-bottom:10px">${[['light', 'Claro'], ['dark', 'Noche'], ['sun', 'Sol']].map(([k, l]) => `<button class="${currentTheme() === k ? 'on' : ''}" aria-pressed="${currentTheme() === k}" onclick="setPref({ theme: '${k}' }); applyTheme()">${l}</button>`).join('')}</div>
           <label class="check-row"><input type="checkbox" ${prefs.big ? 'checked' : ''} onchange="setPref({ big: this.checked }); applyTheme()"><span>Botones y letra grandes (con guantes)</span></label>
+          <label class="check-row"><input type="checkbox" ${avanzado() ? 'checked' : ''} onchange="setPref({ avanzado: this.checked })"><span>Funciones avanzadas: patrimonio (BIC), espacios confinados y exportar a mapas</span></label>
           <button class="btn btn-g full" style="margin-top:10px" onclick="enableNotifications()" ${'Notification' in window && Notification.permission === 'granted' ? 'disabled' : ''}>${ic('bell')} ${'Notification' in window && Notification.permission === 'granted' ? 'Avisos del sistema activados' : 'Activar avisos del sistema'}</button>
           
         </div>

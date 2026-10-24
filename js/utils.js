@@ -52,6 +52,8 @@ function haptic(pattern = 12) {
 
 // Modo claro / noche
 // Modos de pantalla: claro, noche y sol (alto contraste para trabajar a pleno sol). «Botones grandes» se suma a cualquiera.
+// Funciones avanzadas (patrimonio BIC, espacios confinados y exportar a mapas): ocultas salvo que se activen en Ajustes
+const avanzado = () => !!prefs.avanzado;
 const currentTheme = () => prefs.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 function applyTheme() {
   const theme = currentTheme(), root = document.documentElement;
