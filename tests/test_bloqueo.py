@@ -33,7 +33,10 @@ with sync_playwright() as p:
     a.fill('[name=pin]', '1357'); a.click('.login button.btn-a'); a.wait_for_selector('.topbar:visible')
     assert a.evaluate("prefs.tab") == 'avisos', 'al entrar va a Inicio'
     # Recargar (p. ej. al llegar una versión nueva) no vuelve a pedirla
-    a.evaluate("go('ajustes')"); a.reload(); a.wait_for_selector('.topbar:visible')
+    a.evaluate("go('ajustes')"); a.reload(); a.wait_for_selector('#view > *')
+    estado = a.evaluate("({ dentro: loggedIn(), sesion: prefs.session, ss: { ...sessionStorage }, vista: $('view').innerText.slice(0, 120) })")
+    assert estado['dentro'], f'al recargar sigue dentro: {estado} {problems}'
+    a.wait_for_selector('.topbar:visible')
     assert a.evaluate("prefs.tab") == 'ajustes'
     # Abrir la app de nuevo (otra pestaña): la pide y después va a Inicio
     b = page(c); b.goto(APP); b.wait_for_selector('.login')
