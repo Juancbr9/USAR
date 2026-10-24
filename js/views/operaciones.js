@@ -70,7 +70,7 @@ function missionForm(id, type = 'intervencion') {
   openForm(id ? 'Editar datos generales' : `Nueva ${MISSION_TYPES[type].toLowerCase()}`, [
     { k: 'title', label: 'Nombre', value: m.title, required: true, wide: true, placeholder: type === 'ejercicio' ? 'Ej: Simulacro colapso nave' : 'Ej: Derrumbe vivienda C/ Real' },
     { k: 'type', label: 'Tipo', value: m.type, options: Object.entries(MISSION_TYPES) },
-    { k: 'scope', label: 'Ámbito', value: m.scope || 'usar', options: [['usar', 'Rescate de personas (USAR)'], ['bic', 'Salvaguarda de patrimonio (BIC)']] },
+    ...(avanzado() || m.scope === 'bic' ? [{ k: 'scope', label: 'Ámbito', value: m.scope || 'usar', options: [['usar', 'Rescate de personas (USAR)'], ['bic', 'Salvaguarda de patrimonio (BIC)']] }] : []),
     { k: 'date', label: 'Fecha y hora de salida', type: 'datetime-local', value: m.date },
     { k: 'location', label: 'Ubicación', value: m.location, wide: true, placeholder: 'Dirección o lugar' },
     { k: 'meeting', label: 'Punto de reunión', value: m.meeting, wide: true, placeholder: 'Ej: Parque de bomberos, 07:30' },
