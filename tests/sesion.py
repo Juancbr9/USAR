@@ -5,14 +5,20 @@ from playwright.sync_api import Browser
 LOGIN = """try { const k = 'USAR_V4_PREFS', p = JSON.parse(localStorage.getItem(k) || '{}');
   if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; localStorage.setItem(k, JSON.stringify(p)); } } catch (e) {}"""
 _new_context = Browser.new_context
-# Las pruebas arrancan sin el modo mantenimiento (solo RODRI); test_mantenimiento.py lo prueba con mant=True
-def _sin_mant(route):
-    r = route.fetch()
-    route.fulfill(response=r, body=r.text().replace('const MANT_DEFECTO = true', 'const MANT_DEFECTO = false'))
-def new_context(self, *args, autologin=True, mant=False, **kw):
+# Las pruebas arrancan sin el modo mantenimiento (solo RODRI); test_mantenimiento.py lo prueba con mant=True (y RODRI de ADMIN).
+# Además, GRANADOS (la sesión de las pruebas) hace de ADMIN para dar de alta material y vehículos; test_flota.py prueba
+# el permiso de verdad (solo RODRI) con flota=True.
+def _config(mant, flota):
+    def route_(route):
+        r = route.fetch(); body = r.text()
+        if not mant: body = body.replace('const MANT_DEFECTO = true', 'const MANT_DEFECTO = false')
+        if not flota: body = body.replace("const ADMIN = 'RODRI'", "const ADMIN = 'GRANADOS'")
+        route.fulfill(response=r, body=body)
+    return route_
+def new_context(self, *args, autologin=True, mant=False, flota=False, **kw):
     c = _new_context(self, *args, **kw)
     if autologin: c.add_init_script(LOGIN)
-    if not mant: c.route('**/js/config.js', _sin_mant)
+    if not mant: c.route('**/js/config.js', _config(mant, flota))
     return c
 Browser.new_context = new_context
 

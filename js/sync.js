@@ -168,11 +168,18 @@ const Sync = (() => {
         const body = await Promise.all(batch.map(async ([, r]) => r.img
           ? { kind: 'images', id: r.id, deleted: r.deleted, data: r.deleted ? null : { data: await Img.get(r.id), _u: r._u } }
           : r));
-        await api(`${TABLE}?on_conflict=kind,id`, {
+        const send = rows => api(`${TABLE}?on_conflict=kind,id`, {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-          body: JSON.stringify(body.filter(r => r.deleted || r.kind !== 'images' || r.data.data))
+          body: JSON.stringify(rows.filter(r => r.deleted || r.kind !== 'images' || r.data.data))
         });
+        try { await send(body); }
+        catch (e) {
+          // El servidor rechaza lo que este usuario no tiene permiso para guardar (p. ej. material nuevo si no es jefe):
+          // se envía de uno en uno y lo rechazado se queda solo en este móvil, para que no atasque el resto de la cola
+          if (!/42501|row-level security/.test(e.message)) throw e;
+          for (const r of body) await send([r]).catch(err => { if (!/42501|row-level security/.test(err.message)) throw err; });
+        }
         batch.filter(([, r]) => r.img).forEach(([, r]) => { imgU[r.id] = r._u; });
         writeJSON('USAR_IMG_U', imgU);
         batch.forEach(([k, r]) => { if (outbox[k] === r) delete outbox[k]; });

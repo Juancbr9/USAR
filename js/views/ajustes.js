@@ -160,13 +160,13 @@ function replaceAll(data, msg) {
 function accountPanel() {
   if (Sync.email) return `
     <div class="well" style="margin-top:14px">
-      <div class="between"><div><b>${ic('lock', 'i-sm')} ${esc(Sync.email)}</b><small class="muted">${Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? 'Miembro: ve y edita todo' : 'Sin rol en el equipo'}</small></div>
+      <div class="between"><div><b>${ic('lock', 'i-sm')} ${esc(Sync.email)}</b><small class="muted">${Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? 'Miembro: ve y usa todo; el material y los vehículos los da de alta el jefe' : 'Sin rol en el equipo'}</small></div>
         <button class="btn btn-g btn-sm" onclick="Sync.signOut(); render(); toast('Sesión cerrada')">Salir</button></div>
       ${Sync.role === 'jefe' ? `<button class="btn btn-g full" style="margin-top:10px" onclick="membersModal()">${ic('users')} Miembros y permisos</button>` : ''}
     </div>`;
   return `
     <details class="well" style="margin-top:14px" ${Sync.locked ? 'open' : ''}><summary><b>${ic('lock', 'i-sm')} Entrar con usuario (modo seguro)</b></summary>
-      <p class="muted" style="margin:8px 0">Si el equipo ha activado el modo seguro en Supabase (ver supabase.sql), cada persona entra con su correo y contraseña y solo el personal dado de alta ve los datos. Todos ven todo; los jefes además dan de alta a los miembros.</p>
+      <p class="muted" style="margin:8px 0">Si el equipo ha activado el modo seguro en Supabase (ver supabase.sql), cada persona entra con su correo y contraseña y solo el personal dado de alta ve los datos. Todos ven todo; los jefes además dan de alta a los miembros y son los únicos que añaden o eliminan material y vehículos.</p>
       <form class="form" onsubmit="event.preventDefault(); accountSubmit(this, event.submitter?.value)">
         <label class="lbl wide">Correo<input class="input" type="email" name="email" required autocomplete="username"></label>
         <label class="lbl wide">Contraseña<input class="input" type="password" name="password" required minlength="6" autocomplete="current-password"></label>

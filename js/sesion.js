@@ -21,6 +21,12 @@ const loggedIn = () => !!me();
 const isAdmin = () => me()?.name === ADMIN;
 const enMantenimiento = () => (get('meta', 'mantenimiento')?.value ?? MANT_DEFECTO) !== false;
 const bloqueado = () => enMantenimiento() && !isAdmin();
+// Material, cajas, consumibles, vehículos y extras de las salidas: solo ADMIN los añade, cambia o elimina. Con usuario de
+// Supabase hace falta además que sea jefe: así ADMIN, con una segunda cuenta de miembro, ve la app como el resto.
+// El resto del equipo sigue moviendo material, sacándolo, pasándolo a revisión y ajustando el stock.
+const FLOTA_KINDS = ['gear', 'boxes', 'consumables', 'vehicles'];
+const puedeFlota = () => isAdmin() && (!Sync.email || Sync.role === 'jefe');
+const soloFlota = () => puedeFlota() || (toast(`Solo ${ADMIN} puede añadir o cambiar material, vehículos y extras`, 'bad'), false);
 function renderMantenimiento() {
   document.body.classList.add('login-on');
   $('view').innerHTML = `

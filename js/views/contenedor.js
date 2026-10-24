@@ -38,9 +38,9 @@ function gearDetail(id) {
               : `<button class="btn btn-g" onclick="checkout('${id}')">${ic('out')} Sacar</button>`}
       <button class="btn btn-g" onclick="moveForm('gear', '${id}')">${ic('move')} Mover</button>
       ${boxOf(g) ? `<button class="btn btn-g" onclick="boxDetail('${g.box}')">${ic('case')} Caja ${esc(boxCode(g))}</button>` : `<button class="btn btn-g" onclick="gearToBox('${id}')">${ic('case')} Meter en caja</button>`}
-      <button class="btn btn-g" onclick="gearForm('${id}')">${ic('pencil')} Editar</button>
+      ${puedeFlota() ? `<button class="btn btn-g" onclick="gearForm('${id}')">${ic('pencil')} Editar</button>` : ''}
       <button class="btn btn-g" onclick="qrModal('${id}')">${ic('qr')} Código QR</button>
-      <button class="btn btn-bad" onclick="removeItem('gear', '${id}')">${ic('trash')} Eliminar</button>
+      ${puedeFlota() ? `<button class="btn btn-bad" onclick="removeItem('gear', '${id}')">${ic('trash')} Eliminar</button>` : ''}
     </div>`);
 }
 
@@ -121,6 +121,7 @@ function gearToBox(id) {
 }
 
 function gearForm(id) {
+  if (!soloFlota()) return;
   const cur = prefs.door, g = get('gear', id) || { door: typeof cur === 'number' ? cur : 1 };
   openForm(id ? 'Editar material' : 'Añadir material', [
     { k: 'name', label: 'Herramienta / equipo', value: g.name, required: true, wide: true },

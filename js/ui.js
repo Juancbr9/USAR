@@ -272,6 +272,7 @@ addEventListener('keydown', e => {
 
 function removeItem(kind, id) {
   const item = get(kind, id);
+  if (FLOTA_KINDS.includes(kind) && !soloFlota()) return;
   if (!item || !confirm(`¿Eliminar "${item.name}"?`)) return;
   remove(kind, id, `Eliminado "${item.name}"`);
   closeModal();
