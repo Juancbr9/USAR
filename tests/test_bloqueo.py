@@ -19,7 +19,8 @@ def page(c):
 
 with sync_playwright() as p:
     br = p.chromium.launch()
-    c = br.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, bloqueo=True)
+    # Sin service worker: si no, al recargar config.js llega de su caché sin pasar por sesion.py (y sale el mantenimiento)
+    c = br.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, bloqueo=True, service_workers='block')
     a = page(c)
     a.goto(APP); a.wait_for_selector('.login')
     assert a.locator('.topbar').is_hidden(), 'con la sesión recordada también pide entrar'
@@ -34,8 +35,7 @@ with sync_playwright() as p:
     assert a.evaluate("prefs.tab") == 'avisos', 'al entrar va a Inicio'
     # Recargar (p. ej. al llegar una versión nueva) no vuelve a pedirla
     a.evaluate("go('ajustes')"); a.reload(); a.wait_for_selector('#view > *')
-    estado = a.evaluate("({ dentro: loggedIn(), sesion: prefs.session, ss: { ...sessionStorage }, vista: $('view').innerText.slice(0, 120) })")
-    assert estado['dentro'], f'al recargar sigue dentro: {estado} {problems}'
+    assert a.evaluate("loggedIn()"), 'al recargar sigue dentro'
     a.wait_for_selector('.topbar:visible')
     assert a.evaluate("prefs.tab") == 'ajustes'
     # Abrir la app de nuevo (otra pestaña): la pide y después va a Inicio
