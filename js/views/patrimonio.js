@@ -240,23 +240,25 @@ function heritageInSitu(id) {
 
 /* ==================== TEXTOS E IMPRESIÓN ==================== */
 function heritageText(h) {
-  const L = [`*Ficha de rescate ${herCode(h)} · ${h.name}*`, `${h.type || ''}${h.place ? ' · estaba en ' + h.place : ''}`,
-    `Prioridad: ${h.p ? PRIO[h.p][0] : 'sin poner'} · Estado: ${herStatus(h.status)[0]}`];
-  if (h.box) L.push(`Caja / bulto: ${h.box}`);
-  if (h.condition) L.push(`Conservación: ${h.condition}`);
-  if (h.insitu) L.push(`Medidas in situ: ${h.insitu}`);
+  const L = waHead('🏛️', `Ficha de rescate ${herCode(h)}`, h.name);
+  if (h.type || h.place) L.push(`🖼️ ${h.type || ''}${h.place ? (h.type ? ' · ' : '') + 'estaba en ' + h.place : ''}`);
+  L.push(`🏷️ *Prioridad:* ${h.p ? PRIO[h.p][0] : 'sin poner'} · *Estado:* ${herStatus(h.status)[0]}`);
+  if (h.box) L.push(`📦 *Caja / bulto:* ${h.box}`);
+  if (h.condition) L.push(`🩹 *Conservación:* ${h.condition}`);
+  if (h.insitu) L.push(`🛡️ *Medidas in situ:* ${h.insitu}`);
+  if ((h.custody || []).length) L.push(...waSec('🔗', 'Cadena de custodia'));
   (h.custody || []).forEach(c => L.push(`• ${fmtWhen(c.ts)} ${herStatus(c.status)[0]} (${c.by})${c.note ? ': ' + c.note : ''}`));
   return L.join('\n');
 }
 
 function heritageSummary(m) {
   const hs = heritageOf(m.id), b = m.bic || {};
-  const L = [`*USAR 242 · Salvaguarda de patrimonio · ${b.building || m.title}*`, fmtWhen(Date.now()), b.threat ? `Amenaza: ${b.threat}` : '', ''];
-  L.push(`Bienes registrados: ${hs.length}`);
+  const L = [...waHead('🏛️', 'USAR 242 · Salvaguarda de patrimonio', b.building || m.title), `📅 ${fmtWhen(Date.now())}`, b.threat ? `⚠️ *Amenaza:* ${b.threat}` : '', ''];
+  L.push(`📦 *Bienes registrados:* ${hs.length}`);
   [...HER_FLOW, ['insitu', 'Protegidos in situ']].forEach(([k, l]) => { const n = hs.filter(h => h.status === k).length; if (n) L.push(`• ${l}: ${n}`); });
   const p1 = hs.filter(h => h.p === 'P1' && !['deposito', 'insitu'].includes(h.status));
-  if (p1.length) L.push('', `*P1 aún sin poner a salvo (${p1.length})*`, ...p1.map(h => `• ${herCode(h)} ${h.name} (${herStatus(h.status)[0].toLowerCase()})`));
-  if (b.depot) L.push('', `Depósito: ${b.depot}`);
+  if (p1.length) L.push(...waSec('🔴', `P1 aún sin poner a salvo (${p1.length})`), ...p1.map(h => `• ${herCode(h)} ${h.name} (${herStatus(h.status)[0].toLowerCase()})`));
+  if (b.depot) L.push('', `🏠 *Depósito:* ${b.depot}`);
   return L.filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n');
 }
 

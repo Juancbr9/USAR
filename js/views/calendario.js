@@ -117,8 +117,10 @@ function setAttendance(id, op, k) {
 }
 
 function eventText(e) {
-  return [`*USAR 242 · ${e.type.toUpperCase()}${e.title ? ': ' + e.title : ''}*`, `📅 ${eventDays(e).length > 1 ? evWhen(e) : fmtDT(e.start) + (e.end ? ' → ' + fmtHour(new Date(e.end)) : '')}`,
-    e.place ? `📍 ${e.place}` : '', e.notes || '', `👥 ${names(e.people || []).join(', ')}`].filter(Boolean).join('\n');
+  const ps = names(e.people || []);
+  return [...waHead('📣', `USAR 242 · ${e.type.toUpperCase()}`, e.title), `📅 *Cuándo:* ${eventDays(e).length > 1 ? evWhen(e) : fmtDT(e.start) + (e.end ? ' → ' + fmtHour(new Date(e.end)) : '')}`,
+    e.place ? `📍 *Dónde:* ${e.place}` : null, ...(e.notes ? waSec('📝', 'Detalles').concat(e.notes) : []),
+    ...(ps.length ? waSec('👥', `Convocados (${ps.length})`).concat(ps.map(n => '• ' + n)) : [])].filter(x => x !== null).join('\n');
 }
 function downloadIcs(id) {
   const e = get('events', id);

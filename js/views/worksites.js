@@ -269,18 +269,20 @@ function evalForm(id) {
 function worksiteReportText(w) {
   const vs = victimsOf(w.mission).filter(v => v.worksite === w.id);
   const out = vs.filter(v => ['extraida', 'entregada'].includes(v.status));
-  const L = [`*Informe de worksite ${w.code}* · ${teamCode()}`, fmtWhen(Date.now()), ''];
-  if (w.address) L.push(`📍 ${w.address}`);
-  if (w.lat && w.lon) L.push(`GPS ${allCoords(w.lat, w.lon).join(' · ')}`);
-  L.push(`Categoría: ${w.cat ? `${w.cat} (${TRIAGE[w.cat][0].toLowerCase()})` : 'sin triaje'} · Estado: ${WS_STATUS[w.status][0].toLowerCase()}`);
-  if ((w.asr || []).length) L.push(`ASR: ${w.asr.map(r => `${r.level} (${r.team}, ${markDate(r.date)})`).join(', ')}`);
-  L.push(`Edificio: ${[w.use, w.construction, w.floors && w.floors + ' plantas', w.collapse, w.damage && w.damage + ' % daño'].filter(Boolean).join(', ') || '—'}`);
-  if (w.hazards) L.push(`⚠️ Riesgos: ${w.hazards}`);
-  L.push('', `Rescatados vivos: ${out.filter(v => v.state === 'viva').length} · Fallecidos recuperados: ${out.filter(v => v.state === 'fallecida').length}`);
-  L.push(`Siguen desaparecidos: ${Math.max(0, (+w.missing || 0) - out.length)} · Contactos vivos en curso: ${vs.filter(v => v.state === 'viva' && !out.includes(v)).length}`);
-  if ((w.ops || []).length) L.push(`Trabajos: ${w.ops.map(k => WS_OPS.find(o => o[0] === k)[1]).join(', ')}`);
-  if (w.estimate) L.push(`Plan: ${w.estimate}`);
-  if (out.length) L.push(`Fichas de extracción: ${out.map(victimRef).join(', ')}`);
+  const L = waHead('🏚️', `Informe de worksite ${w.code}`);
+  L.push(`👥 *Equipo:* ${teamCode()} · 📅 ${fmtWhen(Date.now())}`);
+  if (w.address) L.push(`📍 *Dirección:* ${w.address}`);
+  if (w.lat && w.lon) L.push(`🛰️ *GPS:* ${allCoords(w.lat, w.lon).join(' · ')}`);
+  L.push(`🏷️ *Categoría:* ${w.cat ? `${w.cat} (${TRIAGE[w.cat][0].toLowerCase()})` : 'sin triaje'} · *Estado:* ${WS_STATUS[w.status][0].toLowerCase()}`);
+  if ((w.asr || []).length) L.push(`🪧 *ASR:* ${w.asr.map(r => `${r.level} (${r.team}, ${markDate(r.date)})`).join(', ')}`);
+  L.push(`🏢 *Edificio:* ${[w.use, w.construction, w.floors && w.floors + ' plantas', w.collapse, w.damage && w.damage + ' % daño'].filter(Boolean).join(', ') || '—'}`);
+  if (w.hazards) L.push(`⚠️ *Riesgos:* ${w.hazards}`);
+  L.push(...waSec('🧍', 'Víctimas'), `• 💚 Rescatados vivos: ${out.filter(v => v.state === 'viva').length}`, `• 🖤 Fallecidos recuperados: ${out.filter(v => v.state === 'fallecida').length}`);
+  L.push(`• 🔎 Siguen desaparecidos: ${Math.max(0, (+w.missing || 0) - out.length)}`, `• 🗣️ Contactos vivos en curso: ${vs.filter(v => v.state === 'viva' && !out.includes(v)).length}`);
+  if ((w.ops || []).length || w.estimate || out.length) L.push('');
+  if ((w.ops || []).length) L.push(`🔧 *Trabajos:* ${w.ops.map(k => WS_OPS.find(o => o[0] === k)[1]).join(', ')}`);
+  if (w.estimate) L.push(`🗓️ *Plan:* ${w.estimate}`);
+  if (out.length) L.push(`📄 *Fichas de extracción:* ${out.map(victimRef).join(', ')}`);
   return L.join('\n');
 }
 
@@ -368,21 +370,20 @@ function periodForm(id) {
 
 function periodText(w, n) {
   const p = (w.periods || []).find(x => x.n === n);
-  const L = [`*Informe de worksite (INSARAG) · ${w.code} · nº ${p.n}*`, `G3 Equipo: ${teamCode()}`,
-    `E1 Worksite: ${w.code}${w.lat ? ` · E2 GPS (WGS84): ${w.lat}, ${w.lon} · MGRS ${toMGRS(+w.lat, +w.lon)}` : ''}${w.address ? ` · E3 ${w.address}` : ''}`,
-    `G1–G2 Inicio: ${fmtWhen(p.start)} · G13–G14 Fin: ${fmtWhen(p.end)}`,
-    `G5 ASR ${p.asr} · G6 ${p.asrDone ? 'completado' : 'en curso'}`,
-    `G7 Rescates con vida en el periodo: ${p.live} · G8 Fallecidos recuperados: ${p.dead}`];
-  if (p.other) L.push(`G9 Otras actividades: ${p.other}`);
-  if (p.release) L.push(`G10 Recursos que se pueden liberar: ${p.release}`);
-  if (p.safety) L.push(`G11 Seguridad: ${p.safety}`);
-  if (p.contacts) L.push(`G12 Contactos: ${p.contacts}`);
-  L.push(`G16 Asignación completa: ${p.complete ? 'Sí' : 'No'}`, `G17 Siguen desaparecidos: ${p.missing} · G18 Contactos vivos / rescates en curso: ${p.contacts_live}`);
-  if (p.plan) L.push(`G19 Plan: ${p.plan}`);
-  if (p.logistics) L.push(`G20 Necesidades: ${p.logistics}`);
-  if (p.eta) L.push(`G21–G22 Fin estimado: ${fmtWhen(p.eta)}`);
-  if (p.refs.length) L.push(`G23 Fichas de extracción: ${p.refs.join(', ')}`);
-  L.push(`Completado por: ${p.by}`);
+  const L = [...waHead('📋', 'Informe de worksite (INSARAG)', `${w.code} · nº ${p.n}`), `👥 *G3* Equipo: ${teamCode()}`,
+    `📍 *E1* Worksite: ${w.code}${w.lat ? ` · *E2* GPS (WGS84): ${w.lat}, ${w.lon} · MGRS ${toMGRS(+w.lat, +w.lon)}` : ''}${w.address ? ` · *E3* ${w.address}` : ''}`,
+    `🕒 *G1–G2* Inicio: ${fmtWhen(p.start)} · *G13–G14* Fin: ${fmtWhen(p.end)}`,
+    `🪧 *G5* ASR ${p.asr} · *G6* ${p.asrDone ? 'completado' : 'en curso'}`,
+    ...waSec('🧍', 'Resultados'),
+    `• 💚 *G7* Rescates con vida en el periodo: ${p.live}`, `• 🖤 *G8* Fallecidos recuperados: ${p.dead}`,
+    `• 🔎 *G17* Siguen desaparecidos: ${p.missing}`, `• 🗣️ *G18* Contactos vivos / rescates en curso: ${p.contacts_live}`,
+    `• ✅ *G16* Asignación completa: ${p.complete ? 'Sí' : 'No'}`];
+  const more = [p.other && `🔧 *G9* Otras actividades: ${p.other}`, p.release && `🔓 *G10* Recursos que se pueden liberar: ${p.release}`,
+    p.safety && `⚠️ *G11* Seguridad: ${p.safety}`, p.contacts && `📞 *G12* Contactos: ${p.contacts}`, p.plan && `🗓️ *G19* Plan: ${p.plan}`,
+    p.logistics && `📦 *G20* Necesidades: ${p.logistics}`, p.eta && `⏱️ *G21–G22* Fin estimado: ${fmtWhen(p.eta)}`,
+    p.refs.length && `📄 *G23* Fichas de extracción: ${p.refs.join(', ')}`].filter(Boolean);
+  if (more.length) L.push('', ...more);
+  L.push('', `✍️ _Completado por: ${p.by}_`);
   return L.join('\n');
 }
 

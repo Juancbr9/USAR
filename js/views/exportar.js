@@ -127,5 +127,5 @@ function needForm(mid) {
     { k: 'notes', label: 'Notas', type: 'textarea', rows: 2, wide: true }
   ], v => { const m = mget(mid); saveMission(m, { needs: [...(m.needs || []), { ...v, ts: Date.now() }] }, `necesidades en ${v.place}`); });
 }
-const needsText = m => [`*USAR 242 · Necesidades humanitarias · ${m.title}*`, fmtWhen(Date.now()), '',
-  ...(m.needs || []).map(n => `• ${n.place}${n.people ? ` (${n.people} personas)` : ''}: ${n.needs.join(', ') || '—'}${n.notes ? '. ' + n.notes : ''}`)].join('\n');
+const needsText = m => [...waHead('🆘', 'USAR 242 · Necesidades humanitarias', m.title), `📅 ${fmtWhen(Date.now())}`, '',
+  ...(m.needs || []).map(n => `📍 ${waB(n.place)}${n.people ? ` (👥 ${n.people} personas)` : ''}: ${n.needs.join(', ') || '—'}${n.notes ? '. ' + n.notes : ''}`)].join('\n');
