@@ -61,6 +61,33 @@ with sync_playwright() as p:
     ids = a.evaluate("missionGearIds(mget(prefs.mission))"); assert 'B-901' in ids and 'B-902' in ids and len(ids) == n0 + 2, ids
     txt = a.evaluate("missionText(mget(prefs.mission))"); assert 'Amarok · ET-12345' in txt and 'Transmisiones (TETRA)' in txt, txt
     assert a.locator('.item:has-text("5678 DEF")').count() == 1
+    # Sin repetir: quien conduce no sale entre los ocupantes, quien ya va en un vehículo no sale en otro y el material no se duplica
+    a.click('button.btn[onclick^=missionVehicleForm]'); a.select_option('[name=id]', label='Amarok')
+    drv = a.evaluate("[...$('modalForm').elements.driver.options].map(o => o.text)")
+    assert not {'MANOLO', 'AGUIAR', 'DORTA', 'CRISTOFER'} & set(drv), drv
+    crew = a.evaluate("[...document.querySelectorAll('input[name=crew]')].map(c => c.closest('.check-row').textContent.trim())")
+    assert 'AGUIAR' not in crew and 'MANOLO' not in crew and 'GRANADOS' in crew, crew
+    gid = a.evaluate("operators().find(o => o.name === 'GRANADOS').id")
+    a.check(f'input[name=crew][value="{gid}"]'); a.select_option('[name=driver]', label='GRANADOS')
+    assert a.locator(f'.check-row:has(input[name=crew][value="{gid}"])').is_hidden() and not a.is_checked(f'input[name=crew][value="{gid}"]')
+    assert a.locator('input[name=gear][value=B-901]').count() == 0, 'la caja ya va en otro Amarok'
+    multi = a.evaluate("list('gear').find(g => !get('boxes', g.box) && +g.qty >= 3 && !vehGearIds(mget(prefs.mission)).has(g.id))")
+    assert multi, 'hace falta un equipo suelto con varias unidades'
+    a.check(f'input[name=gear][value="{multi["id"]}"]'); a.fill(f'[name="gear__q_{multi["id"]}"]', '2'); save()
+    v4 = a.evaluate("mget(prefs.mission).vehicles")[-1]
+    assert v4['driver'] == gid and v4['crew'] == [] and v4['gearQty'] == {multi['id']: 2}, v4
+    assert f'{multi["name"]} ×2' in a.evaluate("missionText(mget(prefs.mission))")
+    a.click('button.btn[onclick^=missionVehicleForm]'); a.select_option('[name=id]', label='Amarok')
+    assert a.locator(f'input[name=crew][value="{gid}"]').count() == 0
+    left = int(multi['qty']) - 2
+    row = a.locator(f'.check-row:has(input[name=gear][value="{multi["id"]}"])')
+    assert f'quedan {left} de {multi["qty"]}' in row.inner_text(), row.inner_text()
+    if left > 1: assert a.get_attribute(f'[name="gear__q_{multi["id"]}"]', 'max') == str(left)
+    a.evaluate('closeModal()'); a.wait_for_timeout(100)
+    # Elegir material no mueve lo repartido por unidades
+    mtab('Material'); a.click('button:has-text("Elegir material")'); a.click('button:has-text("Guardar material")'); a.wait_for_timeout(150)
+    assert a.evaluate("mget(prefs.mission).vehicles")[-1]['gearQty'] == {multi['id']: 2}
+    mtab('Personal')
 
     mtab('Seguridad'); a.locator('.panel:has-text("Seguridad, contactos") button:has-text("Editar")').click()
     a.fill('[name=safety]', 'Riesgo de colapso secundario. Vigía en acceso norte.'); a.fill('[name=contacts]', 'Sala 112'); save()

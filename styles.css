@@ -879,6 +879,7 @@ body.cv-dragging { cursor: grabbing; }
 .cell-box .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; }
 .cell-box ul { margin: 6px 0 0; padding-left: 22px; }
 .check-row.off { opacity: .55; }
+.check-row .qty-in { width: 72px; margin-left: auto; flex: none; }
 .trip ul { margin: 0; padding-left: 18px; }
 @media print {
   .box-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
