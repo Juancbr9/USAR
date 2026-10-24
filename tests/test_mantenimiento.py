@@ -29,7 +29,7 @@ with sync_playwright() as p:
     a.click('.mant-card button'); a.wait_for_selector('.login [name=op]')
     # RODRI: la app completa y el interruptor en Ajustes
     rodri = a.evaluate("operators().find(o => o.name === 'RODRI').id")
-    a.evaluate(f"setPref({{ session: '{rodri}', activeOperator: 'RODRI' }})"); a.wait_for_selector('.topbar:visible')
+    a.evaluate(f"ss.set(UNLOCK_KEY, '1'); setPref({{ session: '{rodri}', activeOperator: 'RODRI' }})"); a.wait_for_selector('.topbar:visible')
     assert a.locator('.mant-card').count() == 0
     a.evaluate("setPref({ tab: 'ajustes' })"); a.wait_for_timeout(200)
     assert a.locator('text=Dar acceso a todo el equipo').count() == 1

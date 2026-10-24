@@ -1,9 +1,11 @@
-"""Las pruebas entran ya con sesión iniciada (GRANADOS, OP-01) para no pasar por la pantalla de entrada en cada página.
+"""Las pruebas entran ya con sesión iniciada (GRANADOS, OP-01) para no pasar por la pantalla de entrada en cada página
+(ni por la que la pide de nuevo cada vez que se abre la app; para probarla: br.new_context(..., bloqueo=True)).
 Para probar la propia pantalla de entrada: br.new_context(..., autologin=False)."""
 from playwright.sync_api import Browser
 
 LOGIN = """try { const k = 'USAR_V4_PREFS', p = JSON.parse(localStorage.getItem(k) || '{}');
-  if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; p.avanzado ??= true; localStorage.setItem(k, JSON.stringify(p)); } } catch (e) {}"""
+  if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; p.avanzado ??= true; localStorage.setItem(k, JSON.stringify(p)); }
+  if (p.session && !sessionStorage.getItem('con-bloqueo')) sessionStorage.setItem('USAR_UNLOCK', '1'); } catch (e) {}"""
 _new_context = Browser.new_context
 # Las pruebas arrancan sin el modo mantenimiento (solo RODRI); test_mantenimiento.py lo prueba con mant=True (y RODRI de ADMIN).
 # Además, GRANADOS (la sesión de las pruebas) hace de ADMIN para dar de alta material y vehículos; test_flota.py prueba
@@ -15,9 +17,9 @@ def _config(mant, flota):
         if not flota: body = body.replace("const ADMIN = 'RODRI'", "const ADMIN = 'GRANADOS'")
         route.fulfill(response=r, body=body)
     return route_
-def new_context(self, *args, autologin=True, mant=False, flota=False, **kw):
+def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=False, **kw):
     c = _new_context(self, *args, **kw)
-    if autologin: c.add_init_script(LOGIN)
+    if autologin: c.add_init_script(LOGIN.replace("!sessionStorage.getItem('con-bloqueo')", 'false') if bloqueo else LOGIN)
     if not mant: c.route('**/js/config.js', _config(mant, flota))
     return c
 Browser.new_context = new_context
