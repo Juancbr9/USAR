@@ -278,6 +278,7 @@ function removeItem(kind, id) {
 }
 
 // fields: [{ k, label, value, type: text|number|date|photo, options: [[valor, texto]], required, wide, placeholder }]
+// Campos checks: una opción [valor, texto, máximo] con máximo > 1 lleva casilla de unidades (valor inicial en f.qty) y devuelve values[k + 'Qty']
 // Campos con lista (catalog): opciones de serie + propias y «➕ Otra…». Campos con carry: recuerdan el último valor usado.
 function openForm(title, fields, onSave, extra = '') {
   prefs.last ||= {};
@@ -292,8 +293,8 @@ function openForm(title, fields, onSave, extra = '') {
   });
   const control = f => {
     const attrs = `name="${f.k}" class="input" ${f.required ? 'required' : ''} ${f.catalog ? `data-catalog="${f.catalog}"` : ''}`;
-    if (f.type === 'checks') return (f.filter ? `<input class="input" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.label)}" oninput="const q = fold(this.value); this.nextElementSibling.querySelectorAll('.check-row').forEach(r => r.hidden = q && !fold(r.textContent).includes(q))">` : '') + `<div class="checks${f.filter ? ' scroll' : ''}">${f.options.map(([v, l]) => `
-      <label class="check-row"><input type="checkbox" name="${f.k}" value="${esc(v)}" ${(f.value || []).includes(v) ? 'checked' : ''}><span>${esc(l)}</span></label>`).join('')}
+    if (f.type === 'checks') return (f.filter ? `<input class="input" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.label)}" oninput="const q = fold(this.value); this.nextElementSibling.querySelectorAll('.check-row').forEach(r => r.hidden = q && !fold(r.textContent).includes(q))">` : '') + `<div class="checks${f.filter ? ' scroll' : ''}">${f.options.map(([v, l, max]) => `
+      <label class="check-row"><input type="checkbox" name="${f.k}" value="${esc(v)}" ${(f.value || []).includes(v) ? 'checked' : ''}><span>${esc(l)}</span>${max > 1 ? `<input class="input sm qty-in" type="number" name="${f.k}__q_${esc(v)}" min="1" max="${max}" value="${Math.min(max, f.qty?.[v] || max)}" inputmode="numeric" aria-label="Unidades de ${esc(l)}" onclick="event.stopPropagation()">` : ''}</label>`).join('')}
       ${f.catalog ? `<input class="input sm check-new" name="${f.k}__new" aria-label="Añadir otra opción" placeholder="➕ Otra (separa con comas)" autocomplete="off">` : ''}</div>`;
     if (f.options) return `<select ${attrs} ${f.catalog ? 'onchange="catalogNew(this)"' : ''}>${f.options.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(f.value ?? '') ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     if (f.type === 'textarea') return `<span class="dictate-wrap"><textarea ${attrs} rows="${f.rows || 4}" placeholder="${esc(f.placeholder)}">${esc(f.value)}</textarea>${micButton()}</span>`;
@@ -327,6 +328,9 @@ function openForm(title, fields, onSave, extra = '') {
     fields.forEach(f => {
       if (f.type === 'checks') values[f.k] = [...fd.getAll(f.k), ...String(fd.get(f.k + '__new') || '').split(',').map(s => s.trim()).filter(Boolean)];
       else { const v = fd.get(f.k); values[f.k] = typeof v === 'string' ? v.trim() : ''; if (values[f.k] === '__new') values[f.k] = ''; }
+      // Opciones con varias unidades (tercer elemento = máximo): cuántas se eligen de cada una
+      if (f.type === 'checks' && f.options.some(o => o[2] > 1)) values[f.k + 'Qty'] = Object.fromEntries(f.options.filter(([v, , max]) => max > 1 && values[f.k].includes(v))
+        .map(([v, , max]) => [v, Math.max(1, Math.min(max, Math.round(+fd.get(`${f.k}__q_${v}`) || max)))]));
       if (f.catalog) [].concat(values[f.k]).forEach(v => addOption(f.catalog, v));
       if (f.carry) prefs.last[f.carry] = values[f.k];
     });
