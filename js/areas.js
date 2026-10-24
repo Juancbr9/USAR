@@ -54,14 +54,12 @@ function sectionStatus(id) {
       const day = new Date(t(last)).toISOString().slice(0, 10);
       return [`Última: ${fmtDate(day)}`, daysTo(day) < -30 ? 'warn' : 'ok']; }
     case 'consumibles': return a.low.length ? [`${a.low.length} bajo mínimo`, 'bad'] : ['Stock correcto', 'ok'];
-    case 'epi': return a.epi.length ? [`${a.epi.length} por revisar`, 'warn'] : ['Todo en orden', 'ok'];
     case 'vehiculos': return [`${list('vehicles').length} vehículos`, 'neutral'];
     case 'despliegue': { const fs = get('meta', 'factsheet')?.value; return [TEAM_STATUS[fs?.status || 'base'], fs?.status && fs.status !== 'base' ? 'warn' : 'neutral']; }
     case 'personal': { const n = operators().reduce((s, o) => s + readinessIssues(o.id).length, 0); return n ? [`${n} avisos`, 'warn'] : [`${operators().length} personas`, 'ok']; }
     case 'calendario': { const next = list('events').filter(e => (e.start || '') >= localNow()).sort((x, y) => x.start.localeCompare(y.start))[0];
       return next ? [`Próximo: ${fmtDT(next.start)}`, 'info'] : ['Nada programado', 'neutral']; }
     case 'vencimientos': { const n = expiries().filter(x => daysTo(x.date) <= 30).length; return n ? [`${n} en 30 días`, 'warn'] : ['Nada próximo', 'ok']; }
-    case 'puestos': return [PRESETS[mission()]?.[0] || '', 'neutral'];
     default: return null;
   }
 }

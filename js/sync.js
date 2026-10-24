@@ -90,8 +90,7 @@ const Sync = (() => {
   }
 
   function queue(kind, rec) {
-    if (!cfg() || LOCAL_KINDS.includes(kind)) return;
-    if (role === 'miembro' && JEFE_KINDS.includes(kind)) return;   // la documentación del personal solo la comparten los jefes
+    if (!cfg()) return;
     outbox[kind + '|' + rec.id] = { kind, id: rec.id, data: rec, deleted: !!rec._del };
     writeJSON(KEY.outbox, outbox);
     clearTimeout(debounce);
@@ -100,7 +99,7 @@ const Sync = (() => {
 
   function merge(row) {
     if (row.kind === 'images') return mergeImage(row);
-    if (!db[row.kind] || LOCAL_KINDS.includes(row.kind)) return false;
+    if (!db[row.kind]) return false;
     const rec = cleanRec({ ...(row.data || {}), id: row.id });
     if (!rec) return false;
     if (row.deleted) rec._del = true;
@@ -133,7 +132,7 @@ const Sync = (() => {
         // Primera conexión: si la nube está vacía se suben los datos de este móvil;
         // si ya tiene datos del equipo, este móvil adopta esos datos.
         const rows = await fetchRows();
-        if (rows.length) { KINDS.filter(k => !LOCAL_KINDS.includes(k)).forEach(k => { db[k] = {}; }); rows.forEach(merge); seedDefaults(true); }
+        if (rows.length) { KINDS.forEach(k => { db[k] = {}; }); rows.forEach(merge); seedDefaults(true); }
         else { KINDS.forEach(k => Object.values(db[k]).forEach(r => queue(k, r))); Object.keys(await Img.all().catch(() => ({}))).forEach(id => queueImage(id)); }
         Object.assign(c, { joined: true, since: newest(rows) });
         writeJSON(KEY.sync, c);

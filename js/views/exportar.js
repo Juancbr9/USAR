@@ -105,7 +105,6 @@ function exportPanel(m) {
 }
 
 /* ==================== NECESIDADES HUMANITARIAS ==================== */
-const NEEDS = ['Agua', 'Comida', 'Refugio', 'Saneamiento', 'Atención médica', 'Seguridad', 'Ropa y abrigo'];
 function needsPanel(m) {
   const ns = m.needs || [];
   return `

@@ -47,8 +47,6 @@ const PHASES_BIC = [
 ];
 const phasesFor = m => m?.scope === 'bic' ? PHASES_BIC : PHASES;
 
-const THREATS = ['Incendio', 'Erupción volcánica (lava)', 'Ceniza volcánica', 'Inundación', 'Terremoto', 'Temporal / viento', 'Derrumbe'];
-const HER_TYPES = ['Pintura (lienzo o tabla)', 'Escultura / imagen', 'Orfebrería', 'Textil / ornamentos', 'Libros y documentos', 'Mobiliario', 'Retablo / elemento fijo', 'Otro'];
 // Recorrido de cada bien: de su sitio al depósito temporal
 const HER_FLOW = [
   ['pendiente', 'Pendiente', 'warn'], ['documentado', 'Documentado', 'info'], ['embalado', 'Embalado', 'info'],

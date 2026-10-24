@@ -4,7 +4,6 @@
 /* ==================== CONFIGURACIÓN ==================== */
 const TEAM = ['GRANADOS', 'CABRERA', 'IBAÑEZ', 'BRAYAN', 'AGUIAR', 'DORTA', 'CRISTOFER',
               'RODRI', 'AREVALO', 'NUÑEZ', 'LENIS', 'FERNANDEZ', 'MANOLO'];
-const STATUS = ['OPERATIVO', 'REVISIÓN', 'AVERIADO'];
 const STATUS_TAG = { 'OPERATIVO': 'ok', 'REVISIÓN': 'warn', 'AVERIADO': 'bad' };
 // Huecos del contenedor, como en las hojas pegadas en él. Cada lateral: 4 columnas; en las dos del centro hay tres huecos
 // (el de arriba es compartido: «B3 y B6», «B13 y B16») y en las de los extremos, dos (arriba uno alto y abajo otro).
@@ -23,14 +22,10 @@ const ARMARIOS = [1, 2, 3].flatMap(n => [{ id: 200 + n * 2 - 1, n, side: 'izquie
 const PLACES = [{ id: PASILLO, label: 'Pasillo', area: 'pasillo' }, ...ARMARIOS.map(a => ({ id: a.id, label: `Armario ${a.n} · puerta ${a.side}`, short: `Armario ${a.n} ${a.side === 'izquierda' ? 'izq.' : 'dcha.'}`, area: 'armarios' })), { id: OTROS, label: 'Otros', area: 'otros' }];
 // Situación del material en revisión
 const REV_STATES = { taller: ['En el taller', 'warn'], espera: ['A la espera de revisión', 'warn'], inoperativo: ['Inoperativo', 'bad'], operativo: ['Operativo (con defecto)', 'ok'], baja: ['De baja', 'bad'] };
-// Anterior (puertas P1–P8 con alturas): solo para pasar los datos al esquema nuevo
-const DOOR_NAMES = ['Holmatro', 'Corte', 'Perforación y carpintería', 'Búsqueda técnica', 'Altura y cuerdas', 'Rescate de víctimas', 'Respiración e iluminación', 'Campamento'];
-const OLD_DOOR_NAMES = ['Holmatro', 'Corte de hormigón', 'Corte de madera', 'Corte de hierro', 'Libre', 'Libre', 'Libre', 'Libre'];
 // EPI que lleva cada persona
 const EPI_TYPES = { casco: 'Casco', auditivos: 'Protectores auditivos', mono: 'Mono', guantes: 'Guantes', gafas: 'Gafas de protección',
   respiratoria: 'Protección respiratoria (FFP)', botas: 'Botas' };
 const EPI_SIZED = ['mono', 'guantes', 'botas'];   // EPI con talla propia
-const EPI_STATUS = ['OK', 'REVISAR'];
 const GEAR_FUNCS = ['Búsqueda', 'Rescate', 'Médico', 'Logística', 'Comunicaciones', 'Seguridad'];
 // Tipos de emergencia y el material que suele hacer falta (palabras que se buscan en el nombre o la función de cada equipo)
 const EMERGENCIES = {
@@ -46,10 +41,6 @@ const DANGEROUS = ['', 'Baterías de litio', 'Combustible', 'Gases a presión', 
 const SOON_DAYS = 30;          // aviso de vencimiento con esta antelación
 const RESERVA = 'RESERVA';     // EPI sin asignar
 const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans'];
-// Datos de salud: se guardan solo en este dispositivo y nunca se envían a la nube
-const LOCAL_KINDS = [];   // ahora todo se comparte con el equipo (antes: datos de salud solo en el móvil)
-// Con usuarios y permisos, la documentación del personal solo la ven y editan los jefes
-const JEFE_KINDS = [];   // de momento todo el personal accede a todo
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento

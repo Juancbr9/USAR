@@ -31,7 +31,6 @@ function renderNav() {
 }
 
 // Menú por niveles: Inicio, Activación, Logística (con Material dentro), Equipo y Ajustes. Al tocar un grupo se despliega.
-const MENU_GROUPS = ['ops', 'log', 'mat', 'team', 'help'];
 const tabGroups = tab => { const s = sectionOf(tab) || (tab === 'operaciones' ? [, , , , 'ops'] : null); return s ? [s[4], s[5]].filter(Boolean) : []; };
 function menuOpen(g) { return (prefs.menuOpen ?? tabGroups(prefs.tab)).includes(g); }
 function toggleMenuGroup(g) {

@@ -92,7 +92,7 @@ function defaultData() {
     ],
     vehicles: DEFAULT_VEHICLES,
     logs: [], inspections: [], missions: [], mlog: [],
-    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 7 }]
+    meta: [{ id: 'mission', value: 'estandar' }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 7 }]
   };
 }
 
@@ -237,8 +237,6 @@ function seedDefaults(share = false) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     OLD_BASE_IDS.forEach(id => { const g = get('gear', id); if (g && !g.serial && !g.photo && !g.out && !g.notes) stampIt('gear', { id, _del: true }); });
     BASE_GEAR.forEach(g => { if (!db.gear[g.id]) stampIt('gear', { ...g }); });
-    const doors = get('meta', 'doors')?.value;
-    if (!doors || doors.every((d, i) => d === OLD_DOOR_NAMES[i])) stampIt('meta', { id: 'doors', value: DOOR_NAMES });
     DEFAULT_TEMPLATES.filter(t => get('templates', t.id)).forEach(t => stampIt('templates', { ...t }));
     stampIt('meta', { id: 'gearbase', value: 2 });
   }
