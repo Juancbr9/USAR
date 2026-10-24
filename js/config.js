@@ -44,7 +44,7 @@ const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections'
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
-const MANT_MSG = 'RODRI ESTÁ HACIENDO LABORES DE MANTENIMIENTO EN USAR 242';
+const MANT_MSG = 'USAR 242 EN FASE DE MANTENIMIENTO';
 const KEY = { db: 'USAR_V5_DB', prefs: 'USAR_V4_PREFS', sync: 'USAR_V4_SYNC', outbox: 'USAR_V4_OUTBOX' };
 
 // Un puesto por integrante, en el mismo orden que TEAM ("Célula|Puesto")

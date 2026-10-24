@@ -33,6 +33,7 @@ function renderMantenimiento() {
     <div class="login">
       <div class="login-brand"><span class="wordmark">USAR <span class="plate">242</span></span></div>
       <div class="panel login-card mant-card" role="status">
+        <img class="mant-img" src="img/mantenimiento.webp" width="300" height="210" alt="RODRI trabajando en el ordenador">
         <h2>${ic('wrench')} En mantenimiento</h2>
         <p class="mant-msg">${esc(MANT_MSG)}</p>
         <p class="muted">Vuelve a entrar más tarde. Tus datos no se pierden.</p>
