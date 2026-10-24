@@ -4,7 +4,7 @@
 /* ==================== VISTA: MATERIAL ==================== */
 // Material: contenedor (dibujo), en revisión, pasillo 3, armarios y otros
 function viewContenedor() { return viewContVisual(); }
-const viewPasillo = () => viewPlace(PASILLO), viewOtros = () => viewPlace(OTROS);
+const viewPasillo = () => fueraTabs() + viewPlace(PASILLO), viewOtros = () => fueraTabs() + viewPlace(OTROS);
 
 // Marca de novedad y de revisión en fichas y listas
 const novTag = x => x.nov?.text ? `<span class="tag nov" title="${esc(x.nov.text)}">${ic('alert', 'i-sm')} Novedad</span>` : '';
