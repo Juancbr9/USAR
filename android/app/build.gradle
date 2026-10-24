@@ -1,16 +1,17 @@
 plugins { id 'com.android.application' }
 
-// La app abre la web publicada en Chrome a pantalla completa (Trusted Web Activity): los cambios de la web
-// llegan solos, sin volver a instalar el APK. Solo hay que subir versionCode si cambia algo de aquí.
+// App nativa: lleva dentro los archivos de la web (raíz del repositorio) y los abre en su propia ventana.
+// Al abrirla con conexión descarga la versión publicada (ver Actualizador), así que no hace falta un APK nuevo
+// para cada cambio de la web; solo al cambiar algo de esta carpeta (subir versionCode).
 android {
     namespace 'io.github.juancbr9.usar242'
     compileSdk 35
     defaultConfig {
         applicationId 'io.github.juancbr9.usar242'
-        minSdk 21
-        targetSdk 35
-        versionCode 1
-        versionName '1.0'
+        minSdk 24
+        targetSdk 34
+        versionCode 2
+        versionName '2.0'
     }
     signingConfigs {
         release {
@@ -24,8 +25,21 @@ android {
     buildTypes {
         release { minifyEnabled false; signingConfig signingConfigs.release }
     }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets { main { assets.srcDirs += "$buildDir/web" } }
 }
 
+// Copia la web dentro del APK (assets/www)
+tasks.register('copiarWeb', Copy) {
+    from(rootProject.file('..')) {
+        include 'index.html', 'styles.css', 'qr.js', 'sw.js', 'manifest.webmanifest', 'icon.svg', 'icon-*.png', 'supabase.sql'
+        include 'js/**', 'img/**', 'vendor/**', 'manual/**'
+    }
+    into "$buildDir/web/www"
+}
+preBuild.dependsOn 'copiarWeb'
+
 dependencies {
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.core:core:1.13.1'
 }
