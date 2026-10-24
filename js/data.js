@@ -92,7 +92,7 @@ function defaultData() {
     ],
     vehicles: DEFAULT_VEHICLES,
     logs: [], inspections: [], missions: [], mlog: [],
-    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 5 }]
+    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 6 }]
   };
 }
 
@@ -109,6 +109,7 @@ const DEFAULT_VEHICLES = [
   veh('V-CUPRA', 'Cupra'),
   veh('V-AB-LCIF', 'Autobomba Renault (módulo LCIF)'),
   veh('V-AB-CONT', 'Autobomba Renault (contenedor pequeño)'),
+  veh('V-AB-CONT2', 'Autobomba Renault (contenedor pequeño 2)'),
   veh('V-AB', 'Autobomba'),
   veh('V-ATB-M1', 'ATB Iveco M1'),
   veh('V-ATB-M2', 'ATB Iveco M2'),
@@ -287,6 +288,12 @@ function seedDefaults(share = false) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     DEFAULT_VEHICLES.filter(v => ['V-ATB-M1', 'V-ATB-M2'].includes(v.id) && !db.vehicles[v.id]).forEach(v => stampIt('vehicles', { ...v }));
     stampIt('meta', { id: 'vehbase', value: 5 });
+  }
+  // v6: segundo modelo de autobomba Renault de contenedor pequeño (contenedor largo, hasta la cabina). Solo si falta
+  if (!(get('meta', 'vehbase')?.value >= 6)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    DEFAULT_VEHICLES.filter(v => v.id === 'V-AB-CONT2' && !db.vehicles[v.id]).forEach(v => stampIt('vehicles', { ...v }));
+    stampIt('meta', { id: 'vehbase', value: 6 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
