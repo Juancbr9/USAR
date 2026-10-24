@@ -6,16 +6,16 @@
 // Parte de una sección: { h: título, p: explicación, steps: [pasos], img: [archivo, pie, [[n, qué es], …]] }
 const MANUAL = [
   { id: 'areas', area: 'help', icon: 'grid', title: 'Cómo está ordenada la app',
-    what: 'La app se divide en cuatro áreas (Activación, Logística, Equipo y Ajustes), cada una con su color, para que sepas siempre dónde estás. La cabecera toma el color del área. Todas las secciones están en el menú de tres rayas, arriba a la izquierda.',
+    what: 'La app se divide en cuatro áreas (Actividades, Logística, Equipo y Ajustes), cada una con su color, para que sepas siempre dónde estás. La cabecera toma el color del área. Todas las secciones están en el menú de tres rayas, arriba a la izquierda.',
     parts: [
       { h: 'La cabecera', p: 'Está siempre arriba, en todas las pantallas. Su color te dice en qué área estás.',
         img: ['cabecera', 'La cabecera', [[1, 'Menú de tres rayas: abre todas las secciones. El número rojo son los avisos pendientes.'], [2, 'Lupa: «¿Dónde está…?». Busca en todo y del material dice dónde está.']]] },
       { h: 'Debajo del nombre', p: 'Si el equipo comparte datos, debajo de «USAR 242» se ve si estás conectado, sincronizando o sin conexión (con los cambios pendientes de enviar). Si los datos solo están en este móvil, no sale nada.' },
       { h: 'El menú', p: 'Pulsa las tres rayas para abrir el menú. Va por niveles: arriba Inicio y las cuatro áreas, plegadas. Toca un área para desplegar sus secciones (al abrir otra, la anterior se pliega); dentro de Logística, toca «Material» para ver sus apartados. Un punto naranja o rojo indica que hay algo pendiente (una revista atrasada, documentos que caducan…). Para cerrarlo, toca fuera, la X, elige una sección o desliza desde el borde para volver atrás.',
-        img: ['menu', 'El menú, con Logística y Material desplegados', [[1, 'Inicio, con el número de avisos.'], [2, 'Activación (rojo): intervenciones y ejercicios.'], [3, 'Logística (azul): Material, revista, vehículos y despliegue.'], [4, 'Material: contenedor, en revisión, pasillo, armarios, otros, material fungible y entregas.'], [5, 'Punto de aviso: esa sección tiene algo que revisar.'], [6, 'Equipo (verde petróleo): personal, calendario y vencimientos.'], [7, 'Ajustes (gris): general, listas y opciones, este manual y la guía de campo.']]] },
+        img: ['menu', 'El menú, con Logística y Material desplegados', [[1, 'Inicio, con el número de avisos.'], [2, 'Actividades (rojo): activación, ejercicios, maniobras y convoy.'], [3, 'Logística (azul): Material, revista, vehículos y despliegue.'], [4, 'Material: contenedor, en revisión, pasillo, armarios, otros, material fungible y entregas.'], [5, 'Punto de aviso: esa sección tiene algo que revisar.'], [6, 'Equipo (verde petróleo): personal, calendario y vencimientos.'], [7, 'Ajustes (gris): general, listas y opciones, este manual y la guía de campo.']]] },
       { h: 'Volver atrás', p: 'El gesto de atrás del móvil (deslizar desde el borde o el botón «atrás») vuelve a la pantalla anterior de la app: cierra primero la foto ampliada, la ventana o el menú que esté abierto y, si no hay nada abierto, va a la sección o pestaña de antes.' },
       { h: 'Zoom', p: 'La app no se amplía con dos dedos, para que no se descoloque al trabajar con guantes. Lo que sí se amplía: las fotos y dibujos (tócalos para verlos a pantalla completa; ahí se pellizca, se arrastra y doble toque para acercar) y los mapas. Si necesitas letra más grande, en Ajustes → General está «Botones y letra grandes».' },
-      { h: 'Las cuatro áreas', steps: ['<b class="ac ac-ops">Activación (rojo)</b>: todo lo de una salida real o un ejercicio, por fases.', '<b class="ac ac-log">Logística (azul)</b>: el material (contenedor, en revisión, pasillo, armarios, otros, material fungible y entregas), la revista, los vehículos y la preparación para desplegar.',
+      { h: 'Las cuatro áreas', steps: ['<b class="ac ac-ops">Actividades (rojo)</b>: la activación (salidas reales) y los ejercicios, por fases; y la logística de las maniobras y los convoyes.', '<b class="ac ac-log">Logística (azul)</b>: el material (contenedor, en revisión, pasillo, armarios, otros, material fungible y entregas), la revista, los vehículos y la preparación para desplegar.',
         '<b class="ac ac-team">Equipo (verde petróleo)</b>: las personas de la unidad, su puesto, documentación y EPI, el calendario y lo que caduca.', '<b class="ac ac-help">Ajustes (gris)</b>: los ajustes generales, las listas de opciones, este manual y la guía de campo.',
         'Con una operación en marcha aparece una franja a rayas bajo la cabecera, en todas las pantallas: roja si es una intervención real y ámbar si es un ejercicio. Tócala para volver a la operación.'] }
     ],
@@ -38,9 +38,9 @@ const MANUAL = [
     tips: ['Si alguien olvida su contraseña, cualquiera puede borrarla en su ficha (Personal → Editar datos → «Restablecer contraseña») y la crea de nuevo al entrar.', 'Abajo del todo, «Enviar estado del material» manda un resumen del material y los avisos (por WhatsApp o donde elijas).'] },
 
   { id: 'operacion', area: 'ops', icon: 'flag', title: 'Crear y llevar una intervención o ejercicio', go: 'intervenciones',
-    what: 'Cada salida se prepara y se lleva desde Activación → Intervenciones (salidas reales) o Ejercicios (maniobras y simulacros): datos generales, equipos con su jefe, puestos, vehículos, material, seguridad, worksites, víctimas, diario e informes. Se trabaja por fases siguiendo el método de la UME.',
+    what: 'Cada salida se prepara y se lleva desde Actividades → Activación (salidas reales) o Ejercicios (maniobras y simulacros): datos generales, equipos con su jefe, puestos, vehículos, material, seguridad, worksites, víctimas, diario e informes. Se trabaja por fases siguiendo el método de la UME.',
     parts: [
-      { h: 'Crear la operación', p: 'Menú → Activación → Intervenciones o Ejercicios. Arriba, un botón grande para crear; debajo, las que están en curso, en preparación y las terminadas (plegadas), y las plantillas.', steps: ['Pulsa «Nueva intervención» o «Nuevo ejercicio».', 'Elige una plantilla (colapso estructural, búsqueda técnica, rescate vertical, salvaguarda de patrimonio o las vuestras) o «En blanco».',
+      { h: 'Crear la operación', p: 'Menú → Actividades → Activación o Ejercicios. Arriba, un botón grande para crear; debajo, las que están en curso, en preparación y las terminadas (plegadas), y las plantillas.', steps: ['Pulsa «Nueva intervención» o «Nuevo ejercicio».', 'Elige una plantilla (colapso estructural, búsqueda técnica, rescate vertical, salvaguarda de patrimonio o las vuestras) o «En blanco».',
         'Completa nombre, tipo de emergencia, ubicación, punto de reunión, jefe y canal de radio y pulsa Guardar.'],
         img: ['op-plantillas', 'Elegir plantilla al crear', [[1, 'Plantillas de serie y las que guardéis vosotros.'], [2, '«En blanco» para empezar de cero.']]] },
       { h: 'La ficha de la operación', p: 'Arriba están los datos y los botones principales; debajo, las pestañas. En el móvil las pestañas se deslizan de lado; en el PC van en una columna a la izquierda.',
@@ -124,6 +124,18 @@ const MANUAL = [
     ],
     example: 'Convento de San Francisco, Garachico, lava en 2 h: la imagen del santo es P1 y sale primero; el retablo mayor se cubre in situ con manta ignífuga.',
     tips: ['Cada tipo de bien muestra cómo cogerlo y embalarlo.'] },
+
+  { id: 'maniobras', area: 'ops', icon: 'tent', title: 'Maniobras y convoyes', go: 'maniobras',
+    what: 'Actividades → Maniobras prepara la logística de unas maniobras: quién va, en qué vehículo, con qué material, dónde se duerme y qué se hace cada día. Actividades → Convoy organiza un movimiento de un sitio a otro, solo de ida o de ida y vuelta.',
+    parts: [
+      { h: 'Crear la maniobra', steps: ['«Nueva maniobra»: nombre, lugar, primer y último día, punto de reunión y responsable.', 'Alojamiento: «Siempre en el mismo sitio» (escribe dónde) o «Cambia según el día» (se pone en cada día del planning).', '«Cosas a tener en cuenta»: lo que cada uno debe llevar o saber.'] },
+      { h: 'Quién va', p: 'En la ficha salen todos los nombres: toca cada uno para marcarlo o quitarlo, o pulsa «Todos» o «Nadie». No hace falta que cada persona entre a decir si va. Lo cambia quien lo creó.' },
+      { h: 'Vehículos y material', steps: ['«Vehículo»: modelo, matrícula, conductor, ocupantes y lo que carga.', 'Como en las operaciones, nadie va en dos vehículos y la carga no se repite: solo sale lo que queda libre.', '«Otro material»: lo demás, una línea por cosa.'] },
+      { h: 'Planning diario', p: 'Hay un día por cada fecha de la maniobra. Toca un día para escribir su horario (una línea por actividad) y, si cambia, dónde se duerme esa noche.' },
+      { h: 'Convoy', steps: ['«Nuevo convoy»: origen, destino y hora de salida.', 'En «Trayecto» elige «Ida y vuelta» y aparece la hora de vuelta.', 'Personal, vehículos y material, igual que en la maniobra.'] }
+    ],
+    example: 'Maniobras de tres días en Lanzarote: marcas a los diez que van, pones dos SsangYong y la VPI con el contenedor, el alojamiento fijo en la residencia y el horario de cada día. «Enviar por WhatsApp» lo manda todo al grupo.',
+    tips: ['Al pasar la fecha, la maniobra o el convoy queda en «Pasadas».'] },
 
   { id: 'contenedor', area: 'log', icon: 'box', title: 'Material: el contenedor', go: 'contenedor',
     what: 'En el menú, «Material» agrupa sus apartados: Contenedor, En revisión, Fuera del contenedor (pasillo, armarios y otros), Material fungible y Entregas. El contenedor se ve igual que en las hojas pegadas en él: lateral izquierdo con los huecos B1 a B10 y lateral derecho con B11 a B20. Cada lateral tiene cuatro columnas: en los extremos, un hueco alto arriba (B1, B9 / B11, B19) y otro abajo (B2, B10 / B12, B20); en el centro, un hueco compartido arriba («B3 y B6», «B13 y B16») y dos más debajo. Las cajas H van en el lateral izquierdo y las U en el derecho. El material es común: no está asignado a nadie.',

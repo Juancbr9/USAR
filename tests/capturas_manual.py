@@ -118,7 +118,7 @@ with sync_playwright() as p:
     ann(a, 'stock', [('#view .grid .panel .row.nowrap', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
     a.evaluate("prefs.menuOpen = ['log', 'mat']; renderDrawer()"); tall(1360); a.wait_for_timeout(200)
-    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Activación")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Logística")', 'r', {'d': 60}),
+    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Logística")', 'r', {'d': 60}),
                     ('#drawer .dr-group-head:has-text("Material")', 'r', {'d': 60}), ('#drawer .dr-dot', 'r', {'d': 30}), ('#drawer .dr-group-head:has-text("Equipo")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
 

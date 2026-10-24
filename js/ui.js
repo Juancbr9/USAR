@@ -30,7 +30,7 @@ function renderNav() {
   $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count, active)}</div>` : '';
 }
 
-// Menú por niveles: Inicio, Activación, Logística (con Material dentro), Equipo y Ajustes. Al tocar un grupo se despliega.
+// Menú por niveles: Inicio, Actividades, Logística (con Material dentro), Equipo y Ajustes. Al tocar un grupo se despliega.
 const tabGroups = tab => { const s = sectionOf(tab) || (tab === 'operaciones' ? [, , , , 'ops'] : null); return s ? [s[4], s[5]].filter(Boolean) : []; };
 function menuOpen(g) { return (prefs.menuOpen ?? tabGroups(prefs.tab)).includes(g); }
 function toggleMenuGroup(g) {
@@ -77,7 +77,7 @@ function toggleDrawer(open) {
   if (open) { renderDrawer(); d.querySelector('.dr-item.on, .dr-item')?.focus({ preventScroll: true }); history.pushState({ nav: navSnap(), drawer: 1 }, ''); }
 }
 
-function go(tab) { tab = tab === 'fuera' ? (FUERA_TABS.includes(prefs.fuera) ? prefs.fuera : 'pasillo') : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(FUERA_TABS.includes(tab) ? { fuera: tab } : {}), ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); }
+function go(tab) { tab = tab === 'fuera' ? (FUERA_TABS.includes(prefs.fuera) ? prefs.fuera : 'pasillo') : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(FUERA_TABS.includes(tab) ? { fuera: tab } : {}), ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(ACT_TABS.includes(tab) ? { move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
 function toggleSearch() {
@@ -484,7 +484,7 @@ document.addEventListener('click', e => {
 
 /* ---------- Gesto «atrás» del móvil (o botón atrás): vuelve a la pantalla anterior de la app ---------- */
 // Cada cambio de pantalla deja una entrada en el historial del navegador; abrir una ventana, el menú o una foto, también.
-const navSnap = () => ({ tab: prefs.tab, mission: prefs.mission || null, mtab: prefs.mtab || null, person: prefs.person || null, ws: prefs.ws || null });
+const navSnap = () => ({ tab: prefs.tab, mission: prefs.mission || null, mtab: prefs.mtab || null, person: prefs.person || null, ws: prefs.ws || null, move: prefs.move || null });
 const navKey = s => JSON.stringify(s);
 let NAV_KEY = null, NAV_POP = false;
 function navTrack() {
