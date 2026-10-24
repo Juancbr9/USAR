@@ -130,8 +130,6 @@ function markGroup(json, m) {
   JSON.parse(json).forEach(id => { if (!markOf(prefs.draft.res[id]) || m === 'skip') prefs.draft.res[id] = { mark: m, ok: m === 'ok', note: '' }; });
   setPref({});
 }
-// compatibilidad con revistas empezadas antes (por hueco)
-function markDoor(door) { markGroup(JSON.stringify(list('gear').filter(g => groupKey(g) === door).map(g => g.id)), 'ok'); }
 function cancelRevista() { if (confirm('¿Descartar la revista en curso?')) setPref({ draft: null }); }
 
 function finishRevista() {

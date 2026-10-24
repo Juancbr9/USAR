@@ -59,15 +59,6 @@ function applyTheme() {
   if (theme === 'sun') root.dataset.sun = '1'; else delete root.dataset.sun;
   root.classList.toggle('big', !!prefs.big);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'dark' ? '#0E1611' : theme === 'sun' ? '#000000' : '#22382A');
-  const btn = $('themeBtn');
-  if (btn) btn.innerHTML = ic(theme === 'light' ? 'moon' : theme === 'dark' ? 'sunbright' : 'sun', 'i-lg');
-}
-function toggleTheme() {
-  haptic(10);
-  const next = { light: 'dark', dark: 'sun', sun: 'light' }[currentTheme()];
-  setPref({ theme: next });
-  applyTheme();
-  toast({ light: 'Modo claro', dark: 'Modo noche', sun: 'Modo sol: alto contraste' }[next]);
 }
 
 // Mantiene la pantalla encendida durante una operación en curso o una revista

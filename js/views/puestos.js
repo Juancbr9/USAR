@@ -1,44 +1,9 @@
 'use strict';
-// USAR 242 · Puestos y perfiles de misión
-
-/* ==================== VISTA: PUESTOS ==================== */
-function viewPuestos() {
-  const ops = operators();
-  const cells = [...new Set(ops.map(o => o.cell))];
-  const missionOptions = Object.entries(PRESETS).map(([k, [label]]) => `<option value="${k}" ${mission() === k ? 'selected' : ''}>${label}</option>`).join('');
-  return `
-    <div class="panel between wrap-row">
-      <div><h2>Matriz de puestos</h2></div>
-      <select class="input sm" style="border-color:rgba(255,85,0,.6)" onchange="applyPreset(this.value)">${missionOptions}</select>
-    </div>
-    <div class="grid g3">${cells.map(cell => {
-      const members = ops.filter(o => o.cell === cell);
-      return `
-        <div class="panel">
-          <div class="between sec-head"><h3>${esc(cell)}</h3><span class="muted">${members.length}</span></div>
-          <div class="list">${members.map(m => `
-            <button class="item" onclick="operatorForm('${m.id}')"><div class="who-row">${avatar(m.name, 'sm')}<div><b>${esc(m.name)}</b><small>${esc(m.role)}</small></div></div>${ic('pencil', 'i-sm')}</button>`).join('')}
-          </div>
-        </div>`;
-    }).join('')}</div>`;
-}
+// USAR 242 · Perfiles de misión y alta, baja y borrado de personal
 
 function operatorForm(id) {
   if (!id) return newPersonForm();
   return personForm(id);
-  const o = get('operators', id);
-  openForm('Editar ' + o.name, [
-    { k: 'name', label: 'Nombre', value: o.name, required: true, wide: true },
-    { k: 'cell', label: 'Célula', value: o.cell, required: true, wide: true },
-    { k: 'role', label: 'Puesto', value: o.role, required: true, wide: true }
-  ], v => {
-    if (prefs.activeOperator === o.name) { prefs.activeOperator = v.name; writeJSON(KEY.prefs, prefs); }
-    if (v.name !== o.name && allOperators().some(x => x.id !== o.id && x.name === v.name)) return toast('Ya hay otra persona con ese nombre', 'bad');
-    put('operators', { ...o, ...v }, `Puesto de ${v.name}: ${v.role} (${v.cell})`);
-  }, `<div class="row span2" style="gap:8px">
-    ${o.active === false ? `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', true)">${ic('check')} Volver a dar de alta</button>`
-      : `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', false)">${ic('out')} Dar de baja</button>`}
-    <button type="button" class="btn btn-bad" onclick="deletePerson('${o.id}')">${ic('trash')} Eliminar</button></div>`);
 }
 
 function applyPreset(key) {

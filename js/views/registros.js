@@ -174,7 +174,6 @@ setInterval(() => {
 }, 30000);
 
 /* ==================== PLAN DE COMUNICACIONES (tipo ICS 205) ==================== */
-const COMM_FUNCS = ['Mando', 'Táctico', 'Seguridad', 'Sanitario', 'Logística', 'Coordinación externa'];
 function commsPanel(m) {
   const cs = m.comms || [];
   return `
