@@ -12,7 +12,8 @@ const daysTo = iso => Math.round((new Date(iso + 'T00:00') - new Date(todayISO()
 const fmtDate = iso => iso ? new Date(iso + 'T00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
 const fmtWhen = ts => new Date(ts).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const byName = (a, b) => a.name.localeCompare(b.name, 'es');
-const appUrl = () => location.href.split('#')[0];
+// En la app de Android los enlaces y QR apuntan a la web publicada, que también abre la app
+const appUrl = () => window.USARNative?.urlPublica() || location.href.split('#')[0];
 const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
 
