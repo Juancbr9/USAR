@@ -17,7 +17,8 @@ with sync_playwright() as p:
     a.on('dialog', lambda d: d.accept())
     # GRANADOS (sesión de las pruebas): ve el aviso y nada de la app
     a.goto(APP); a.wait_for_selector('.mant-card')
-    assert 'RODRI ESTÁ HACIENDO LABORES DE MANTENIMIENTO EN USAR 242' in a.inner_text('#view')
+    assert 'USAR 242 EN FASE DE MANTENIMIENTO' in a.inner_text('#view')
+    a.wait_for_function("document.querySelector('.mant-img').naturalWidth > 0")  # se ve el muñequito
     assert a.locator('.topbar').is_hidden() and a.locator('#drawer').is_hidden(), 'sin menú ni cabecera'
     a.screenshot(path=f'{OUT}/mantenimiento.png')
     # Un enlace QR tampoco abre nada
@@ -44,6 +45,7 @@ with sync_playwright() as p:
     a.evaluate(f"setPref({{ session: '{rodri}', activeOperator: 'RODRI', tab: 'ajustes' }})"); a.wait_for_timeout(200)
     a.click('text=Activar mantenimiento'); a.wait_for_timeout(200)
     a.evaluate("setPref({ session: 'OP-01', activeOperator: 'GRANADOS' })"); a.wait_for_selector('.mant-card')
+    a.wait_for_function("document.querySelector('.mant-img').naturalWidth > 0")  # se ve el muñequito
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')
