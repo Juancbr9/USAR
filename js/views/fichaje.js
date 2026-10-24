@@ -89,7 +89,7 @@ function closePresence(m) {
 
 function presenceText(m) {
   const ps = presence(m).filter(p => p.state === 'in');
-  return ps.length ? `👷 En zona (${ps.length}): ${ps.map(p => get('operators', p.op)?.name).join(', ')}` : '';
+  return ps.length ? `👷 *En zona (${ps.length}):* ${ps.map(p => get('operators', p.op)?.name).join(', ')}` : '';
 }
 
 // Actualiza los contadores de tiempo en pantalla cada 30 s sin redibujar la página

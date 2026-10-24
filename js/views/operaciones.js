@@ -7,8 +7,10 @@ const mtypeName = m => MISSION_TYPES[m.type] || 'Operación';
 const MISSION_STATUS = { prep: ['En preparación', 'warn'], active: ['En curso', 'bad'], done: ['Finalizada', 'neutral'] };
 const STATUS_ORDER = { active: 0, prep: 1, done: 2 };
 // En el orden de la flota de la unidad; los añadidos después, por nombre
-const VEH_ORDER = id => { const i = DEFAULT_VEHICLES.findIndex(v => v.id === id); return i < 0 ? 999 : i; };
-const vehicles = () => list('vehicles').sort((a, b) => VEH_ORDER(a.id) - VEH_ORDER(b.id) || byName(a, b));
+// Flota por orden alfabético (también los vehículos que se añadan o renombren)
+const vehicles = () => list('vehicles').sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { numeric: true }));
+// Las matrículas de la unidad son «ET-» y números: se añade el prefijo si falta (vacío o solo «ET-» = sin matrícula)
+const etPlate = p => { const t = String(p || '').trim().toUpperCase().replace(/^ET[\s-]*/, '').trim(); return t ? 'ET-' + t : ''; };
 const localNow = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
 const fmtDT = v => v ? new Date(v).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Sin fecha';
 const mapsUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
@@ -135,27 +137,48 @@ function roleForm(mid, opid) {
   ], v => saveMission(m, { roles: { ...(m.roles || {}), [opid]: v.role } }, `puesto de ${get('operators', opid).name}: ${v.role}`));
 }
 
-// Vehículo de una actividad: modelo de la flota (se puede repetir), matrícula de ese día, conductor, ocupantes y lo que carga
+// Vehículo de una actividad: modelo de la flota (se puede repetir), matrícula de ese día, conductor, ocupantes y lo que carga.
+// Nadie va en dos vehículos y el material no se repite: solo lo que queda libre (por unidades si hay varias del mismo equipo)
+const unitsOf = g => Math.max(1, +g?.qty || 1);
+const vehUnits = (v, id) => get('boxes', id) ? 1 : (v.gearQty?.[id] || unitsOf(get('gear', id)));
 function missionVehicleForm(mid, key) {
   const m = mget(mid), cur = (m.vehicles || []).find(v => vkey(v) === key) || {};
   if (!vehicles().length) return toast('No hay vehículos en la flota. Añádelos en Logística → Vehículos.', 'bad');
-  const inOther = new Set((m.vehicles || []).filter(v => vkey(v) !== key).flatMap(v => v.gear || []));
-  const loads = [...boxes().map(b => [b.id, `${b.code} · ${b.name || ''}`]), ...list('gear').filter(g => !get('boxes', g.box)).sort(byName).map(g => [g.id, g.name + qtyText(g)])]
-    .filter(([id]) => !inOther.has(id));
+  const others = (m.vehicles || []).filter(v => vkey(v) !== key);
+  const used = id => others.reduce((n, v) => n + ((v.gear || []).includes(id) ? vehUnits(v, id) : 0), 0);
+  const loads = [...boxes().filter(b => !used(b.id)).map(b => [b.id, `${b.code} · ${b.name || ''}`]),
+    ...list('gear').filter(g => !get('boxes', g.box)).sort(byName).map(g => {
+      const all = unitsOf(g), left = all - used(g.id);
+      return left > 0 && [g.id, g.name + (left < all ? ` (quedan ${left} de ${all})` : qtyText(g)), left];
+    }).filter(Boolean)];
+  const busy = new Set(others.flatMap(v => [v.driver, ...(v.crew || [])]).filter(Boolean));
+  const free = operators().filter(o => !busy.has(o.id)).map(o => [o.id, o.name]);
   openForm(key ? 'Editar vehículo' : 'Añadir vehículo', [
     { k: 'id', label: 'Vehículo (modelo)', value: cur.id, options: vehicles().map(v => [v.id, v.name]), wide: true },
-    { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate, placeholder: 'Ej: 1234 ABC' },
-    { k: 'driver', label: 'Conductor', value: cur.driver, options: opOptions() },
-    { k: 'crew', label: 'Ocupantes', type: 'checks', value: cur.crew, options: opChecks(), wide: true },
-    { k: 'gear', label: 'Lo que carga este vehículo (cajas o equipos; opcional)', type: 'checks', value: cur.gear, options: loads, wide: true }
+    { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate || 'ET-', placeholder: 'Ej: ET-12345' },
+    { k: 'driver', label: 'Conductor', value: cur.driver, options: [['', 'Sin asignar'], ...free] },
+    { k: 'crew', label: 'Ocupantes' + (busy.size ? ` <small class="muted">(no salen los ${busy.size} que ya van en otro vehículo)</small>` : ''), type: 'checks', value: cur.crew, options: free, wide: true },
+    { k: 'gear', label: 'Lo que carga este vehículo (cajas o equipos; opcional)', type: 'checks', value: cur.gear,
+      qty: Object.fromEntries((cur.gear || []).map(id => [id, vehUnits(cur, id)])), options: loads, wide: true }
   ], v => {
-    const entry = { ...cur, ...v, key: key || uid('MV'), plate: (v.plate || '').trim().toUpperCase(), crew: v.crew.filter(id => id !== v.driver) };
+    const gearQty = Object.fromEntries(Object.entries(v.gearQty || {}).filter(([id, n]) => n < unitsOf(get('gear', id))));
+    const entry = { ...cur, ...v, gearQty, key: key || uid('MV'), plate: etPlate(v.plate), crew: v.crew.filter(id => id !== v.driver) };
     const list_ = key ? m.vehicles.map(x => (vkey(x) === key ? entry : x)) : [...(m.vehicles || []), entry];
-    saveMission(m, { vehicles: list_ }, `vehículo ${vehName(v.id)}${entry.plate ? ' ' + entry.plate : ''} ${key ? 'editado' : 'añadido'}`);
+    // Lo que se carga entero en el vehículo deja de ir en el contenedor
+    const gear = (m.gear || []).filter(id => !entry.gear.includes(id) || gearQty[id]);
+    saveMission(m, { vehicles: list_, gear }, `vehículo ${vehName(v.id)}${entry.plate ? ' ' + entry.plate : ''} ${key ? 'editado' : 'añadido'}`);
   }, key ? `<button type="button" class="btn btn-bad span2" onclick="const m = mget('${mid}'); saveMission(m, { vehicles: m.vehicles.filter(x => vkey(x) !== '${key}') }, 'vehículo quitado'); closeModal();">${ic('trash')} Quitar de la operación</button>` : '');
+  // Quien conduce no aparece entre los ocupantes
+  const form = $('modalForm'), driver = form.elements.driver;
+  const hideDriver = () => form.querySelectorAll('input[name=crew]').forEach(c => {
+    const me = c.value === driver.value;
+    if (me) c.checked = false;
+    c.closest('.check-row').hidden = me;
+  });
+  driver.addEventListener('change', hideDriver); hideDriver();
 }
 // Lo que carga un vehículo de la actividad, en texto (las cajas por su código)
-const vehLoad = (v, m) => [...(v.gear || []).map(id => get('boxes', id) ? 'caja ' + get('boxes', id).code : get('gear', id) ? get('gear', id).name + qtyText(get('gear', id)) : ''),
+const vehLoad = (v, m) => [...(v.gear || []).map(id => get('boxes', id) ? 'caja ' + get('boxes', id).code : get('gear', id) ? get('gear', id).name + (v.gearQty?.[id] ? ` ×${v.gearQty[id]}` : qtyText(get('gear', id))) : ''),
   ...((m?.extras || []).filter(x => x.in === vkey(v)).map(extraText))].filter(Boolean);
 const vehHasLoad = (v, m) => vehLoad(v, m).length > 0;
 const vehGearIds = m => new Set((m.vehicles || []).flatMap(v => (v.gear || []).flatMap(id => get('boxes', id) ? boxItems(id).map(g => g.id) : [id])));
@@ -195,8 +218,10 @@ const destOf = (m, id) => (m.vehicles || []).find(v => (v.gear || []).includes(i
 function gearPicker(mid) {
   const m = mget(mid), inVeh = new Set((m.vehicles || []).flatMap(v => v.gear || []));
   const chosen = new Set([...(m.gear || []), ...inVeh]), dests = destOptions(m);
+  // Lo repartido por unidades entre varios sitios se reparte en cada vehículo, aquí no se mueve
+  const split = id => (m.vehicles || []).some(v => v.gearQty?.[id]) || (m.vehicles || []).filter(v => (v.gear || []).includes(id)).length > 1;
   const groups = gearGroups(list('gear'));
-  const sel = (g) => `<select class="input sm dest" name="dest-${g.id}" aria-label="Dónde va ${esc(g.name)}">${dests.map(([k, l]) => `<option value="${esc(k)}" ${destOf(m, g.id) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+  const sel = (g) => split(g.id) ? `<span class="tag info">repartido</span>` : `<select class="input sm dest" name="dest-${g.id}" aria-label="Dónde va ${esc(g.name)}">${dests.map(([k, l]) => `<option value="${esc(k)}" ${destOf(m, g.id) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
   openModal('Material que se lleva', `
     <form id="gearPickForm" class="stack">
       <div class="seg-row" role="radiogroup" aria-label="Cómo sale el material">
@@ -219,9 +244,13 @@ function gearPicker(mid) {
     const fd = new FormData(e.target), ids = fd.getAll('gear'), container = !!fd.get('container');
     const where = id => fd.get('dest-' + id) || 'cont';
     const all = new Set(list('gear').map(g => g.id));
-    const vehicles = (m.vehicles || []).map(v => ({ ...v, gear: [...(v.gear || []).filter(id => !all.has(id)), ...ids.filter(id => where(id) === vkey(v))] }));
+    const keep = id => !all.has(id) || (split(id) && ids.includes(id));
+    const vehicles = (m.vehicles || []).map(v => {
+      const gear = [...(v.gear || []).filter(keep), ...ids.filter(id => !split(id) && where(id) === vkey(v))];
+      return { ...v, gear, gearQty: Object.fromEntries(Object.entries(v.gearQty || {}).filter(([id]) => gear.includes(id))) };
+    });
     closeModal();
-    saveMission(m, { gear: ids.filter(id => where(id) === 'cont'), container, vehicles }, container ? 'sale el contenedor completo' : `material: ${ids.length} equipos`);
+    saveMission(m, { gear: ids.filter(id => split(id) ? (m.gear || []).includes(id) : where(id) === 'cont'), container, vehicles }, container ? 'sale el contenedor completo' : `material: ${ids.length} equipos`);
   };
 }
 
@@ -307,39 +336,43 @@ function deleteMission(mid) {
 
 function missionText(m) {
   const opn = id => get('operators', id)?.name || '—';
-  const L = [`*USAR 242 · ${m.type === 'ejercicio' ? '🏋️ EJERCICIO' : '🚨 INTERVENCIÓN'}: ${m.title}*`, `📅 ${fmtDT(m.date)}`];
-  if (m.location) L.push(`📍 ${m.location}`, mapsUrl(m.location));
-  if (m.meeting) L.push(`🤝 Reunión: ${m.meeting}`);
-  L.push(`⭐ Jefe: ${opn(m.chief)}${m.channel ? ' · 📻 ' + m.channel : ''}`);
-  if (m.status !== 'prep') L.push(`🧭 Fase: ${phaseOf(m).name}`);
-  const fn = FUNCS.filter(([k]) => m.func?.[k]).map(([k, name]) => `${name}: ${opn(m.func[k])}`);
-  if (fn.length) L.push(`🦺 ${fn.join(' · ')}`);
-  if (m.zone?.meeting) L.push(`📍 Punto de reunión en zona: ${m.zone.meeting}`);
+  const ex = m.type === 'ejercicio';
+  const L = waHead(ex ? '🏋️' : '🚨', `USAR 242 · ${ex ? 'EJERCICIO' : 'INTERVENCIÓN'}`, m.title);
+  L.push(`📅 *Fecha:* ${fmtDT(m.date)}`);
+  if (m.location) L.push(`📍 *Lugar:* ${m.location}`, `🗺️ ${mapsUrl(m.location)}`);
+  if (m.meeting) L.push(`🤝 *Reunión:* ${m.meeting}`);
+  L.push(`⭐ *Jefe:* ${opn(m.chief)}`);
+  if (m.channel) L.push(`📻 *Canal:* ${m.channel}`);
+  if (m.status !== 'prep') L.push(`🧭 *Fase:* ${phaseOf(m).name}`);
+  if (m.zone?.meeting) L.push(`🚩 *Punto de reunión en zona:* ${m.zone.meeting}`);
   if (m.status === 'active' && presenceText(m)) L.push(presenceText(m));
-  if (m.objective) L.push('', m.objective);
+  if (m.objective) L.push(...waSec('🎯', 'Objetivo'), m.objective);
+  const fn = FUNCS.filter(([k]) => m.func?.[k]).map(([k, name]) => `• ${name}: ${opn(m.func[k])}`);
+  if (fn.length) L.push(...waSec('🦺', 'Funciones'), ...fn);
   if (m.scope === 'bic' && m.bic) {
     const b = m.bic;
-    L.push('', '*🏛️ Patrimonio*', ...[b.building && `Inmueble: ${b.building}`, b.threat && `Amenaza: ${b.threat}`, b.owner && `Responsable: ${b.owner}`, b.depot && `Depósito: ${b.depot}`, b.route && `Ruta de los bienes: ${b.route}`].filter(Boolean));
+    L.push(...waSec('🏛️', 'Patrimonio'), ...[b.building && `• Inmueble: ${b.building}`, b.threat && `• Amenaza: ${b.threat}`, b.owner && `• Responsable: ${b.owner}`, b.depot && `• Depósito: ${b.depot}`, b.route && `• Ruta de los bienes: ${b.route}`].filter(Boolean));
   }
-  if ((m.comms || []).length) { L.push('', '*📻 Comunicaciones*'); m.comms.forEach(c => L.push(`• ${c.func}: ${c.channel}${c.who ? ' (' + c.who + ')' : ''}`)); }
+  if ((m.comms || []).length) { L.push(...waSec('📻', 'Comunicaciones')); m.comms.forEach(c => L.push(`• ${c.func}: ${c.channel}${c.who ? ' (' + c.who + ')' : ''}`)); }
   if ((m.vehicles || []).length) {
-    L.push('', '*🚒 Vehículos*');
-    m.vehicles.forEach(v => L.push(`• ${vehLabel(v)}: ${opn(v.driver)} (conductor)${(v.crew || []).length ? ', ' + names(v.crew).join(', ') : ''}`));
+    L.push(...waSec('🚒', `Vehículos (${m.vehicles.length})`));
+    m.vehicles.forEach(v => L.push(`▪️ ${waB(vehLabel(v))}`, `   🧑‍✈️ Conductor: ${opn(v.driver)}`, ...((v.crew || []).length ? [`   👥 Ocupantes: ${names(v.crew).join(', ')}`] : [])));
   }
   if ((m.teams || []).length) {
-    L.push('', '*👥 Equipos*');
-    m.teams.forEach(t => L.push(`• ${t.name}${t.func ? ' – ' + t.func : ''}${t.zone ? ' (sector ' + t.zone + ')' : ''}\n   Jefe: ${opn(t.leader)}${(t.members || []).filter(id => id !== t.leader).length ? ' · ' + names(t.members.filter(id => id !== t.leader)).join(', ') : ''}`));
+    L.push(...waSec('👥', `Equipos (${m.teams.length})`));
+    m.teams.forEach(t => L.push(`▪️ ${waB(t.name)}${t.func ? ' – ' + t.func : ''}${t.zone ? ' (sector ' + t.zone + ')' : ''}`, `   ⭐ Jefe: ${opn(t.leader)}`,
+      ...((t.members || []).filter(id => id !== t.leader).length ? [`   👤 ${names(t.members.filter(id => id !== t.leader)).join(', ')}`] : [])));
   }
   const gearList = missionGear(m);
   if (gearList.length || (m.extras || []).length) {
-    L.push('', `*🧰 Material${m.container ? ' · contenedor completo' : ''} (${gearList.length})*`);
-    (m.vehicles || []).filter(v => vehHasLoad(v, m)).forEach(v => L.push(`• En ${vehLabel(v)}: ${vehLoad(v, m).join(', ')}`));
+    L.push(...waSec('🧰', `Material${m.container ? ' · contenedor completo' : ''} (${gearList.length})`));
+    (m.vehicles || []).filter(v => vehHasLoad(v, m)).forEach(v => L.push(`• 🚒 En ${vehLabel(v)}: ${vehLoad(v, m).join(', ')}`));
     gearGroups(gearList.filter(g => !vehGearIds(m).has(g.id))).forEach(([, label, gs]) => L.push(`• ${label}: ${gs.map(g => g.name + qtyText(g)).join(', ')}`));
-    if ((m.extras || []).some(x => !x.in)) L.push(`• Extra: ${m.extras.filter(x => !x.in).map(extraText).join(', ')}`);
+    if ((m.extras || []).some(x => !x.in)) L.push(`• ➕ Extra: ${m.extras.filter(x => !x.in).map(extraText).join(', ')}`);
   }
-  if (m.safety) L.push('', `*⚠️ Seguridad*`, m.safety);
-  if (m.contacts) L.push('', `*📞 Contactos*`, m.contacts);
-  if (m.notes) L.push('', `*📝 Notas*`, m.notes);
+  if (m.safety) L.push(...waSec('⚠️', 'Seguridad'), m.safety);
+  if (m.contacts) L.push(...waSec('📞', 'Contactos'), m.contacts);
+  if (m.notes) L.push(...waSec('📝', 'Notas'), m.notes);
   return L.join('\n');
 }
 

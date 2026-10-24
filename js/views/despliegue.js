@@ -126,10 +126,10 @@ function factsheetForm() {
 function factsheetText() {
   const fs = get('meta', 'factsheet')?.value || {}, g = list('gear');
   const kg = Math.round(g.reduce((s, x) => s + (parseFloat(x.weight) || 0), 0)), m3 = g.reduce((s, x) => s + (parseFloat(x.volume) || 0), 0);
-  return [`*Ficha del equipo · ${teamCode()} (USAR 242)*`, `Estado: ${TEAM_STATUS[fs.status || 'base']} · Tipo: ${fs.type || '—'}`,
-    `Personas: ${operators().length} · Perros: ${fs.dogs || 0}`, `Material: ${kg} kg, ${m3.toLocaleString('es-ES', { maximumFractionDigits: 2 })} m³`,
-    fs.capabilities ? `Capacidades: ${fs.capabilities}` : '', fs.selfSufficiency ? `Autosuficiencia: ${fs.selfSufficiency}` : '',
-    fs.arrival ? `Llegada: ${fs.arrival}` : '', fs.contact ? `Contacto: ${fs.contact}` : '', `Actualizado: ${fmtWhen(fs.updated || Date.now())}`].filter(Boolean).join('\n');
+  return [...waHead('🪪', `Ficha del equipo · ${teamCode()} (USAR 242)`), `🚦 *Estado:* ${TEAM_STATUS[fs.status || 'base']} · *Tipo:* ${fs.type || '—'}`,
+    `👥 *Personas:* ${operators().length} · 🐕 *Perros:* ${fs.dogs || 0}`, `🧰 *Material:* ${kg} kg, ${m3.toLocaleString('es-ES', { maximumFractionDigits: 2 })} m³`,
+    fs.capabilities ? `💪 *Capacidades:* ${fs.capabilities}` : '', fs.selfSufficiency ? `🔋 *Autosuficiencia:* ${fs.selfSufficiency}` : '',
+    fs.arrival ? `✈️ *Llegada:* ${fs.arrival}` : '', fs.contact ? `📞 *Contacto:* ${fs.contact}` : '', `🕒 _Actualizado: ${fmtWhen(fs.updated || Date.now())}_`].filter(Boolean).join('\n');
 }
 
 /* ---------- Manifiestos imprimibles ---------- */

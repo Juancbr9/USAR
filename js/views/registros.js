@@ -38,8 +38,8 @@ function availabilityForm(mid, op) {
   ], v => setAvailability(mid, op, v.state, v.eta));
 }
 function activationText(m) {
-  return [`*🚨 USAR 242 · ACTIVACIÓN*`, `*${m.title}*`, `📅 ${fmtDT(m.date)}`, m.location ? `📍 ${m.location}` : '', m.meeting ? `🤝 Reunión: ${m.meeting}` : '',
-    '', 'Responde en la app (Operaciones → Personal): Voy / Voy con retraso / No puedo.', appUrl()].filter(x => x !== '').join('\n');
+  return [...waHead('🚨', 'USAR 242 · ACTIVACIÓN', m.title), `📅 *Fecha:* ${fmtDT(m.date)}`, m.location ? `📍 *Lugar:* ${m.location}` : null, m.meeting ? `🤝 *Reunión:* ${m.meeting}` : null,
+    '', '👉 *Responde en la app* (Operaciones → Personal):', '✅ Voy · ⏱️ Voy con retraso · ❌ No puedo', `🔗 ${appUrl()}`].filter(x => x !== null).join('\n');
 }
 
 /* ==================== RECUENTO PERIÓDICO (PAR) ==================== */

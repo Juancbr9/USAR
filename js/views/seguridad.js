@@ -174,19 +174,20 @@ function zoneForm(mid) {
 function briefingText(m) {
   const z = m.zone || {}, f = m.func || {};
   const who = k => get('operators', f[k])?.name || '—';
-  const L = [`*USAR 242 · Briefing de seguridad · ${m.title}*`, fmtWhen(Date.now()), ''];
-  if (z.height) L.push(`📏 Distancia de seguridad: ${fmtDist(Math.ceil(z.height * 2))}`);
-  L.push(`🚪 Entrada única: ${z.door || 'por definir'} · hombre-puerta: ${who('puerta')}`);
-  if (z.meeting) L.push(`📍 Punto de reunión: ${z.meeting}`);
-  if (z.escape) L.push(`🏃 Evacuación: ${z.escape}`);
-  L.push(`👁 Vigía: ${who('vigia')} · 🦺 Seguridad: ${who('seguridad')} · ➕ Sanitario: ${who('sanitario')}`);
-  if ((z.hazards || []).length) L.push(`⚠️ Peligros: ${z.hazards.join(', ')}`);
+  const L = [...waHead('⛑️', 'USAR 242 · Briefing de seguridad', m.title), `📅 ${fmtWhen(Date.now())}`, ''];
+  if (z.height) L.push(`📏 *Distancia de seguridad:* ${fmtDist(Math.ceil(z.height * 2))}`);
+  L.push(`🚪 *Entrada única:* ${z.door || 'por definir'} · hombre-puerta: ${who('puerta')}`);
+  if (z.meeting) L.push(`📍 *Punto de reunión:* ${z.meeting}`);
+  if (z.escape) L.push(`🏃 *Evacuación:* ${z.escape}`);
+  L.push(...waSec('🦺', 'Funciones'), `• 👁 Vigía: ${who('vigia')}`, `• 🦺 Seguridad: ${who('seguridad')}`, `• ➕ Sanitario: ${who('sanitario')}`);
   const notCut = SUPPLIES.filter(s => !(z.cut || []).includes(s));
-  if (notCut.length) L.push(`🔌 Sin cortar: ${notCut.join(', ')}`);
+  if ((z.hazards || []).length || notCut.length) L.push('');
+  if ((z.hazards || []).length) L.push(`⚠️ *Peligros:* ${z.hazards.join(', ')}`);
+  if (notCut.length) L.push(`🔌 *Sin cortar:* ${notCut.join(', ')}`);
   const high = (m.risks || []).filter(r => riskLevel(r.p, r.c)[1] !== 'ok');
-  if (high.length) { L.push('', '*Riesgos a vigilar*'); high.forEach(r => L.push(`• ${r.name} (${riskLevel(r.p, r.c)[0]})${r.measures ? ': ' + r.measures : ''}`)); }
-  L.push('', '*Señales*', '• Evacuación: 3 pitadas cortas', '• Parar, todos quietos: 1 larga de 3 s', '• Continuar: 1 larga y 1 corta');
-  L.push('', 'Solo entra el personal imprescindible. Relevos' + (z.relevo ? ` cada ${z.relevo} min.` : '.'));
+  if (high.length) { L.push(...waSec('🔺', 'Riesgos a vigilar')); high.forEach(r => L.push(`• ${r.name} (${riskLevel(r.p, r.c)[0]})${r.measures ? ': ' + r.measures : ''}`)); }
+  L.push(...waSec('📢', 'Señales'), '• 🚨 Evacuación: 3 pitadas cortas', '• ✋ Parar, todos quietos: 1 larga de 3 s', '• ▶️ Continuar: 1 larga y 1 corta');
+  L.push('', '❗ _Solo entra el personal imprescindible. Relevos' + (z.relevo ? ` cada ${z.relevo} min._` : '._'));
   return L.join('\n');
 }
 

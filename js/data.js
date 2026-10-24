@@ -1,7 +1,7 @@
 'use strict';
-// Vehículos: la flota son modelos (Sangyong, Amarok…). En cada actividad se añaden los que salen, repetidos si hace falta.
+// Vehículos: la flota son modelos (SsangYong, Amarok…). En cada actividad se añaden los que salen, repetidos si hace falta.
 const vehName = id => get('vehicles', id)?.name || 'Vehículo';
-const vkey = v => v.key || v.id;   // cada vehículo de una actividad tiene su clave (puede haber tres Sangyong)
+const vkey = v => v.key || v.id;   // cada vehículo de una actividad tiene su clave (puede haber tres SsangYong)
 // USAR 242 · Datos iniciales y almacén local
 
 /* ==================== DATOS INICIALES ==================== */
@@ -92,14 +92,14 @@ function defaultData() {
     ],
     vehicles: DEFAULT_VEHICLES,
     logs: [], inspections: [], missions: [], mlog: [],
-    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 5 }]
+    meta: [{ id: 'mission', value: 'estandar' }, { id: 'doors', value: DOOR_NAMES }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 7 }]
   };
 }
 
 // Flota de la unidad (ids fijos para no duplicar entre móviles). Matrícula y plazas se completan en Vehículos.
 const veh = (id, name, notes = '') => ({ id, name, plate: '', seats: '', notes });
 const DEFAULT_VEHICLES = [
-  veh('V-SANGYONG', 'Sangyong'),
+  veh('V-SANGYONG', 'SsangYong'),
   veh('V-VPI', 'VPI (contenedor USAR)', 'Lleva el contenedor USAR'),
   veh('V-AMAROK', 'Amarok'),
   veh('V-MOTO', 'Moto PM'),
@@ -109,6 +109,7 @@ const DEFAULT_VEHICLES = [
   veh('V-CUPRA', 'Cupra'),
   veh('V-AB-LCIF', 'Autobomba Renault (módulo LCIF)'),
   veh('V-AB-CONT', 'Autobomba Renault (contenedor pequeño)'),
+  veh('V-AB-CONT2', 'Autobomba Renault (contenedor pequeño 2)'),
   veh('V-AB', 'Autobomba'),
   veh('V-ATB-M1', 'ATB Iveco M1'),
   veh('V-ATB-M2', 'ATB Iveco M2'),
@@ -266,7 +267,7 @@ function seedDefaults(share = false) {
     DEFAULT_VEHICLES.forEach(v => { if (!db.vehicles[v.id]) stampIt('vehicles', { ...v }); });
     DEFAULT_TEMPLATES.filter(t => get('templates', t.id)).forEach(t => stampIt('templates', { ...t }));
   }
-  // v3: las TETRA y el botiquín van «con el jefe» (su vehículo cambia en cada salida), no fijos en el Sangyong
+  // v3: las TETRA y el botiquín van «con el jefe» (su vehículo cambia en cada salida), no fijos en el SsangYong
   if (!(get('meta', 'vehbase')?.value >= 3)) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     ['B-901', 'B-902'].forEach(id => { const g = get('gear', id); if (g && g.vehicle === 'V-SANGYONG') stampIt('gear', { ...g, vehicle: '', door: 0 }); });
@@ -287,6 +288,18 @@ function seedDefaults(share = false) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     DEFAULT_VEHICLES.filter(v => ['V-ATB-M1', 'V-ATB-M2'].includes(v.id) && !db.vehicles[v.id]).forEach(v => stampIt('vehicles', { ...v }));
     stampIt('meta', { id: 'vehbase', value: 5 });
+  }
+  // v6: segundo modelo de autobomba Renault de contenedor pequeño (contenedor largo, hasta la cabina). Solo si falta
+  if (!(get('meta', 'vehbase')?.value >= 6)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    DEFAULT_VEHICLES.filter(v => v.id === 'V-AB-CONT2' && !db.vehicles[v.id]).forEach(v => stampIt('vehicles', { ...v }));
+    stampIt('meta', { id: 'vehbase', value: 6 });
+  }
+  // v7: SsangYong se escribe con dos S (solo se corrige esa palabra; el resto del nombre editado se respeta)
+  if (!(get('meta', 'vehbase')?.value >= 7)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    list('vehicles').filter(v => /\bsang ?yong\b/i.test(v.name || '')).forEach(v => stampIt('vehicles', { ...v, name: v.name.replace(/\bsang ?yong\b/gi, 'SsangYong') }));
+    stampIt('meta', { id: 'vehbase', value: 7 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
