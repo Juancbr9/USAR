@@ -54,12 +54,12 @@ with sync_playwright() as p:
     assert 'Puntales de madera' in a.inner_text('#view')
     # Cualquier vehículo puede llevar material; los modelos se repiten (dos Amarok con matrícula distinta)
     ids = a.evaluate("missionGearIds(mget(prefs.mission))"); n0 = len(ids); assert 'B-901' not in ids, ids
-    mtab('Personal'); a.click('button.btn[onclick^=missionVehicleForm]'); a.select_option('[name=id]', label='Amarok'); a.fill('[name=plate]', '1234 ABC')
+    mtab('Personal'); a.click('button.btn[onclick^=missionVehicleForm]'); a.select_option('[name=id]', label='Amarok'); assert a.input_value('[name=plate]') == 'ET-'; a.fill('[name=plate]', '12345')
     a.check('input[name=gear][value=B-901]'); a.check('input[name=gear][value=B-902]'); save()
     a.click('button.btn[onclick^=missionVehicleForm]'); a.select_option('[name=id]', label='Amarok'); a.fill('[name=plate]', '5678 DEF'); save()
     vs = a.evaluate("mget(prefs.mission).vehicles"); assert len(vs) == 3 and len({v['key'] for v in vs}) == 3, vs
     ids = a.evaluate("missionGearIds(mget(prefs.mission))"); assert 'B-901' in ids and 'B-902' in ids and len(ids) == n0 + 2, ids
-    txt = a.evaluate("missionText(mget(prefs.mission))"); assert 'Amarok · 1234 ABC' in txt and 'Transmisiones (TETRA)' in txt, txt
+    txt = a.evaluate("missionText(mget(prefs.mission))"); assert 'Amarok · ET-12345' in txt and 'Transmisiones (TETRA)' in txt, txt
     assert a.locator('.item:has-text("5678 DEF")').count() == 1
 
     mtab('Seguridad'); a.locator('.panel:has-text("Seguridad, contactos") button:has-text("Editar")').click()
