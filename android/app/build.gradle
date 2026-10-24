@@ -1,0 +1,31 @@
+plugins { id 'com.android.application' }
+
+// La app abre la web publicada en Chrome a pantalla completa (Trusted Web Activity): los cambios de la web
+// llegan solos, sin volver a instalar el APK. Solo hay que subir versionCode si cambia algo de aquí.
+android {
+    namespace 'io.github.juancbr9.usar242'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'io.github.juancbr9.usar242'
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+    signingConfigs {
+        release {
+            // La clave no está en el repositorio: se pasa con variables de entorno al compilar
+            storeFile file(System.getenv('USAR_KEYSTORE') ?: 'usar242.keystore')
+            storePassword System.getenv('USAR_KEYSTORE_PASS')
+            keyAlias 'usar242'
+            keyPassword System.getenv('USAR_KEYSTORE_PASS')
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.release }
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}
