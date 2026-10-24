@@ -36,7 +36,7 @@ function viewAjustes() {
   return `
     <div class="panel between wrap-row">
       <div class="who-row">${personPhoto(me())}<div><b>${esc(me().name)}</b><small>Sesión iniciada</small></div></div>
-      <div class="row"><button class="btn btn-g" onclick="pinForm()">${ic('pencil')} Cambiar contraseña</button><button class="btn btn-g" onclick="logout()">${ic('out')} Cerrar sesión</button></div>
+      <div class="row"><button class="btn btn-g" onclick="pinForm()">${ic('pencil')} Cambiar contraseña</button>${bioPanel()}<button class="btn btn-g" onclick="logout()">${ic('out')} Cerrar sesión</button></div>
     </div>
     ${mantenimientoPanel()}
     <div class="grid g2">

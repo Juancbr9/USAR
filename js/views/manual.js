@@ -26,6 +26,8 @@ const MANUAL = [
     what: 'La app reúne el material del contenedor, los EPI, el personal y cada intervención o ejercicio. Funciona sin cobertura y, si el equipo lo activa, comparte los datos entre todos los móviles.',
     parts: [
       { h: 'Entrar', steps: ['Elige tu nombre y escribe tu contraseña.', 'Cada uno tiene ya su contraseña, que le da el jefe. Si tu nombre no la tiene, la creas tú la primera vez (dos veces). Desde ese momento es tu contraseña en este y en los demás móviles del equipo.',
+        'Cada vez que abres la app (o vuelves tras más de 5 minutos fuera) te la pide de nuevo, y al entrar vas siempre a Inicio.',
+        'Huella: la primera vez que entras con contraseña te ofrece entrar con tu huella (o la cara) en ese móvil. Después se pide sola al abrir la app. Se activa o se quita en Ajustes → General.',
         'Todo lo que hagas queda apuntado con tu nombre. Para salir: Ajustes → General → «Cerrar sesión». Allí también la cambias.'],
         img: ['entrar', 'Entrar con tu nombre', [[1, 'Tu nombre.'], [2, 'Tu contraseña (la primera vez, la creas).']]] },
       { h: 'Instalar y compartir', steps: [ 'Instálala como una app: en Android, menú del navegador (⋮) → «Instalar aplicación»; en iPhone, botón Compartir → «Añadir a pantalla de inicio».',
