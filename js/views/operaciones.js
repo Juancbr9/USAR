@@ -7,8 +7,10 @@ const mtypeName = m => MISSION_TYPES[m.type] || 'Operación';
 const MISSION_STATUS = { prep: ['En preparación', 'warn'], active: ['En curso', 'bad'], done: ['Finalizada', 'neutral'] };
 const STATUS_ORDER = { active: 0, prep: 1, done: 2 };
 // En el orden de la flota de la unidad; los añadidos después, por nombre
-const VEH_ORDER = id => { const i = DEFAULT_VEHICLES.findIndex(v => v.id === id); return i < 0 ? 999 : i; };
-const vehicles = () => list('vehicles').sort((a, b) => VEH_ORDER(a.id) - VEH_ORDER(b.id) || byName(a, b));
+// Flota por orden alfabético (también los vehículos que se añadan o renombren)
+const vehicles = () => list('vehicles').sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { numeric: true }));
+// Las matrículas de la unidad son «ET-» y números: se añade el prefijo si falta (vacío o solo «ET-» = sin matrícula)
+const etPlate = p => { const t = String(p || '').trim().toUpperCase().replace(/^ET[\s-]*/, '').trim(); return t ? 'ET-' + t : ''; };
 const localNow = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
 const fmtDT = v => v ? new Date(v).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Sin fecha';
 const mapsUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
@@ -144,12 +146,12 @@ function missionVehicleForm(mid, key) {
     .filter(([id]) => !inOther.has(id));
   openForm(key ? 'Editar vehículo' : 'Añadir vehículo', [
     { k: 'id', label: 'Vehículo (modelo)', value: cur.id, options: vehicles().map(v => [v.id, v.name]), wide: true },
-    { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate, placeholder: 'Ej: 1234 ABC' },
+    { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate || 'ET-', placeholder: 'Ej: ET-12345' },
     { k: 'driver', label: 'Conductor', value: cur.driver, options: opOptions() },
     { k: 'crew', label: 'Ocupantes', type: 'checks', value: cur.crew, options: opChecks(), wide: true },
     { k: 'gear', label: 'Lo que carga este vehículo (cajas o equipos; opcional)', type: 'checks', value: cur.gear, options: loads, wide: true }
   ], v => {
-    const entry = { ...cur, ...v, key: key || uid('MV'), plate: (v.plate || '').trim().toUpperCase(), crew: v.crew.filter(id => id !== v.driver) };
+    const entry = { ...cur, ...v, key: key || uid('MV'), plate: etPlate(v.plate), crew: v.crew.filter(id => id !== v.driver) };
     const list_ = key ? m.vehicles.map(x => (vkey(x) === key ? entry : x)) : [...(m.vehicles || []), entry];
     saveMission(m, { vehicles: list_ }, `vehículo ${vehName(v.id)}${entry.plate ? ' ' + entry.plate : ''} ${key ? 'editado' : 'añadido'}`);
   }, key ? `<button type="button" class="btn btn-bad span2" onclick="const m = mget('${mid}'); saveMission(m, { vehicles: m.vehicles.filter(x => vkey(x) !== '${key}') }, 'vehículo quitado'); closeModal();">${ic('trash')} Quitar de la operación</button>` : '');
