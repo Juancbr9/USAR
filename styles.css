@@ -1084,6 +1084,7 @@ body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-
 .login-brand .wordmark { color: #fff; font-size: 40px; }
 .login-card { width: min(100%, 380px); display: grid; gap: 12px; }
 .login-card h2 { margin-bottom: 2px; }
+.mant-msg { font-weight: 800; font-size: 18px; line-height: 1.35; }
 .bad-text { color: var(--bad); font-weight: 700; min-height: 1.2em; }
 .tok.is-out { opacity: .5; } .tok.is-out .tok-name { text-decoration: line-through; }
 

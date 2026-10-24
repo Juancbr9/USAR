@@ -6,6 +6,7 @@
 
 function render() {
   if (!loggedIn()) return renderLogin();
+  if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
   if (HUB_TO[prefs.tab]) prefs.tab = HUB_TO[prefs.tab];
   applyArea();
@@ -397,6 +398,7 @@ function handleHash() {
   const [key, value] = [hash.slice(0, eq), decodeURIComponent(hash.slice(eq + 1))];
   history.replaceState(history.state, '', location.pathname + location.search);
   if (!loggedIn() && key !== 'join') { prefs.afterLogin = '#' + hash; writeJSON(KEY.prefs, prefs); return; }   // se abre al entrar
+  if (bloqueado() && key !== 'join') return;
 
   if (key === 'g') {
     const g = get('gear', value);

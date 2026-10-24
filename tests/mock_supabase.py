@@ -21,10 +21,16 @@ class H(BaseHTTPRequestHandler):
         a = self.headers.get('Authorization', '')
         email = a[len('Bearer tok:'):] if a.startswith('Bearer tok:') else None
         return email, (members.get(email, {}).get('role') if email else None)
+    def bad_jwt(self):
+        # Como Supabase: en Authorization solo vale un JWT (aquí, el token de sesión); una clave «sb_publishable_…» se rechaza
+        a = self.headers.get('Authorization')
+        if a and not a.startswith('Bearer tok:'): self.reply(401, {'message': 'Invalid JWT'}); return True
+        return False
     def do_OPTIONS(self): self.reply(204)
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         if u.path == '/_dump': return self.reply(200, list(rows.values()))
+        if self.bad_jwt(): return
         if u.path.endswith('/usar_members'):
             f = q.get('email', [None])[0]
             data = [m for m in members.values() if not f or m['email'] == f[3:]]
@@ -48,6 +54,7 @@ class H(BaseHTTPRequestHandler):
                 if users.get(e) != body['password']: return self.reply(400, {'error_description': 'Invalid login credentials'})
             else: e = body['refresh_token'][4:]
             return self.reply(200, {'access_token': 'tok:' + e, 'refresh_token': 'ref:' + e, 'expires_in': 3600, 'user': {'email': e}})
+        if self.bad_jwt(): return
         if u.path.endswith('/usar_members'):
             for m in body: members[m['email']] = m
             return self.reply(201)

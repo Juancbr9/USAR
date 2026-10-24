@@ -71,7 +71,7 @@ with sync_playwright() as p:
     assert a.locator('text=Jefe de Rescate en Altura').count() == 1
 
     # Conectar A al servidor de prueba
-    tab(a, 'Ajustes'); a.fill('[name=url]', MOCK); a.fill('[name=key]', 'clave-prueba'); a.click('button:has-text("Conectar")')
+    tab(a, 'Ajustes'); a.fill('[name=url]', MOCK); a.fill('[name=key]', 'sb_publishable_prueba'); a.click('button:has-text("Conectar")')
     a.wait_for_function("document.querySelector('#syncBadge').textContent.includes('conectado')", timeout=15000)
     print('Filas en la nube tras conectar A:', len(dump()))
     a.click('button:has-text("Invitar al equipo")'); a.wait_for_timeout(200)
