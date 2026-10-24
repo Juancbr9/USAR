@@ -375,7 +375,7 @@ function findGo(kind, id) {
 function viewArmarios() {
   const gear = list('gear'), bs = list('boxes');
   const at = d => [gear.filter(g => !g.vehicle && g.door === d), bs.filter(b => !b.vehicle && b.door === d)];
-  return `
+  return `${fueraTabs()}
     <div class="panel">
       <div class="between sec-head"><h2>Armarios</h2></div>
       <p class="muted" style="margin:-4px 0 12px">Toca una puerta para verla; mantén pulsado para arrastrar.</p>

@@ -21,9 +21,11 @@ const SECTIONS = [
   // Material: con subopciones (sexto campo) que el menú pinta sangradas bajo «Material»
   ['contenedor', 'box', 'Contenedor', 'Dibujo por laterales, huecos y cajas', 'log', 'mat'],
   ['revision', 'refresh', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
-  ['pasillo', 'layers', 'Pasillo', 'Material guardado en el pasillo', 'log', 'mat'],
-  ['armarios', 'case', 'Armarios', 'Tres armarios de dos puertas', 'log', 'mat'],
-  ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat'],
+  ['fuera', 'layers', 'Fuera del contenedor', 'Pasillo, armarios y otros sitios', 'log', 'mat'],
+  // Las tres pantallas de «Fuera del contenedor» (séptimo campo: no salen sueltas en el menú)
+  ['pasillo', 'layers', 'Pasillo', 'Material guardado en el pasillo', 'log', 'mat', true],
+  ['armarios', 'case', 'Armarios', 'Tres armarios de dos puertas', 'log', 'mat', true],
+  ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat'],
   ['entregas', 'out', 'Entregas', 'Material prestado a personal de fuera, con firma', 'log', 'mat'],
   ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log'],
@@ -66,7 +68,11 @@ function sectionStatus(id) {
 
 // Las antiguas portadas de área (Logística, Equipo, Más) repetían el menú: ahora llevan a su primera sección
 const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', epi: 'personal', puestos: 'personal' };
-const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat').map(s => s[0]);
+const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
+const FUERA_TABS = ['pasillo', 'armarios', 'otros'];
+// Pestañas de «Fuera del contenedor» (Pasillo, Armarios y Otros en una sola entrada del menú)
+const fueraTabs = () => `<div class="seg-row" role="group" aria-label="Fuera del contenedor" style="margin-bottom:12px">${FUERA_TABS.map(id => { const on = prefs.tab === id;
+  return `<button class="${on ? 'on' : ''}" aria-pressed="${on}" onclick="go('${id}')">${sectionOf(id)[2]}</button>`; }).join('')}</div>`;
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
 const areaHeader = () => '';
 

@@ -26,10 +26,18 @@ with sync_playwright() as p:
     a.click('#menuBtn'); a.click('#drawer .dr-group-head:has-text("Logística")'); a.wait_for_timeout(100)
     assert a.locator('#drawer .dr-item.sub2').count() == 0, 'Material empieza plegado'
     a.click('#drawer .dr-group-head:has-text("Material")'); a.wait_for_timeout(100)
-    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Contenedor', 'En revisión', 'Pasillo', 'Armarios', 'Otros', 'Material fungible', 'Entregas']
+    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Contenedor', 'En revisión', 'Fuera del contenedor', 'Material fungible', 'Entregas']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
     a.click('#drawer .dr-item:has-text("Material fungible")'); a.wait_for_timeout(150)
     assert 'material fungible' in a.inner_text('#view h2').lower()
+    # Fuera del contenedor: una entrada del menú con Pasillo, Armarios y Otros en pestañas; recuerda la última
+    a.click('#menuBtn'); a.click('#drawer .dr-item:has-text("Fuera del contenedor")'); a.wait_for_timeout(150)
+    assert a.inner_text('#view h2').lower() == 'pasillo' and a.locator('#view .seg-row button').all_inner_texts() == ['Pasillo', 'Armarios', 'Otros']
+    a.click('#view .seg-row button:has-text("Armarios")'); a.wait_for_timeout(150)
+    assert a.inner_text('#view h2').lower() == 'armarios'
+    a.evaluate("go('avisos')"); a.evaluate("go('fuera')"); a.wait_for_timeout(150)
+    assert a.inner_text('#view h2').lower() == 'armarios', 'Fuera del contenedor vuelve a la última pestaña'
+    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Fuera del contenedor")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
 
     # ---------- Entrega con firma ----------
     a.evaluate("go('entregas')"); a.wait_for_timeout(150); a.click('#view button:has-text("Entrega")')
