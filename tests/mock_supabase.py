@@ -7,6 +7,7 @@ from urllib.parse import urlparse, parse_qs
 rows = {}; users = {}; members = {}; lock = threading.Lock()
 SECURE = [False]   # GET /_secure lo activa: como el modo seguro de supabase.sql, sin usuario no se lee ni se escribe usar_records
 JEFE_KINDS = set()   # ahora todo el personal accede a todo
+FLOTA_KINDS = {'gear', 'boxes', 'consumables', 'vehicles'}
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
     def cors(self):
@@ -67,6 +68,9 @@ class H(BaseHTTPRequestHandler):
         email, role = self.who()
         if self.denied(email): return
         if role == 'miembro' and any(r['kind'] in JEFE_KINDS for r in body): return self.reply(403, {'message': 'permiso denegado'})
+        # Como supabase.sql: con usuario, solo un jefe da de alta o elimina material, cajas, consumibles y vehículos
+        if email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS and (r.get('deleted') or (r['kind'], r['id']) not in rows) for r in body):
+            return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
         with lock:
             for r in body:
                 r['updated_at'] = datetime.now(timezone.utc).isoformat()

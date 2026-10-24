@@ -7,7 +7,7 @@ function viewConsumibles() {
   return `
     <div class="panel between wrap-row">
       <div><h2>Material fungible</h2><p class="muted">Aviso cuando algo baja del mínimo.</p></div>
-      <button class="btn btn-a" onclick="consForm()">${ic('plus')} Consumible</button>
+      ${puedeFlota() ? `<button class="btn btn-a" onclick="consForm()">${ic('plus')} Consumible</button>` : ''}
     </div>
     <div class="grid g3">${items.map(c => {
       const low = c.stock <= c.min;
@@ -24,7 +24,7 @@ function viewConsumibles() {
           <div class="bar ${low ? 'bad' : ''}" style="margin:8px 0 12px"><span style="width:${pct}%"></span></div>
           <div class="between">
             <div class="row nowrap">${step(-1)}${step(1)}${step(5)}</div>
-            <button class="link" onclick="consForm('${c.id}')">Editar</button>
+            ${puedeFlota() ? `<button class="link" onclick="consForm('${c.id}')">Editar</button>` : ''}
           </div>
         </div>`;
     }).join('') || '<p class="muted">No hay consumibles.</p>'}</div>`;
@@ -38,6 +38,7 @@ function adjust(id, n) {
 }
 
 function consForm(id) {
+  if (!soloFlota()) return;
   const c = get('consumables', id) || { stock: 10, min: 5, unit: 'uds' };
   openForm(id ? 'Editar consumible' : 'Nuevo consumible', [
     { k: 'name', label: 'Nombre', value: c.name, required: true, wide: true },

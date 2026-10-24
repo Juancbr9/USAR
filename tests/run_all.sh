@@ -51,6 +51,7 @@ run test_accesibilidad.py
 run test_sesion.py
 run test_material2.py
 run test_mantenimiento.py
+start_mock; run test_flota.py
 
 echo
 if [ $status -eq 0 ]; then echo "✓ Todas las pruebas pasaron"; else echo "✗ Alguna prueba falló"; fi

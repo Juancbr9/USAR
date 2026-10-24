@@ -213,7 +213,7 @@ function tabMaterial(m) {
   return `
     <div class="panel">
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material (${gearList.length})</h3>
-        <div class="row"><button class="btn btn-g btn-sm" onclick="extrasForm('${m.id}')">${ic('plus')} Extra</button>
+        <div class="row">${puedeFlota() ? `<button class="btn btn-g btn-sm" onclick="extrasForm('${m.id}')">${ic('plus')} Extra</button>` : ''}
         <button class="btn btn-a btn-sm" onclick="gearPicker('${m.id}')">${ic('check')} Elegir material</button></div></div>
       ${(m.vehicles || []).filter(v => vehHasLoad(v, m)).map(v => `<div class="well mat-veh"><b style="font-size:15px" class="who-row">${vehArt(get('vehicles', v.id), 'xs')} En ${esc(vehLabel(v))}</b>
         <ul style="margin:6px 0 0; padding-left:18px">${vehLoad(v, m).map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}

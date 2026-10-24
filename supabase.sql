@@ -47,8 +47,10 @@ grant select, insert, update on public.usar_records to anon;
 -- =====================================================================================
 -- MODO SEGURO (recomendado): acceso con usuario y contraseña y permisos por rol
 -- Con esto, el enlace de invitación ya NO basta: cada persona entra con su usuario.
---   · jefe:    ve y edita todo y da de alta a los miembros
---   · miembro: ve y edita todo (de momento todo el personal accede a todo)
+--   · jefe:    ve y edita todo, da de alta a los miembros y es el único que da de alta o elimina material, cajas,
+--              consumibles y vehículos
+--   · miembro: ve y usa todo (mueve material, lo pasa a revisión, ajusta el stock…), pero no da de alta ni elimina
+--              material, cajas, consumibles ni vehículos
 -- Pasos: 1) En Authentication → Sign In / Providers → Email, deja activado «Confirm email» (si no, alguien podría
 --           registrarse con el correo de un jefe antes que él). Si todos los usuarios los creas tú, desactiva además
 --           «Allow new users to sign up».
@@ -90,10 +92,21 @@ grant select, insert, update, delete on public.usar_members to authenticated;
 -- «(select …)»: el rol se calcula una vez por consulta y no una vez por fila (mucho más rápido al descargar)
 drop policy if exists "equipo usar" on public.usar_records;
 drop policy if exists "equipo usar con usuario" on public.usar_records;
-create policy "equipo usar con usuario" on public.usar_records for all to authenticated
+drop policy if exists "equipo usar: ver" on public.usar_records;
+drop policy if exists "equipo usar: crear" on public.usar_records;
+drop policy if exists "equipo usar: cambiar" on public.usar_records;
+create policy "equipo usar: ver" on public.usar_records for select to authenticated
+  using ((select private.usar_role()) is not null);
+-- Material (gear), cajas (boxes), consumibles y vehículos: solo un jefe los da de alta (los ids de FLOTA_KINDS en js/sesion.js)
+create policy "equipo usar: crear" on public.usar_records for insert to authenticated
+  with check ((select private.usar_role()) = 'jefe'
+    or ((select private.usar_role()) is not null and kind not in ('gear', 'boxes', 'consumables', 'vehicles')));
+-- Todos cambian lo que ya existe (estado, ubicación, stock…), pero solo un jefe elimina material, cajas, consumibles o vehículos
+create policy "equipo usar: cambiar" on public.usar_records for update to authenticated
   using ((select private.usar_role()) is not null)
-  with check ((select private.usar_role()) is not null);
--- Si más adelante queréis que la documentación del personal solo la vean los jefes, cambiad las dos líneas de arriba por:
+  with check ((select private.usar_role()) = 'jefe'
+    or ((select private.usar_role()) is not null and (not deleted or kind not in ('gear', 'boxes', 'consumables', 'vehicles'))));
+-- Si más adelante queréis que la documentación del personal solo la vean los jefes, cambiad el «using» de «ver» por:
 --   using ((select private.usar_role()) is not null and (kind not in ('readiness', 'docs', 'images') or (select private.usar_role()) = 'jefe'))
 revoke all on public.usar_records from anon;
 grant select, insert, update on public.usar_records to authenticated;

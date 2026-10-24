@@ -189,6 +189,7 @@ const vehLabel = v => vehName(v.id) + (v.plate ? ' · ' + v.plate : '');
 const vehArt = (v, cls = '') => v?.photo ? `<img class="veh-art ${cls}" data-img="veh:${v.id}" alt="">`
   : VEH_ART.includes(v?.id) ? `<img class="veh-art ${cls}" src="img/veh/${v.id.toLowerCase()}.webp" alt="" loading="lazy">` : `<span class="veh-art none ${cls}">${ic('truck', 'i-lg')}</span>`;
 function vehicleForm(id) {
+  if (!soloFlota()) return;
   const v = get('vehicles', id) || {};
   openForm(id ? `Editar ${v.name}` : 'Nuevo modelo de vehículo', [
     { k: 'name', label: 'Nombre o modelo', value: v.name, required: true, wide: true, placeholder: 'Ej: Amarok' },
@@ -203,6 +204,7 @@ function vehicleForm(id) {
   id ? `<button type="button" class="btn btn-bad span2" onclick="deleteVehicle('${id}')">${ic('trash')} Eliminar de la flota</button>` : '');
 }
 function deleteVehicle(id) {
+  if (!soloFlota()) return;
   const v = get('vehicles', id);
   if (!confirm(`¿Eliminar ${v.name} de la flota?\n\nLas actividades donde salió lo conservan en su historial.`)) return;
   closeModal(); remove('vehicles', id, `Eliminado el vehículo ${v.name}`);
@@ -255,6 +257,7 @@ function gearPicker(mid) {
 // Material extra para una salida concreta (lo que no está en la app): nombre, cantidad y dónde va
 const extraText = x => (+x.qty > 1 ? x.qty + ' × ' : '') + x.name;
 function extrasForm(mid) {
+  if (!soloFlota()) return;
   const m = mget(mid), dests = destOptions(m), rows = [...(m.extras || []), { name: '', qty: 1, in: 'cont' }];
   const row = x => `<div class="extra-row"><input class="input" name="name" value="${esc(x.name)}" placeholder="Ej: Puntales de madera" aria-label="Material">
     <input class="input qty" name="qty" type="number" min="1" inputmode="numeric" value="${x.qty || 1}" aria-label="Cantidad">

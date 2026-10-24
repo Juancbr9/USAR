@@ -64,6 +64,7 @@ const parsePlace = pl => pl.startsWith('V:') ? { vehicle: pl.slice(2), door: 0 }
 
 /* ---------- Formularios ---------- */
 function boxForm(id, at = {}) {
+  if (!soloFlota()) return;
   const door0 = at.door ?? (typeof prefs.door === 'number' ? prefs.door : 1);
   const b = get('boxes', id) || { code: nextBoxCode(door0), model: prefs.last?.boxModel || 'Peli 1650', color: 'negro', heli: 'si', door: door0, vehicle: at.vehicle || '' };
   openForm(id ? `Editar caja ${b.code}` : 'Nueva caja', [
@@ -93,6 +94,7 @@ function boxForm(id, at = {}) {
 }
 
 function deleteBox(id) {
+  if (!soloFlota()) return;
   const b = get('boxes', id), items = boxItems(id);
   if (!confirm(`¿Eliminar la caja ${b.code}?` + (items.length ? `\n\nSus ${items.length} equipos se quedan sueltos en el mismo sitio (no se borran).` : ''))) return;
   items.forEach(g => stamp('gear', { ...g, box: '' }));
@@ -129,7 +131,7 @@ function boxDetail(id) {
     <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:14px">
       <button class="btn btn-g" onclick="novForm('box', '${id}')">${ic('pencil')} ${b.nov?.text ? 'Cambiar nota' : 'Nota / novedad'}</button>
       <button class="btn btn-g" onclick="moveForm('box', '${id}')">${ic('move')} Mover</button>
-      <button class="btn btn-g" onclick="boxForm('${id}')">${ic('pencil')} Editar</button>
+      ${puedeFlota() ? `<button class="btn btn-g" onclick="boxForm('${id}')">${ic('pencil')} Editar</button>` : ''}
       <button class="btn btn-g" onclick="printBoxLabels(['${id}'])">${ic('qr')} Etiqueta</button>
     </div>`);
 }
@@ -204,7 +206,7 @@ function viewContVisual() {
     <div class="panel">
       <div class="between wrap-row sec-head">
         <div><h2>${esc(sideTitle)}</h2><p class="muted">Toca un hueco para verlo; mantén pulsado para arrastrar.</p></div>
-        <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button><button class="btn btn-g btn-sm" onclick="boxForm()">${ic('case')} Caja</button><button class="btn btn-a btn-sm" onclick="gearForm()">${ic('plus')} Material</button></div>
+        <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>${puedeFlota() ? `<button class="btn btn-g btn-sm" onclick="boxForm()">${ic('case')} Caja</button><button class="btn btn-a btn-sm" onclick="gearForm()">${ic('plus')} Material</button>` : ''}</div>
         <div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
       </div>
       <div class="cv cvi" data-side="${side}">
@@ -264,8 +266,8 @@ function cellModal(door, veh = '') {
       <button class="item" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b><small>${g.weight ? kg(g.weight) : 'sin peso'}</small></div></div>${revTag(g)}${novTag(g)}${g.out ? `<span class="tag info">${ic('out', 'i-sm')} ${esc(g.out.who)}</span>` : ''}</button>`).join('')}</div>` : ''}
     ${!bs.length && !loose.length ? '<p class="muted">Vacío.</p>' : ''}
     <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:14px">
-      <button class="btn btn-a" onclick="boxForm(null, ${at})">${ic('case')} Caja aquí</button>
-      <button class="btn btn-g" onclick="gearFormAt(${at})">${ic('plus')} Material aquí</button>
+      ${puedeFlota() ? `<button class="btn btn-a" onclick="boxForm(null, ${at})">${ic('case')} Caja aquí</button>
+      <button class="btn btn-g" onclick="gearFormAt(${at})">${ic('plus')} Material aquí</button>` : ''}
       ${bs.length || loose.length ? `<button class="btn btn-g span2" onclick="printLabels(${door})">${ic('qr')} Etiquetas de lo que hay aquí</button>` : ''}
     </div>`);
 }
@@ -398,7 +400,7 @@ function viewPlace(door) {
   return `
     <div class="panel">
       <div class="between wrap-row sec-head"><h2>${esc(p.label)}</h2>
-        <div class="row"><button class="btn btn-g" onclick="boxForm(null, ${at})">${ic('case')} Caja</button><button class="btn btn-a" onclick="gearFormAt(${at})">${ic('plus')} Material</button></div></div>
+        ${puedeFlota() ? `<div class="row"><button class="btn btn-g" onclick="boxForm(null, ${at})">${ic('case')} Caja</button><button class="btn btn-a" onclick="gearFormAt(${at})">${ic('plus')} Material</button></div>` : ''}</div>
       ${bs.map(b => { const [, hex, ink] = colorOf(b), items = boxItems(b.id); return `
         <div class="well" data-box="${b.id}">
           <button class="between box-head" onclick="boxDetail('${b.id}')"><span class="row"><span class="box-chip" style="--c:${hex}; --ink:${ink}">${esc(b.code)}</span><b>${esc(b.name || '')}</b>${novTag(b)}</span><span class="muted">${items.length}</span></button>
