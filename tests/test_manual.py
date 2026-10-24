@@ -37,11 +37,11 @@ with sync_playwright() as p:
     assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
     # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Logística › Material)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
-    assert a.locator('#drawer .dr-group-head').all_inner_texts()[:4] == ['Activación', 'Logística', 'Material', 'Equipo'], a.locator('#drawer .dr-group-head').all_inner_texts()
+    assert a.locator('#drawer .dr-group-head').all_inner_texts()[:4] == ['Actividades', 'Logística', 'Material', 'Equipo'], a.locator('#drawer .dr-group-head').all_inner_texts()
     assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 2 and a.locator('#drawer .dr-item.on:has-text("Material fungible")').count() == 1
-    assert a.locator('#drawer .dr-item:has-text("Intervenciones")').count() == 0, 'Activación está plegada'
-    a.click('#drawer .dr-group-head:has-text("Activación")')
-    assert a.locator('#drawer .dr-item').all_inner_texts()[1:3] == ['Intervenciones', 'Ejercicios'] and a.locator('#drawer .dr-item:has-text("Contenedor")').count() == 0, 'un grupo abierto a la vez'
+    assert a.locator('#drawer .dr-item:has-text("Activación")').count() == 0, 'Actividades está plegada'
+    a.click('#drawer .dr-group-head:has-text("Actividades")')
+    assert a.locator('#drawer .dr-item').all_inner_texts()[1:5] == ['Activación', 'Ejercicios', 'Maniobras', 'Convoy'] and a.locator('#drawer .dr-item:has-text("Contenedor")').count() == 0, 'un grupo abierto a la vez'
     a.click('#drawer .dr-group-head:has-text("Ajustes")')
     assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item').all_inner_texts()[1:]] == ['General', 'Listas y opciones', 'Manual de uso', 'Guía de campo']
     a.keyboard.press('Escape'); assert a.locator('#drawer').is_hidden()
@@ -78,7 +78,7 @@ with sync_playwright() as p:
     b.on('pageerror', lambda e: problems.append(f'PC ERROR {e}')); b.on('dialog', lambda x: x.accept())
     b.goto(APP); b.wait_for_selector('#view > *')
     assert b.evaluate("getComputedStyle(document.getElementById('nav')).position") == 'fixed'
-    for g in ['Activación', 'Logística', 'Equipo', 'Ajustes']:
+    for g in ['Actividades', 'Logística', 'Equipo', 'Ajustes']:
         assert b.locator(f'#nav .dr-group-head:has-text("{g}")').is_visible(), 'la barra lateral va por áreas desplegables'
     b.click('#nav .dr-group-head:has-text("Equipo")'); b.wait_for_timeout(150)
     assert b.locator('#nav .dr-item:has-text("Calendario")').is_visible(), 'al tocar un área se ven sus secciones'

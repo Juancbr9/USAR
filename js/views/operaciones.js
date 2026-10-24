@@ -56,7 +56,7 @@ function viewMissionList(type) {
   return `
     <div class="op-new ${type ? 'one' : ''}">
       ${type !== 'ejercicio' ? `<button class="op-tile real" onclick="newMission('intervencion')">${ic('alert', 'i-lg')}<b>Nueva intervención</b><small>Salida real</small></button>` : ''}
-      ${type !== 'intervencion' ? `<button class="op-tile ex" onclick="newMission('ejercicio')">${ic('flag', 'i-lg')}<b>Nuevo ejercicio</b><small>Maniobra o simulacro</small></button>` : ''}
+      ${type !== 'intervencion' ? `<button class="op-tile ex" onclick="newMission('ejercicio')">${ic('flag', 'i-lg')}<b>Nuevo ejercicio</b><small>Simulacro o práctica</small></button>` : ''}
     </div>
     ${block('active', 'En curso', 'play')}
     ${block('prep', 'En preparación', 'clock')}
@@ -144,7 +144,15 @@ const vehUnits = (v, id) => get('boxes', id) ? 1 : (v.gearQty?.[id] || unitsOf(g
 function missionVehicleForm(mid, key) {
   const m = mget(mid), cur = (m.vehicles || []).find(v => vkey(v) === key) || {};
   if (!vehicles().length) return toast('No hay vehículos en la flota. Añádelos en Logística → Vehículos.', 'bad');
-  const others = (m.vehicles || []).filter(v => vkey(v) !== key);
+  vehicleEntryForm(cur, key, (m.vehicles || []).filter(v => vkey(v) !== key), entry => {
+    const list_ = key ? m.vehicles.map(x => (vkey(x) === key ? entry : x)) : [...(m.vehicles || []), entry];
+    // Lo que se carga entero en el vehículo deja de ir en el contenedor
+    const gear = (m.gear || []).filter(id => !entry.gear.includes(id) || entry.gearQty[id]);
+    saveMission(m, { vehicles: list_, gear }, `vehículo ${vehName(entry.id)}${entry.plate ? ' ' + entry.plate : ''} ${key ? 'editado' : 'añadido'}`);
+  }, key ? `<button type="button" class="btn btn-bad span2" onclick="const m = mget('${mid}'); saveMission(m, { vehicles: m.vehicles.filter(x => vkey(x) !== '${key}') }, 'vehículo quitado'); closeModal();">${ic('trash')} Quitar de la operación</button>` : '');
+}
+// Formulario de un vehículo (operaciones, maniobras y convoyes): solo salen las personas y la carga que no van ya en otro de la lista
+function vehicleEntryForm(cur, key, others, onSave, extra = '') {
   const used = id => others.reduce((n, v) => n + ((v.gear || []).includes(id) ? vehUnits(v, id) : 0), 0);
   const loads = [...boxes().filter(b => !used(b.id)).map(b => [b.id, `${b.code} · ${b.name || ''}`]),
     ...list('gear').filter(g => !get('boxes', g.box)).sort(byName).map(g => {
@@ -162,12 +170,8 @@ function missionVehicleForm(mid, key) {
       qty: Object.fromEntries((cur.gear || []).map(id => [id, vehUnits(cur, id)])), options: loads, wide: true }
   ], v => {
     const gearQty = Object.fromEntries(Object.entries(v.gearQty || {}).filter(([id, n]) => n < unitsOf(get('gear', id))));
-    const entry = { ...cur, ...v, gearQty, key: key || uid('MV'), plate: etPlate(v.plate), crew: v.crew.filter(id => id !== v.driver) };
-    const list_ = key ? m.vehicles.map(x => (vkey(x) === key ? entry : x)) : [...(m.vehicles || []), entry];
-    // Lo que se carga entero en el vehículo deja de ir en el contenedor
-    const gear = (m.gear || []).filter(id => !entry.gear.includes(id) || gearQty[id]);
-    saveMission(m, { vehicles: list_, gear }, `vehículo ${vehName(v.id)}${entry.plate ? ' ' + entry.plate : ''} ${key ? 'editado' : 'añadido'}`);
-  }, key ? `<button type="button" class="btn btn-bad span2" onclick="const m = mget('${mid}'); saveMission(m, { vehicles: m.vehicles.filter(x => vkey(x) !== '${key}') }, 'vehículo quitado'); closeModal();">${ic('trash')} Quitar de la operación</button>` : '');
+    onSave({ ...cur, ...v, gearQty, key: key || uid('MV'), plate: etPlate(v.plate), crew: v.crew.filter(id => id !== v.driver) });
+  }, extra);
   // Quien conduce no aparece entre los ocupantes
   const form = $('modalForm'), driver = form.elements.driver;
   const hideDriver = () => form.querySelectorAll('input[name=crew]').forEach(c => {

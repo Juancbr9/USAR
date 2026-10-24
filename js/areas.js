@@ -1,6 +1,6 @@
 'use strict';
 // USAR 242 · Orden de la app: áreas con su color para saber siempre dónde estás.
-//   Activación (rojo)  → operaciones: intervenciones y ejercicios
+//   Actividades (rojo) → activación (intervenciones), ejercicios, maniobras y convoy
 //   Logística (azul)   → contenedor, revista, stock, EPI, vehículos y despliegue
 //   Equipo (petróleo)  → personal, calendario, puestos y vencimientos
 //   Ayuda (gris)       → manual, guía de campo, listas y ajustes
@@ -8,7 +8,7 @@
 
 const AREAS = {
   home: { name: 'Inicio', icon: 'home', desc: 'Resumen del día y avisos' },
-  ops: { name: 'Activación', icon: 'flag', desc: 'Intervenciones y ejercicios: preparar, salir, trabajar por fases e informar', hub: 'operaciones' },
+  ops: { name: 'Actividades', icon: 'flag', desc: 'Activación, ejercicios, maniobras y convoyes', hub: 'operaciones' },
   log: { name: 'Logística', icon: 'box', desc: 'Material, revista, stock, EPI, vehículos y preparación del despliegue', hub: 'logistica' },
   team: { name: 'Equipo', icon: 'users', desc: 'Personas, documentación, formación, guardias y caducidades', hub: 'equipo' },
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas, manual de uso y guía de campo', hub: 'mas' }
@@ -16,8 +16,10 @@ const AREAS = {
 // [id, icono, título, descripción, área]
 const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día y avisos', 'home'],
-  ['intervenciones', 'alert', 'Intervenciones', 'Salidas reales', 'ops'],
-  ['ejercicios', 'flag', 'Ejercicios', 'Maniobras y simulacros', 'ops'],
+  ['intervenciones', 'alert', 'Activación', 'Intervenciones: salidas reales', 'ops'],
+  ['ejercicios', 'flag', 'Ejercicios', 'Simulacros y prácticas', 'ops'],
+  ['maniobras', 'tent', 'Maniobras', 'Traslado de personal, vehículos y material, alojamientos y planning diario', 'ops'],
+  ['convoy', 'route', 'Convoy', 'Movimiento de un sitio a otro, solo ida o ida y vuelta', 'ops'],
   // Material: con subopciones (sexto campo) que el menú pinta sangradas bajo «Material»
   ['contenedor', 'box', 'Contenedor', 'Dibujo por laterales, huecos y cajas', 'log', 'mat'],
   ['revision', 'refresh', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
