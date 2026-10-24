@@ -191,11 +191,11 @@ function reportText() {
   const a = alerts(), gearList = list('gear');
   const ok = gearList.filter(g => g.status === 'OPERATIVO').length;
   const lines = [
-    '*USAR 242 · Estado del material*',
-    `${fmtWhen(Date.now())} · ${prefs.activeOperator}`, '',
-    `Operatividad: ${Math.round(ok / (gearList.length || 1) * 100)}% (${ok}/${gearList.length} equipos)`
+    ...waHead('🧰', 'USAR 242 · Estado del material'),
+    `📅 ${fmtWhen(Date.now())} · 👤 ${prefs.activeOperator}`,
+    `📊 *Operatividad:* ${Math.round(ok / (gearList.length || 1) * 100)}% (${ok}/${gearList.length} equipos)`
   ];
-  const block = (title, items) => { if (items.length) lines.push('', `*${title} (${items.length})*`, ...items.map(s => '• ' + s)); };
+  const block = (title, items) => { if (items.length) lines.push('', `${waB(title + ' (' + items.length + ')')}`, ...items.map(s => '• ' + s)); };
   block('🔴 Averiados', a.broken.map(g => `${g.name}: ${revLine(g, placeShort)}`));
   block('🟡 En revisión', a.review.map(g => `${g.name}: ${revLine(g, placeShort)}`));
   block('📝 Novedades', a.nov.map(x => `${x.code && get('boxes', x.id) ? 'Caja ' + x.code : x.name}: ${x.nov.text}`));
@@ -203,7 +203,7 @@ function reportText() {
   block('⏰ Vencimientos', a.due.map(d => `${d.kind === 'gear' ? d.item.name : epiLabel(d.item) + ' de ' + opName(d.item.holder)}: ${due(d.date).text.toLowerCase()}`));
   block('📦 Stock bajo', a.low.map(c => `${c.name}: ${c.stock} ${c.unit} (mín. ${c.min})`));
   block('↗️ Fuera del contenedor', a.out.map(g => `${g.name} → ${g.out.who}`));
-  if (!alertCount(a)) lines.push('', '✅ Sin incidencias');
+  if (!alertCount(a)) lines.push('', '✅ *Sin incidencias*');
   return lines.join('\n');
 }
 /* ==================== BÚSQUEDA ==================== */

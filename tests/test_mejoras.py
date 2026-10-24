@@ -53,7 +53,7 @@ with sync_playwright() as p:
 
     # Ficha del equipo y manifiesto de material
     more('Alistamiento'); a.click('button:has-text("Ficha del equipo")'); a.select_option('[name=status]', 'alerta'); a.fill('[name=dogs]', '2'); save()
-    assert 'Perros: 2' in a.evaluate("factsheetText()")
+    assert '*Perros:* 2' in a.evaluate("factsheetText()")
     a.evaluate("put('boxes', { id: 'K-C01', code: 'C-01', name: 'Holmatro', color: 'negro', door: 1, shelf: 'A', vehicle: '', heli: 'si', tare: 13 })")
     more('Material'); a.evaluate("gearDetail(list('gear').find(g => g.name.startsWith('Extractor')).id)"); a.click('#modal button:has-text("Editar")')
     a.select_option('[name=func]', 'Rescate'); a.fill('[name=weight]', '14.5'); a.select_option('[name=box]', 'K-C01'); a.select_option('[name=dg]', 'Baterías de litio'); save()
@@ -104,7 +104,7 @@ with sync_playwright() as p:
     a.click('.ws-card:has-text("A-1")'); a.click('.panel:has-text("Informes por periodo") button:has-text("Informe")')
     a.fill('[name=plan]', 'Seguir con ASR 4'); save()
     text = a.evaluate("periodText(get('worksites', prefs.ws), 1)"); print('--- Informe por periodo ---\n' + text + '\n---')
-    assert 'G7' in text and 'G19 Plan: Seguir con ASR 4' in text and 'nº 1' in text
+    assert 'G7' in text and '*G19* Plan: Seguir con ASR 4' in text and 'nº 1' in text
     a.click('.panel:has-text("Vigilancia estructural") button:has-text("Punto")'); a.select_option('[name=type]', 'Apuntalamiento'); a.fill('[name=place]', 'Puerta lado 1'); save()
     assert a.evaluate("monitorsDue(get('worksites', prefs.ws)).length") == 0
     mtab('Seguridad'); a.click('button:has-text("Ha habido una réplica")'); a.wait_for_timeout(800); a.keyboard.press('Escape')

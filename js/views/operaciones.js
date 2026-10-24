@@ -306,39 +306,43 @@ function deleteMission(mid) {
 
 function missionText(m) {
   const opn = id => get('operators', id)?.name || '—';
-  const L = [`*USAR 242 · ${m.type === 'ejercicio' ? '🏋️ EJERCICIO' : '🚨 INTERVENCIÓN'}: ${m.title}*`, `📅 ${fmtDT(m.date)}`];
-  if (m.location) L.push(`📍 ${m.location}`, mapsUrl(m.location));
-  if (m.meeting) L.push(`🤝 Reunión: ${m.meeting}`);
-  L.push(`⭐ Jefe: ${opn(m.chief)}${m.channel ? ' · 📻 ' + m.channel : ''}`);
-  if (m.status !== 'prep') L.push(`🧭 Fase: ${phaseOf(m).name}`);
-  const fn = FUNCS.filter(([k]) => m.func?.[k]).map(([k, name]) => `${name}: ${opn(m.func[k])}`);
-  if (fn.length) L.push(`🦺 ${fn.join(' · ')}`);
-  if (m.zone?.meeting) L.push(`📍 Punto de reunión en zona: ${m.zone.meeting}`);
+  const ex = m.type === 'ejercicio';
+  const L = waHead(ex ? '🏋️' : '🚨', `USAR 242 · ${ex ? 'EJERCICIO' : 'INTERVENCIÓN'}`, m.title);
+  L.push(`📅 *Fecha:* ${fmtDT(m.date)}`);
+  if (m.location) L.push(`📍 *Lugar:* ${m.location}`, `🗺️ ${mapsUrl(m.location)}`);
+  if (m.meeting) L.push(`🤝 *Reunión:* ${m.meeting}`);
+  L.push(`⭐ *Jefe:* ${opn(m.chief)}`);
+  if (m.channel) L.push(`📻 *Canal:* ${m.channel}`);
+  if (m.status !== 'prep') L.push(`🧭 *Fase:* ${phaseOf(m).name}`);
+  if (m.zone?.meeting) L.push(`🚩 *Punto de reunión en zona:* ${m.zone.meeting}`);
   if (m.status === 'active' && presenceText(m)) L.push(presenceText(m));
-  if (m.objective) L.push('', m.objective);
+  if (m.objective) L.push(...waSec('🎯', 'Objetivo'), m.objective);
+  const fn = FUNCS.filter(([k]) => m.func?.[k]).map(([k, name]) => `• ${name}: ${opn(m.func[k])}`);
+  if (fn.length) L.push(...waSec('🦺', 'Funciones'), ...fn);
   if (m.scope === 'bic' && m.bic) {
     const b = m.bic;
-    L.push('', '*🏛️ Patrimonio*', ...[b.building && `Inmueble: ${b.building}`, b.threat && `Amenaza: ${b.threat}`, b.owner && `Responsable: ${b.owner}`, b.depot && `Depósito: ${b.depot}`, b.route && `Ruta de los bienes: ${b.route}`].filter(Boolean));
+    L.push(...waSec('🏛️', 'Patrimonio'), ...[b.building && `• Inmueble: ${b.building}`, b.threat && `• Amenaza: ${b.threat}`, b.owner && `• Responsable: ${b.owner}`, b.depot && `• Depósito: ${b.depot}`, b.route && `• Ruta de los bienes: ${b.route}`].filter(Boolean));
   }
-  if ((m.comms || []).length) { L.push('', '*📻 Comunicaciones*'); m.comms.forEach(c => L.push(`• ${c.func}: ${c.channel}${c.who ? ' (' + c.who + ')' : ''}`)); }
+  if ((m.comms || []).length) { L.push(...waSec('📻', 'Comunicaciones')); m.comms.forEach(c => L.push(`• ${c.func}: ${c.channel}${c.who ? ' (' + c.who + ')' : ''}`)); }
   if ((m.vehicles || []).length) {
-    L.push('', '*🚒 Vehículos*');
-    m.vehicles.forEach(v => L.push(`• ${vehLabel(v)}: ${opn(v.driver)} (conductor)${(v.crew || []).length ? ', ' + names(v.crew).join(', ') : ''}`));
+    L.push(...waSec('🚒', `Vehículos (${m.vehicles.length})`));
+    m.vehicles.forEach(v => L.push(`▪️ ${waB(vehLabel(v))}`, `   🧑‍✈️ Conductor: ${opn(v.driver)}`, ...((v.crew || []).length ? [`   👥 Ocupantes: ${names(v.crew).join(', ')}`] : [])));
   }
   if ((m.teams || []).length) {
-    L.push('', '*👥 Equipos*');
-    m.teams.forEach(t => L.push(`• ${t.name}${t.func ? ' – ' + t.func : ''}${t.zone ? ' (sector ' + t.zone + ')' : ''}\n   Jefe: ${opn(t.leader)}${(t.members || []).filter(id => id !== t.leader).length ? ' · ' + names(t.members.filter(id => id !== t.leader)).join(', ') : ''}`));
+    L.push(...waSec('👥', `Equipos (${m.teams.length})`));
+    m.teams.forEach(t => L.push(`▪️ ${waB(t.name)}${t.func ? ' – ' + t.func : ''}${t.zone ? ' (sector ' + t.zone + ')' : ''}`, `   ⭐ Jefe: ${opn(t.leader)}`,
+      ...((t.members || []).filter(id => id !== t.leader).length ? [`   👤 ${names(t.members.filter(id => id !== t.leader)).join(', ')}`] : [])));
   }
   const gearList = missionGear(m);
   if (gearList.length || (m.extras || []).length) {
-    L.push('', `*🧰 Material${m.container ? ' · contenedor completo' : ''} (${gearList.length})*`);
-    (m.vehicles || []).filter(v => vehHasLoad(v, m)).forEach(v => L.push(`• En ${vehLabel(v)}: ${vehLoad(v, m).join(', ')}`));
+    L.push(...waSec('🧰', `Material${m.container ? ' · contenedor completo' : ''} (${gearList.length})`));
+    (m.vehicles || []).filter(v => vehHasLoad(v, m)).forEach(v => L.push(`• 🚒 En ${vehLabel(v)}: ${vehLoad(v, m).join(', ')}`));
     gearGroups(gearList.filter(g => !vehGearIds(m).has(g.id))).forEach(([, label, gs]) => L.push(`• ${label}: ${gs.map(g => g.name + qtyText(g)).join(', ')}`));
-    if ((m.extras || []).some(x => !x.in)) L.push(`• Extra: ${m.extras.filter(x => !x.in).map(extraText).join(', ')}`);
+    if ((m.extras || []).some(x => !x.in)) L.push(`• ➕ Extra: ${m.extras.filter(x => !x.in).map(extraText).join(', ')}`);
   }
-  if (m.safety) L.push('', `*⚠️ Seguridad*`, m.safety);
-  if (m.contacts) L.push('', `*📞 Contactos*`, m.contacts);
-  if (m.notes) L.push('', `*📝 Notas*`, m.notes);
+  if (m.safety) L.push(...waSec('⚠️', 'Seguridad'), m.safety);
+  if (m.contacts) L.push(...waSec('📞', 'Contactos'), m.contacts);
+  if (m.notes) L.push(...waSec('📝', 'Notas'), m.notes);
   return L.join('\n');
 }
 

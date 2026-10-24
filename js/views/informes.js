@@ -94,36 +94,38 @@ function sitrepText(m, extra = {}) {
   const asrCount = (arr, n) => arr.filter(w => lastAsr(w) === n).length;
   const out = vs.filter(isOut), now = out.filter(v => (v.extricated || 0) >= since);
   const inZone = m.status === 'active' ? presence(m).filter(p => p.state === 'in').length : 0;
-  const L = [`*USAR 242 · Informe de situación · ${m.title}*`, `Periodo: ${since ? fmtWhen(since) : 'inicio'} → ${fmtWhen(Date.now())}`,
-    `Equipo ${teamCode()} · Fase: ${phaseOf(m).name} · ${missionPeople(m).length} personas (${inZone} en zona)`, ''];
-  L.push(`*Worksites: ${ws.length}*`);
-  [['active', 'En trabajo'], ['pending', 'Pendientes'], ['done', 'Terminados']].forEach(([st, label]) => {
+  const L = waHead('📋', 'USAR 242 · Informe de situación', m.title);
+  L.push(`🕒 *Periodo:* ${since ? fmtWhen(since) : 'inicio'} → ${fmtWhen(Date.now())}`,
+    `👥 *Equipo:* ${teamCode()} · ${missionPeople(m).length} personas (${inZone} en zona)`, `🧭 *Fase:* ${phaseOf(m).name}`);
+  L.push(...waSec('🏚️', `Worksites (${ws.length})`));
+  [['active', '🔨 En trabajo'], ['pending', '⏳ Pendientes'], ['done', '✅ Terminados']].forEach(([st, label]) => {
     const arr = by(st);
     if (arr.length) L.push(`• ${label}: ${arr.length} (ASR3 ${asrCount(arr, 3)}, ASR4 ${asrCount(arr, 4)}, ASR5 ${asrCount(arr, 5)}) — ${arr.map(w => w.code + (w.cat ? ' ' + w.cat : '')).join(', ')}`);
   });
-  L.push('', '*Víctimas* (periodo / total)');
-  L.push(`• Rescatadas vivas: ${now.filter(v => v.state === 'viva').length} / ${out.filter(v => v.state === 'viva').length}`);
-  L.push(`• Fallecidas recuperadas: ${now.filter(v => v.state === 'fallecida').length} / ${out.filter(v => v.state === 'fallecida').length}`);
+  L.push('', '🧍 *Víctimas* _(periodo / total)_');
+  L.push(`• 💚 Rescatadas vivas: ${now.filter(v => v.state === 'viva').length} / ${out.filter(v => v.state === 'viva').length}`);
+  L.push(`• 🖤 Fallecidas recuperadas: ${now.filter(v => v.state === 'fallecida').length} / ${out.filter(v => v.state === 'fallecida').length}`);
   const pending = vs.filter(v => !isOut(v));
-  if (pending.length) L.push(`• Pendientes: ${pending.map(v => `${victimRef(v)} (${V_STATUS[v.status][0].toLowerCase()})`).join(', ')}`);
-  if ((m.rcm || []).length) L.push(`• Lugares despejados (RCM): ${m.rcm.length}`);
+  if (pending.length) L.push(`• 🔎 Pendientes: ${pending.map(v => `${victimRef(v)} (${V_STATUS[v.status][0].toLowerCase()})`).join(', ')}`);
+  if ((m.rcm || []).length) L.push(`• ✅ Lugares despejados (RCM): ${m.rcm.length}`);
   const hz = m.zone?.hazards || [];
-  if (hz.length || extra.issues) L.push('', '*Seguridad*', ...(hz.length ? [`Peligros: ${hz.join(', ')}`] : []), ...(extra.issues ? [extra.issues] : []));
-  if (extra.objectives) L.push('', '*Próximo periodo*', extra.objectives);
-  if (extra.needs) L.push('', '*Necesidades*', extra.needs);
+  if (hz.length || extra.issues) L.push(...waSec('⚠️', 'Seguridad'), ...(hz.length ? [`Peligros: ${hz.join(', ')}`] : []), ...(extra.issues ? [extra.issues] : []));
+  if (extra.objectives) L.push(...waSec('🎯', 'Próximo periodo'), extra.objectives);
+  if (extra.needs) L.push(...waSec('📦', 'Necesidades'), extra.needs);
   return L.join('\n');
 }
 
 // Resumen de la misión (formulario C1 de INSARAG)
 function missionSummaryText(m) {
   const out = victimsOf(m.id).filter(isOut), ws = worksitesOf(m.id);
-  const L = [`*USAR 242 · Resumen de la misión · ${m.title}*`, `Equipo: ${teamCode()} · Jefe: ${get('operators', m.chief)?.name || '—'}`];
-  if (m.startedAt) L.push(`Inicio: ${fmtWhen(m.startedAt)}${m.endedAt ? ' · Fin: ' + fmtWhen(m.endedAt) + ' (' + fmtDur(m.endedAt - m.startedAt) + ')' : ''}`);
-  if (m.location) L.push(`Lugar: ${m.location}`);
-  L.push(`Sectores: ${[...new Set(ws.map(w => w.sector))].join(', ') || '—'} · Worksites: ${ws.length}`);
-  L.push(`Víctimas con vida extraídas: ${out.filter(v => v.state === 'viva').length}`, `Víctimas fallecidas recuperadas: ${out.filter(v => v.state === 'fallecida').length}`);
+  const L = waHead('🏁', 'USAR 242 · Resumen de la misión', m.title);
+  L.push(`👥 *Equipo:* ${teamCode()}`, `⭐ *Jefe:* ${get('operators', m.chief)?.name || '—'}`);
+  if (m.startedAt) L.push(`🕒 *Inicio:* ${fmtWhen(m.startedAt)}${m.endedAt ? ' · *Fin:* ' + fmtWhen(m.endedAt) + ' (' + fmtDur(m.endedAt - m.startedAt) + ')' : ''}`);
+  if (m.location) L.push(`📍 *Lugar:* ${m.location}`);
+  L.push(`🗺️ *Sectores:* ${[...new Set(ws.map(w => w.sector))].join(', ') || '—'} · *Worksites:* ${ws.length}`);
+  L.push(...waSec('🧍', 'Víctimas'), `• 💚 Con vida extraídas: ${out.filter(v => v.state === 'viva').length}`, `• 🖤 Fallecidas recuperadas: ${out.filter(v => v.state === 'fallecida').length}`);
   const data = (m.type === 'ejercicio' ? m.critique : m.post) || {};
-  if (m.summary) L.push('', m.summary);
-  if (data.lessons || data.improve) L.push('', '*Lecciones*', data.lessons || data.improve);
+  if (m.summary) L.push(...waSec('📝', 'Resumen'), m.summary);
+  if (data.lessons || data.improve) L.push(...waSec('💡', 'Lecciones'), data.lessons || data.improve);
   return L.join('\n');
 }

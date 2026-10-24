@@ -110,7 +110,7 @@ function inviteModal() {
     <p class="muted" style="margin-bottom:12px">Escanéalo o envía el enlace.</p>
     <div class="qr">${QR.svg(link)}</div>
     <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:8px">
-      <button class="btn btn-a" onclick="open('https://wa.me/?text=' + encodeURIComponent('USAR 242 · únete al equipo: ${link}'), '_blank')">${ic('chat')} WhatsApp</button>
+      <button class="btn btn-a" onclick="open('https://wa.me/?text=' + encodeURIComponent('🤝 *USAR 242* · Únete al equipo:\\n🔗 ${link}'), '_blank')">${ic('chat')} WhatsApp</button>
       <button class="btn btn-g" onclick="navigator.clipboard.writeText(${jsq(link)}).then(() => toast('Enlace copiado'))">${ic('link')} Copiar enlace</button>
     </div>
     <p class="muted" style="margin-top:12px">Comparte este enlace solo con el equipo: quien lo tenga puede ver y editar los datos.</p>`);

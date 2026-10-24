@@ -108,10 +108,11 @@ function deleteLoan(id) {
 }
 
 function loanText(l) {
-  return [`*${teamCode()} · Entrega de material*`, `Recibe: ${loanWho(l)}${l.docId ? ' (' + l.docId + ')' : ''}`, `Fecha: ${fmtDate(l.date)}${l.due ? ' · devolución prevista ' + fmtDate(l.due) : ''}`,
-    l.purpose ? `Para: ${l.purpose}` : '', '', ...loanGear(l).map(g => `• ${g.name}${qtyText(g)}${g.serial ? ' (S/N ' + g.serial + ')' : ''}`), '',
-    l.notes ? `Estado: ${l.notes}` : '', `Entrega: ${l.by || ''}${l.signed ? ' · firmado por quien recibe' : ''}`,
-    l.returned ? `Devuelto el ${fmtDate(l.returned.date)}${l.returned.notes ? ': ' + l.returned.notes : ''}` : ''].filter(x => x !== null).join('\n').replace(/\n{3,}/g, '\n\n');
+  const gs = loanGear(l);
+  return [...waHead('📦', `${teamCode()} · Entrega de material`), `👤 *Recibe:* ${loanWho(l)}${l.docId ? ' (' + l.docId + ')' : ''}`, `📅 *Fecha:* ${fmtDate(l.date)}${l.due ? ' · ↩️ devolución prevista ' + fmtDate(l.due) : ''}`,
+    l.purpose ? `🎯 *Para:* ${l.purpose}` : '', ...waSec('🧰', `Material (${gs.length})`), ...gs.map(g => `• ${g.name}${qtyText(g)}${g.serial ? ' (S/N ' + g.serial + ')' : ''}`), '',
+    l.notes ? `📝 *Estado:* ${l.notes}` : '', `✍️ *Entrega:* ${l.by || ''}${l.signed ? ' · firmado por quien recibe' : ''}`,
+    l.returned ? `✅ *Devuelto el ${fmtDate(l.returned.date)}*${l.returned.notes ? ': ' + l.returned.notes : ''}` : ''].join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 async function printLoan(id) {

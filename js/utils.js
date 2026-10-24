@@ -91,6 +91,10 @@ async function shareText(text, title = 'USAR 242') {
   try { await navigator.clipboard.writeText(text); toast('Texto copiado: pégalo donde quieras'); }
   catch { toast('No se pudo compartir', 'bad'); }
 }
+// Formato de los mensajes para WhatsApp: *negrita* e iconos para que se lean de un vistazo
+const waB = s => (s = String(s ?? '').trim()) ? `*${s}*` : '';
+const waHead = (icon, title, sub) => [`${icon} ${waB(title)}`, ...(sub ? [waB(sub)] : []), '━━━━━━━━━━━━━━'];
+const waSec = (icon, title) => ['', `${icon} ${waB(title)}`];
 
 const initials = name => (name || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 const avatar = (name, cls = '') => `<span class="avatar ${cls}" aria-hidden="true">${esc(initials(name))}</span>`;

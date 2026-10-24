@@ -163,19 +163,20 @@ function startTriage(id, step = 'walk') {
 function victimText(v) {
   const ws = get('worksites', v.worksite);
   const cond = v.state === 'fallecida' ? 'Fallecida' : v.injury === 'critico' ? 'Viva, crítica' : v.injury === 'estable' ? 'Viva, estable' : V_STATE[v.state];
-  const L = [`*Ficha de extracción ${victimRef(v)}* · G3 Equipo: ${teamCode()}`];
-  L.push(`E1 Worksite: ${ws?.code || '—'} · V1 Víctima nº ${v.n}`);
-  if (ws?.lat) L.push(`E2 GPS (WGS84): ${ws.lat}, ${ws.lon} · MGRS ${toMGRS(+ws.lat, +ws.lon)}`);
-  if (ws?.address) L.push(`E3 ${ws.address}`);
-  if (v.extricated) L.push(`V2–V3 Extracción: ${fmtWhen(v.extricated)}`);
-  if (v.floor) L.push(`V5 Planta: ${v.floor}`);
-  if (v.position) L.push(`V6 Posición: ${v.position}`);
-  if (v.work) L.push(`V7 Trabajo: ${v.work}`);
-  if (v.extricated) L.push(`V8 Tiempo de extracción: ${fmtDur(v.extricated - (v.rescueStart || v.extricated))}`);
-  L.push(`V9 Estado: ${cond}${v.color ? ' · triaje ' + v.color.toUpperCase() : ''}`);
-  if (v.injury) L.push(`V10 Lesiones: ${V_INJURY[v.injury]}${v.tourniquet ? ' · torniquete ' + fmtHour(v.tourniquet) : ''}`);
-  if (v.handed) L.push(`V11 Entregada a: ${v.handed}`, ...(v.handedContact ? [`V12 Recibe: ${v.handedContact}`] : []));
-  if (v.notes) L.push(`V14 Otra información: ${v.notes}`);
-  L.push(`V4 Datos personales: ${v.info ? 'en la app, solo para la autoridad' : 'no recogidos'}`);
+  const L = waHead('🧍', `Ficha de extracción ${victimRef(v)}`);
+  L.push(`👥 *G3* Equipo: ${teamCode()}`, `🏚️ *E1* Worksite: ${ws?.code || '—'} · *V1* Víctima nº ${v.n}`);
+  if (ws?.lat) L.push(`🛰️ *E2* GPS (WGS84): ${ws.lat}, ${ws.lon} · MGRS ${toMGRS(+ws.lat, +ws.lon)}`);
+  if (ws?.address) L.push(`📍 *E3* ${ws.address}`);
+  L.push(...waSec('🚑', 'Rescate'));
+  if (v.extricated) L.push(`🕒 *V2–V3* Extracción: ${fmtWhen(v.extricated)}`);
+  if (v.floor) L.push(`🏢 *V5* Planta: ${v.floor}`);
+  if (v.position) L.push(`🧭 *V6* Posición: ${v.position}`);
+  if (v.work) L.push(`🔧 *V7* Trabajo: ${v.work}`);
+  if (v.extricated) L.push(`⏱️ *V8* Tiempo de extracción: ${fmtDur(v.extricated - (v.rescueStart || v.extricated))}`);
+  L.push(`${v.state === 'fallecida' ? '🖤' : '💚'} *V9* Estado: ${cond}${v.color ? ' · triaje ' + v.color.toUpperCase() : ''}`);
+  if (v.injury) L.push(`🩹 *V10* Lesiones: ${V_INJURY[v.injury]}${v.tourniquet ? ' · torniquete ' + fmtHour(v.tourniquet) : ''}`);
+  if (v.handed) L.push(`🤝 *V11* Entregada a: ${v.handed}`, ...(v.handedContact ? [`👤 *V12* Recibe: ${v.handedContact}`] : []));
+  if (v.notes) L.push(`📝 *V14* Otra información: ${v.notes}`);
+  L.push('', `🔒 _V4 Datos personales: ${v.info ? 'en la app, solo para la autoridad' : 'no recogidos'}_`);
   return L.join('\n');
 }
