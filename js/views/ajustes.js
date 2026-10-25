@@ -7,8 +7,7 @@ addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt
 
 function viewAjustes() {
   const c = Sync.cfg();
-  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = instalada(), ios = IOS;
   const logs = list('logs').sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 150);
 
   const sync = c ? `
