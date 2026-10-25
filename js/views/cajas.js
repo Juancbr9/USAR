@@ -206,7 +206,7 @@ function viewContVisual() {
     <div class="panel">
       <div class="between wrap-row sec-head">
         <div><h2>${esc(sideTitle)}</h2><p class="muted">Toca un hueco para verlo; mantén pulsado para arrastrar.</p></div>
-        <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>${puedeFlota() ? `<button class="btn btn-g btn-sm" onclick="boxForm()">${ic('case')} Caja</button><button class="btn btn-a btn-sm" onclick="gearForm()">${ic('plus')} Material</button>` : ''}</div>
+        <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>${puedeFlota() ? `<button class="btn btn-a btn-sm" onclick="addMaterial()">${ic('plus')} Material</button>` : ''}</div>
         <div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
       </div>
       <div class="cv cvi" data-side="${side}">
@@ -221,6 +221,7 @@ function viewContVisual() {
       <h3 class="sec-title">${ic('alert')} Sin ubicar</h3>
       <div class="cv-cell cv-unplaced" data-door="0" onclick="cvClick(event, 0)"><button class="sr-only" aria-label="Sin ubicar: ${ub.length} cajas y ${ug.filter(g => !get('boxes', g.box)).length} equipos">Sin ubicar</button>${cellContent(ug, ub)}</div>
     </div>` : ''}
+    ${consIn(d => d <= 20).length ? `<div class="panel" id="alm-fungible">${consList(consIn(d => d <= 20), true)}</div>` : ''}
 `;
 }
 
@@ -253,25 +254,26 @@ function cellModal(door, veh = '') {
   const inCell = x => veh ? x.vehicle === veh : !x.vehicle && (x.door || 0) === door;
   const bs = list('boxes').filter(inCell).sort((a, b) => (a.pos || 0) - (b.pos || 0));
   const loose = list('gear').filter(g => inCell(g) && (!g.box || !get('boxes', g.box))).sort(byName);
+  const cons = veh ? [] : consIn(d => d === door);
   const total = bs.reduce((s, b) => s + boxWeight(b).kg, 0) + loose.reduce((s, g) => s + (parseFloat(g.weight) || 0) * (+g.qty > 1 ? +g.qty : 1), 0);
   const title = veh ? vehName(veh) : placeRec(door)?.label || placeOf({ door });
   const at = JSON.stringify(veh ? { vehicle: veh, door: 0 } : { door }).replace(/"/g, '&quot;');
   openModal(title, `
-    <p class="muted" style="margin-bottom:10px">${bs.length} cajas · ${loose.length} equipos sueltos${total ? ' · ' + kg(total) : ''}</p>
+    <p class="muted" style="margin-bottom:10px">${bs.length} cajas · ${loose.length} equipos sueltos${cons.length ? ` · ${cons.length} fungibles` : ''}${total ? ' · ' + kg(total) : ''}</p>
     ${bs.map(b => { const items = boxItems(b.id), [, hex, ink] = colorOf(b); return `
       <details class="cell-box" open><summary><span class="sw" style="background:${hex}"></span><b>${esc(b.code)}</b> ${esc(b.name || '')}<small class="muted"> · ${esc(boxWeightText(b))}</small>
         <button class="link" style="margin-left:auto" onclick="event.preventDefault(); boxDetail('${b.id}')">Abrir</button></summary>
         <ul>${items.map(g => `<li class="li-art"><span class="tok-art">${toolArt(g.name)}</span><button class="link" onclick="gearDetail('${g.id}')">${esc(g.name)}${qtyText(g)}</button> ${revTag(g)}${novTag(g)}</li>`).join('') || '<li class="muted">Vacía</li>'}</ul></details>`; }).join('')}
     ${loose.length ? `<h4 class="sec-title" style="margin-top:12px">Suelto</h4><div class="list">${loose.map(g => `
       <button class="item" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b><small>${g.weight ? kg(g.weight) : 'sin peso'}</small></div></div>${revTag(g)}${novTag(g)}${g.out ? `<span class="tag info">${ic('out', 'i-sm')} ${esc(g.out.who)}</span>` : ''}</button>`).join('')}</div>` : ''}
-    ${!bs.length && !loose.length ? '<p class="muted">Vacío.</p>' : ''}
+    ${veh ? '' : `<div style="margin-top:12px">${consList(cons)}</div>`}
+    ${!bs.length && !loose.length && !cons.length ? '<p class="muted">Vacío.</p>' : ''}
     <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:14px">
-      ${puedeFlota() ? `<button class="btn btn-a" onclick="boxForm(null, ${at})">${ic('case')} Caja aquí</button>
-      <button class="btn btn-g" onclick="gearFormAt(${at})">${ic('plus')} Material aquí</button>` : ''}
+      ${puedeFlota() ? `<button class="btn btn-a span2" onclick="addMaterial(${at})">${ic('plus')} Material aquí</button>` : ''}
       ${bs.length || loose.length ? `<button class="btn btn-g span2" onclick="printLabels(${door})">${ic('qr')} Etiquetas de lo que hay aquí</button>` : ''}
     </div>`);
 }
-function gearFormAt(at) { setPref({ door: at.vehicle || at.door }); gearForm(null); }
+function gearFormAt(at = {}) { if (at.vehicle || at.door !== undefined) setPref({ door: at.vehicle || at.door }); gearForm(null); }
 
 /* ---------- Arrastrar y soltar (ratón: arrastrar; táctil: mantener pulsado y arrastrar) ---------- */
 let DRAG = null;
@@ -343,7 +345,7 @@ function whereIs(x) {
   return placeOf(x);
 }
 // Pestaña de Material donde se ve cada sitio
-const placeTab = d => !d || d <= 20 ? 'contenedor' : d === PASILLO ? 'pasillo' : d === OTROS ? 'otros' : 'armarios';
+const placeTab = () => 'contenedor';   // todo está en «Contenedor y almacén»
 function findResults(q) {
   const t = fold(q).trim(); if (!t) return [];
   const words = t.split(/\s+/), hit = (...f) => { const h = fold(f.join(' ')); return words.every(w => h.includes(w)); };
@@ -362,12 +364,13 @@ function findItems(r) {
 }
 // Lleva al dibujo, en el lateral correcto, y hace parpadear la caja o el equipo
 function findGo(kind, id) {
-  const x = kind === 'box' ? get('boxes', id) : get('gear', id); if (!x) return;
-  const box = kind === 'gear' ? boxOf(x) : x;
-  setPref({ tab: placeTab(x.door), ...(x.vehicle || !x.door || x.door > 20 ? {} : { cside: x.door <= 10 ? 'izq' : 'der' }) });
-  const sel = box ? `[data-box="${box.id}"]` : `[data-gear="${id}"]`;
+  const x = kind === 'box' ? get('boxes', id) : kind === 'cons' ? get('consumables', id) : get('gear', id); if (!x) return;
+  const box = kind === 'gear' ? boxOf(x) : kind === 'box' ? x : null, door = kind === 'cons' ? consDoor(x) : x.door;
+  setPref({ tab: 'contenedor', ...(x.vehicle || !door || door > 20 ? {} : { cside: door <= 10 ? 'izq' : 'der' }) });
+  const sel = box ? `[data-box="${box.id}"]` : kind === 'cons' ? `[data-cons="${id}"]` : `[data-gear="${id}"]`;
   const el = document.querySelector(sel);
   if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('found'); setTimeout(() => el.classList.remove('found'), 3200); }
+  if (kind === 'cons') return toast(`${x.name}: ${x.stock} ${x.unit} · ${door ? doorName(door) : 'sin ubicar'}`);
   toast(`${kind === 'box' ? 'Caja ' + x.code : x.name}: ${whereIs(x)}${kind === 'gear' && box ? ' · caja ' + box.code : ''}`);
 }
 
@@ -375,7 +378,8 @@ function findGo(kind, id) {
 function viewArmarios() {
   const gear = list('gear'), bs = list('boxes');
   const at = d => [gear.filter(g => !g.vehicle && g.door === d), bs.filter(b => !b.vehicle && b.door === d)];
-  return `${fueraTabs()}
+  const cons = consIn(d => ARMARIOS.some(a => a.id === d));
+  return `
     <div class="panel">
       <div class="between sec-head"><h2>Armarios</h2></div>
       <p class="muted" style="margin:-4px 0 12px">Toca una puerta para verla; mantén pulsado para arrastrar.</p>
@@ -388,7 +392,8 @@ function viewArmarios() {
           <div class="arm-feet" aria-hidden="true"><i></i><i></i></div></div>`).join('')}</div>
     </div>
     ${ARMARIOS.some(a => at(a.id).flat().length) ? `<div class="panel"><div class="list">${ARMARIOS.filter(a => at(a.id).flat().length).map(a => { const [items, b] = at(a.id), loose = items.filter(g => !get('boxes', g.box)); return `
-      <button class="item" onclick="cellModal(${a.id})"><div><b>${esc(placeRec(a.id).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g))].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}`;
+      <button class="item" onclick="cellModal(${a.id})"><div><b>${esc(placeRec(a.id).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g))].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
+    ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}`;
 }
 
 // Pasillo 3 y Otros: lista de lo que hay, con sus cajas
@@ -396,17 +401,19 @@ function viewPlace(door) {
   const p = placeRec(door), at = JSON.stringify({ door }).replace(/"/g, '&quot;');
   const bs = list('boxes').filter(b => !b.vehicle && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
   const loose = list('gear').filter(g => !g.vehicle && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
+  const cons = consIn(d => d === door);
   const row = g => `<button class="item" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
   return `
     <div class="panel">
       <div class="between wrap-row sec-head"><h2>${esc(p.label)}</h2>
-        ${puedeFlota() ? `<div class="row"><button class="btn btn-g" onclick="boxForm(null, ${at})">${ic('case')} Caja</button><button class="btn btn-a" onclick="gearFormAt(${at})">${ic('plus')} Material</button></div>` : ''}</div>
+        ${puedeFlota() ? `<button class="btn btn-g" onclick="addMaterial(${at})">${ic('plus')} Material</button>` : ''}</div>
       ${bs.map(b => { const [, hex, ink] = colorOf(b), items = boxItems(b.id); return `
         <div class="well" data-box="${b.id}">
           <button class="between box-head" onclick="boxDetail('${b.id}')"><span class="row"><span class="box-chip" style="--c:${hex}; --ink:${ink}">${esc(b.code)}</span><b>${esc(b.name || '')}</b>${novTag(b)}</span><span class="muted">${items.length}</span></button>
           ${items.length ? `<div class="list">${items.map(row).join('')}</div>` : ''}</div>`; }).join('')}
       ${loose.length ? `<div class="list">${loose.map(row).join('')}</div>` : ''}
-      ${!bs.length && !loose.length ? `<p class="muted">${door === OTROS ? 'Material guardado en otros sitios (nave, otro parque…). Al añadirlo, escribe dónde está.' : 'Vacío.'}</p>` : ''}
+      ${consList(cons)}
+      ${!bs.length && !loose.length && !cons.length ? `<p class="muted">${door === OTROS ? 'Material guardado en otros sitios (nave, otro parque…). Al añadirlo, escribe dónde está.' : 'Vacío.'}</p>` : ''}
       ${bs.length || loose.length ? `<button class="btn btn-g btn-sm" style="margin-top:12px" onclick="printLabels(${door})">${ic('qr')} Etiquetas</button>` : ''}
     </div>`;
 }

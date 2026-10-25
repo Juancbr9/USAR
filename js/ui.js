@@ -9,6 +9,7 @@ function render() {
   if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
   if (HUB_TO[prefs.tab]) prefs.tab = HUB_TO[prefs.tab];
+  if (ALMACEN_TABS.includes(prefs.tab)) prefs.tab = 'contenedor';
   applyArea();
   renderHeader();
   renderNav();
@@ -40,14 +41,14 @@ function toggleMenuGroup(g) {
   prefs.menuOpen = cur; writeJSON(KEY.prefs, prefs); renderNav();
 }
 function menuTree(count, active) {
-  const curTab = prefs.tab === 'operaciones' ? (get('missions', prefs.mission)?.type === 'ejercicio' ? 'ejercicios' : 'intervenciones') : FUERA_TABS.includes(prefs.tab) ? 'fuera' : prefs.tab;
+  const curTab = prefs.tab === 'operaciones' ? (get('missions', prefs.mission)?.type === 'ejercicio' ? 'ejercicios' : 'intervenciones') : ALMACEN_TABS.includes(prefs.tab) ? 'contenedor' : prefs.tab;
   const item = (id, icon, title, cls = '') => { const st = sectionStatus(id); return `
     <button class="dr-item ${cls} ${curTab === id ? 'on' : ''}" data-area="${areaOf(id)}" ${curTab === id ? 'aria-current="page"' : ''} onclick="go('${id}')">
-      ${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + ' avisos' : 'Todo en orden'}</small>` : ''}</span>
+      ${id === 'avisos' ? areaIc('home') : ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + ' avisos' : 'Todo en orden'}</small>` : ''}</span>
       ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${id === 'intervenciones' && active ? '<span class="live-dot"></span>' : ''}
       ${st && st[1] !== 'neutral' && st[1] !== 'ok' ? `<span class="dr-dot ${st[1]}" title="${esc(st[0])}"></span>` : ''}</button>`; };
   const head = (g, icon, title, cls = '') => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
-    return `<button class="dr-group-head ${cls} ${on ? 'has-on' : ''}" data-area="${g === 'mat' ? 'log' : g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
+    return `<button class="dr-group-head ${cls} ${on ? 'has-on' : ''}" data-area="${g === 'mat' ? 'log' : g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${AREA_ART[g] ? areaIc(g) : ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
   const items = (filter, cls) => SECTIONS.filter(s => !s[6] && filter(s)).map(([id, icon, title]) => item(id, icon, title, cls)).join('');
   return item('avisos', 'home', 'Inicio') + ['ops', 'log', 'team', 'help'].map(ar => `
     <div class="dr-group ${menuOpen(ar) ? 'open' : ''}" data-area="${ar}">
@@ -77,7 +78,7 @@ function toggleDrawer(open) {
   if (open) { renderDrawer(); d.querySelector('.dr-item.on, .dr-item')?.focus({ preventScroll: true }); history.pushState({ nav: navSnap(), drawer: 1 }, ''); }
 }
 
-function go(tab) { tab = tab === 'fuera' ? (FUERA_TABS.includes(prefs.fuera) ? prefs.fuera : 'pasillo') : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(FUERA_TABS.includes(tab) ? { fuera: tab } : {}), ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(ACT_TABS.includes(tab) ? { move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); }
+function go(tab) { const sub = ALMACEN_TABS.includes(tab) && tab; tab = sub ? 'contenedor' : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(ACT_TABS.includes(tab) ? { move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'fuera' ? 'pasillo' : sub); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
 function toggleSearch() {
@@ -172,7 +173,7 @@ function viewAvisos() {
       ${section(`Vencen en ${SOON_DAYS} días`, 'warn', a.due.map(d => row(
         d.kind === 'gear' ? `gearDetail('${d.item.id}')` : `epiForm('${d.item.id}')`,
         d.kind === 'gear' ? d.item.name : `${epiLabel(d.item)} de ${opName(d.item.holder)}`, d.what, dueTag(d.date))))}
-      ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`go('consumibles')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)))}
+      ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`findGo('cons', '${c.id}')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)))}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`)))}
@@ -216,7 +217,7 @@ function renderSearch() {
     ...list('epis').filter(e => hit(e.name, e.size, opName(e.holder))).map(e =>
       ['EPI', e.name, `${opName(e.holder)} · Talla ${e.size}`, `epiForm('${e.id}')`]),
     ...list('consumables').filter(c => hit(c.name, c.location)).map(c =>
-      ['Stock', c.name, `${c.stock} ${c.unit} · ${c.location}`, `setPref({ tab: 'consumibles' })`]),
+      ['Stock', c.name, `${c.stock} ${c.unit} · ${consDoor(c) ? doorName(consDoor(c)) : 'sin ubicar'}`, `findGo('cons', '${c.id}')`]),
     ...operators().filter(o => hit(o.name, o.role, o.cell, o.phone, readiness(o.id).fullName)).map(o =>
       ['Personal', o.name, [o.role, o.phone].filter(Boolean).join(' · '), `openPerson('${o.id}')`]),
     ...list('docs').filter(d => hit(d.type, d.number, d.notes, opName(d.op))).map(d =>
