@@ -1247,3 +1247,13 @@ img.doc-full, .gal img, img.art-lg, .person-photo { cursor: zoom-in; }
 .cons-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2, rgba(127, 127, 127, .12)); flex: none; }
 .cons-head { margin-top: 12px; }
 .add-mat .item { text-align: left; }
+
+/* ---------- Ajustes: bloques por a quién afecta ---------- */
+main > .aj-group { margin-top: 26px; }
+main > .aj-group:first-child { margin-top: 0; }
+.aj-group h2 { font: 800 15px/1.2 var(--cond); text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+.aj-group p { font-size: 13px; margin-top: 2px; }
+main > .aj-group + * { margin-top: 8px; }
+.aj-danger { border-color: var(--bad); }
+.aj-log summary { list-style: none; cursor: pointer; }
+.aj-log summary::-webkit-details-marker { display: none; }

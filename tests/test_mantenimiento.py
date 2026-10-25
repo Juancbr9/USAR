@@ -33,12 +33,17 @@ with sync_playwright() as p:
     assert a.locator('.mant-card').count() == 0
     a.evaluate("setPref({ tab: 'ajustes' })"); a.wait_for_timeout(200)
     assert a.locator('text=Dar acceso a todo el equipo').count() == 1
+    assert 'administración' in a.inner_text('#view').lower() and a.locator('text=Restaurar datos iniciales').count() == 1
     a.click('text=Dar acceso a todo el equipo'); a.wait_for_timeout(200)
     assert a.evaluate("get('meta', 'mantenimiento').value") is False
     assert 'Mantenimiento terminado' in a.evaluate("JSON.stringify(list('logs').map(l => l.action))")
     # Sin mantenimiento, GRANADOS entra con normalidad y no ve el interruptor
     a.evaluate("setPref({ session: 'OP-01', activeOperator: 'GRANADOS', tab: 'ajustes' })"); a.wait_for_selector('.topbar:visible')
     assert a.locator('.mant-card').count() == 0 and a.locator('text=Activar mantenimiento').count() == 0
+    # Ajustes en bloques: GRANADOS ve su cuenta, su móvil y el equipo, pero no Administración ni copias
+    t = a.inner_text('#view').lower()
+    assert all(g in t for g in ['mi cuenta', 'este móvil', 'equipo', 'historial']), t
+    assert 'administración' not in t and a.locator('text=Restaurar datos iniciales').count() == 0
     # Sigue igual al recargar (se guarda con los datos)
     a.reload(); a.wait_for_selector('.topbar:visible'); assert a.locator('.mant-card').count() == 0
     # RODRI lo vuelve a activar y GRANADOS vuelve a ver el aviso
