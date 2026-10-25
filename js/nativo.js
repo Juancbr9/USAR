@@ -15,6 +15,11 @@
   };
 
   Object.defineProperty(navigator, 'standalone', { value: true });
+
+  // Pantalla completa: la cabecera llega hasta arriba y Android dice cuánto ocupan la barra de estado, la cámara y la de gestos
+  const margenes = m => { for (const k of 'tblr') if (m[k] != null) document.documentElement.style.setProperty(`--sa-${k}`, `${m[k]}px`); };
+  window.__usarMargenes = margenes;
+  if (N.margenes) try { margenes(JSON.parse(N.margenes())); } catch (e) {}
   window.print = () => N.imprimir(document.title);
   navigator.canShare = () => true;
   navigator.share = async ({ files, text, title, url } = {}) => {

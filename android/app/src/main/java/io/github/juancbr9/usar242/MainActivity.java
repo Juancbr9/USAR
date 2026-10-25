@@ -11,6 +11,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,6 +21,7 @@ import android.print.PrintAttributes;
 import android.print.PrintManager;
 import android.util.Base64;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -35,6 +37,10 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.webkit.ServiceWorkerClientCompat;
 import androidx.webkit.ServiceWorkerControllerCompat;
 import androidx.webkit.WebViewFeature;
@@ -59,6 +65,7 @@ public class MainActivity extends Activity {
     private String gpsOrigen;
     private ValueCallback<Uri[]> archivoPendiente;
     private final ArrayList<Uri> preparados = new ArrayList<>();
+    private volatile String margenes = "{}";
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -66,7 +73,10 @@ public class MainActivity extends Activity {
         super.onCreate(estado);
         archivos = new Web(this);
         web = new WebView(this);
-        setContentView(web);
+        FrameLayout marco = new FrameLayout(this);
+        marco.addView(web);
+        setContentView(marco);
+        pantallaCompleta(marco);
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -136,6 +146,33 @@ public class MainActivity extends Activity {
 
         if (estado == null || web.restoreState(estado) == null) web.loadUrl(local(enlace(getIntent())));
         buscarVersion();
+    }
+
+    /** La web se dibuja también bajo la barra de estado, la cámara y la barra de gestos; sus medidas van a la web
+     *  (--sa-t, --sa-b, --sa-l, --sa-r en js/nativo.js) para que la cabecera ocupe la franja de arriba sin tapar nada. */
+    private void pantallaCompleta(FrameLayout marco) {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+        if (Build.VERSION.SDK_INT >= 28) {
+            WindowManager.LayoutParams p = getWindow().getAttributes();
+            p.layoutInDisplayCutoutMode = Build.VERSION.SDK_INT >= 30 ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                    : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(p);
+        }
+        // La cabecera es siempre oscura: iconos de la barra de estado en blanco
+        WindowCompat.getInsetsController(getWindow(), marco).setAppearanceLightStatusBars(false);
+        ViewCompat.setOnApplyWindowInsetsListener(marco, (v, ins) -> {
+            Insets b = ins.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            int teclado = ins.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            // Con el teclado abierto la web se encoge sobre él (como adjustResize) y abajo ya no hay margen
+            v.setPadding(0, 0, 0, teclado);
+            float d = getResources().getDisplayMetrics().density;
+            margenes = "{\"t\":" + Math.round(b.top / d) + ",\"b\":" + (teclado > 0 ? 0 : Math.round(b.bottom / d))
+                    + ",\"l\":" + Math.round(b.left / d) + ",\"r\":" + Math.round(b.right / d) + "}";
+            web.evaluateJavascript("window.__usarMargenes && window.__usarMargenes(" + margenes + ")", null);
+            return WindowInsetsCompat.CONSUMED;
+        });
     }
 
     private WebResourceResponse servir(Uri u) {
@@ -245,6 +282,9 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String version() { return archivos.version(); }
+
+        @JavascriptInterface
+        public String margenes() { return margenes; }
 
         @JavascriptInterface
         public void imprimir(String titulo) {
