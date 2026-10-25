@@ -54,7 +54,7 @@ function sectionStatus(id) {
     case 'contenedor': { const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
       return [`${pct} % operativo`, pct >= 90 ? 'ok' : pct >= 75 ? 'warn' : 'bad']; }
     case 'revista': { const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
-      if (!last || !t(last)) return ['Sin revistas', 'warn'];
+      if (!last || !t(last)) return ['Sin revistas', 'neutral'];   // sin ninguna revista no hay nada atrasado: sin punto
       const day = new Date(t(last)).toISOString().slice(0, 10);
       return [`Última: ${fmtDate(day)}`, daysTo(day) < -30 ? 'warn' : 'ok']; }
     case 'consumibles': return a.low.length ? [`${a.low.length} bajo mínimo`, 'bad'] : ['Stock correcto', 'ok'];
