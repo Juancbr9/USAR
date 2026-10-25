@@ -16,7 +16,8 @@ navigator.storage?.persist?.().catch(() => {});   // pide al navegador que no bo
 addEventListener('keydown', e => { if (e.key === 'Escape') { if (closeZoom()) return; toggleDrawer(false); closeModal(); clearSearch(); } });
 addEventListener('hashchange', handleHash);
 
-seedDefaults(!!Sync.cfg());
+const nuevo = Sync.ensure();   // móvil nuevo: se conecta solo a la base de datos del equipo
+seedDefaults(!!Sync.cfg() && !nuevo);
 render();
 Sync.start();
 handleHash();

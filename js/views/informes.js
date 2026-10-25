@@ -49,7 +49,7 @@ function tabInformes(m) {
     </div>
 
     ${needsPanel(m)}
-    ${avanzado() ? exportPanel(m) : ''}
+    ${exportPanel(m)}
 
     <div class="panel">
       <h3 class="sec-title">${ic('truck')} Desmovilización</h3>

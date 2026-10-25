@@ -23,21 +23,21 @@ const MANUAL = [
     tips: ['En tablet en horizontal y en el PC no hay tres rayas: el menú está siempre abierto a la izquierda.', 'Escape (en el PC) cierra el menú y las ventanas.'] },
 
   { id: 'empezar', area: 'home', icon: 'home', title: 'Primeros pasos e Inicio', go: 'avisos',
-    what: 'La app reúne el material del contenedor, los EPI, el personal y cada intervención o ejercicio. Funciona sin cobertura y, si el equipo lo activa, comparte los datos entre todos los móviles.',
+    what: 'La app reúne el material del contenedor, los EPI, el personal y cada intervención o ejercicio. Funciona sin cobertura y comparte los datos entre todos los móviles del equipo.',
     parts: [
-      { h: 'Entrar', steps: ['Elige tu nombre y escribe tu contraseña.', 'Cada uno tiene ya su contraseña, que le da el jefe. Si tu nombre no la tiene, la creas tú la primera vez (dos veces). Desde ese momento es tu contraseña en este y en los demás móviles del equipo.',
-        'Cada vez que abres la app (o vuelves tras más de 5 minutos fuera) te la pide de nuevo, y al entrar vas siempre a Inicio.',
+      { h: 'Entrar', steps: ['Entras con tu correo y tu contraseña. Antes, RODRI te da de alta con tu correo (Ajustes → Miembros y permisos); no hay que configurar nada más.', 'La primera vez pulsa «¿Primera vez? Crea tu cuenta», escribe ese correo y elige tu contraseña (dos veces). Si te llega un correo de confirmación, ábrelo y vuelve a entrar. Esa contraseña vale en cualquier móvil.',
+        'Cada vez que abres la app (o vuelves tras más de 5 minutos fuera) te pide solo la contraseña (también sin cobertura), y al entrar vas siempre a Inicio.',
         'Huella: la primera vez que entras con contraseña te ofrece entrar con tu huella (o la cara) en ese móvil. Después se pide sola al abrir la app. Se activa o se quita en Ajustes → General.',
         'Todo lo que hagas queda apuntado con tu nombre. Para salir: Ajustes → General → «Cerrar sesión». Allí también la cambias.'],
-        img: ['entrar', 'Entrar con tu nombre', [[1, 'Tu nombre.'], [2, 'Tu contraseña (la primera vez, la creas).']]] },
+        img: ['entrar', 'Entrar con tu correo', [[1, 'Tu correo.'], [2, 'Tu contraseña (la primera vez, crea tu cuenta).']]] },
       { h: 'Instalar y compartir', steps: [ 'Instálala como una app: en Android, menú del navegador (⋮) → «Instalar aplicación»; en iPhone, botón Compartir → «Añadir a pantalla de inicio».',
-        'Si el equipo comparte datos, abre el enlace o el QR de invitación que os pase el jefe (ver «Compartir datos»).'] },
+        'Los datos del equipo se comparten solos en cuanto entras con tu correo.'] },
       { h: 'La pantalla de Inicio', p: 'Es el resumen del día: cuántas cosas hay que revisar, la operación en curso o la próxima, y la lista de avisos. Para todo lo demás, el menú de tres rayas.',
         img: ['inicio', 'Inicio', [[1, 'Saludo y cuántas cosas hay que revisar.'], [2, 'Operación en curso: tócala para abrirla; los números llevan a su pestaña.'], [3, 'Avisos, por tipo. Toca uno para ir a su ficha.']]] },
       { h: 'Avisos', p: 'En Inicio salen los avisos: equipos averiados o en revisión, material con novedad, mantenimientos y caducidades de los próximos 30 días, stock por debajo del mínimo, material fuera del contenedor y documentos de las personas. Toca cualquiera para ir a su ficha.' }
     ],
     example: 'Llegas al parque: entras como GRANADOS y en Inicio ves que la sierra de hormigón está en revisión y que el pasaporte de DORTA caduca en 4 meses.',
-    tips: ['Si alguien olvida su contraseña, cualquiera puede borrarla en su ficha (Personal → Editar datos → «Restablecer contraseña») y la crea de nuevo al entrar.', 'Abajo del todo, «Enviar estado del material» manda un resumen del material y los avisos (por WhatsApp o donde elijas).'] },
+    tips: ['Tu contraseña la cambias en Ajustes → General → «Cambiar contraseña» (hace falta conexión).', 'Abajo del todo, «Enviar estado del material» manda un resumen del material y los avisos (por WhatsApp o donde elijas).'] },
 
   { id: 'operacion', area: 'ops', icon: 'flag', title: 'Crear y llevar una intervención o ejercicio', go: 'intervenciones',
     what: 'Cada salida se prepara y se lleva desde Actividades → Activación (salidas reales) o Ejercicios (maniobras y simulacros): datos generales, equipos con su jefe, puestos, vehículos, material, seguridad, worksites, víctimas, diario e informes. Se trabaja por fases siguiendo el método de la UME.',
@@ -105,19 +105,19 @@ const MANUAL = [
     tips: ['Los datos personales solo si los pide la autoridad; no salen en los mensajes.'] },
 
   { id: 'confinados', area: 'ops', icon: 'wind', title: 'Espacios confinados',
-    what: 'Función avanzada: se activa en Ajustes → General → «Funciones avanzadas». Registro de mediciones (O₂, explosividad, CO, H₂S) con la decisión de entrada, quién entra y cuánto aire le queda al ERA.',
+    what: 'Registro de mediciones (O₂, explosividad, CO, H₂S) con la decisión de entrada, quién entra y cuánto aire le queda al ERA.',
     parts: [{ steps: ['Seguridad → Espacios confinados → «Entrada»: lugar, botella y presión, quién entra, respaldo y vigilante.', 'Mide y guarda: la app dice si la entrada está permitida, limitada o prohibida.', '«Entran»: arranca la cuenta atrás hasta el silbato. «Salen todos» al terminar.'],
       img: ['confinado', 'Mediciones y decisión de entrada', []] }],
     example: 'Sótano: O₂ 18 %, LEL 6 % → limitada a emergencias, con ERA. Botella de 6 l a 300 bar: 30 min hasta el silbato.',
     tips: ['Mide siempre en este orden: oxígeno, explosividad y tóxicos; arriba, en medio y abajo.'] },
 
   { id: 'informes', area: 'ops', icon: 'file', title: 'Informes y exportación',
-    what: 'Informe de situación, de worksite, fichas de víctimas, necesidades de la población, desmovilización y post-misión. Con las funciones avanzadas activadas (Ajustes → General), exporta a CSV, GeoJSON y KML.',
+    what: 'Informe de situación, de worksite, fichas de víctimas, necesidades de la población, desmovilización y post-misión. También exporta a CSV, GeoJSON y KML.',
     parts: [{ steps: ['Operación → Informes → «Preparar y enviar» el informe de situación.', 'Toca un worksite o una víctima para enviar su ficha.', 'Exporta las posiciones para Google Earth, CalTopo o ATAK.'], img: ['informes', 'Informes de la operación', []] }],
     example: 'Cada 12 h se envía al mando el informe: 2 worksites en trabajo, 1 rescatada con vida, objetivos del siguiente periodo.', tips: [] },
 
   { id: 'bic', area: 'ops', icon: 'landmark', title: 'Patrimonio (BIC)',
-    what: 'Función avanzada: se activa en Ajustes → General → «Funciones avanzadas». Para poner a salvo los bienes culturales de una iglesia, convento o museo ante incendio, lava, inundación o terremoto.',
+    what: 'Para poner a salvo los bienes culturales de una iglesia, convento o museo ante incendio, lava, inundación o terremoto.',
     parts: [
       { h: 'Inventario y prioridades', steps: ['Crea la operación con la plantilla «Salvaguarda de patrimonio (BIC)».', 'Patrimonio → Inmueble y amenaza: responsable del bien, depósito y hora a la que llega la amenaza (cuenta atrás).', '«Bien»: nombre, tipo, dónde está, foto con la cámara, valor, riesgo y si se puede mover → prioridad P1, P2, P3 o in situ.'],
         img: ['bic', 'Inventario y recorrido de los bienes', [[1, 'Cuántos bienes hay en cada paso del recorrido.']]] },
@@ -287,9 +287,9 @@ const MANUAL = [
     example: 'Losa de 20 cm y 6 m²: unos 3.000 kg → elige cojines de al menos 3 t.', tips: [] },
 
   { id: 'compartir', area: 'help', icon: 'cloud', title: 'Compartir datos, usuarios y copias', go: 'ajustes',
-    what: 'Con Supabase (gratis) todos los móviles ven lo mismo en tiempo real, también fotos, documentos y cajas. Sin conexión se guarda y se envía al volver.',
-    parts: [{ steps: ['Ajustes → General → Datos compartidos: pega la URL y la clave del proyecto (ver supabase.sql).', '«Invitar al equipo»: enlace o QR para los demás.', 'Modo seguro (recomendado): cada persona entra con correo y contraseña.', 'Exporta una copia de seguridad de vez en cuando (incluye las fotos).'], img: ['ajustes', 'Ajustes', []] }],
-    example: 'GRANADOS configura el proyecto, envía el QR al grupo y en 5 minutos los 13 móviles comparten datos.', tips: ['En Ajustes → General → Pantalla y avisos eliges el modo claro, noche o sol (alto contraste) y los botones grandes para usarla con guantes.', 'En Ajustes → General → Unidades eliges cómo se ven las coordenadas (latitud/longitud, UTM o MGRS) y las distancias (metros, kilómetros o centímetros).'] },
+    what: 'La base de datos del equipo va integrada en la app: todos los móviles ven lo mismo en tiempo real, también fotos, documentos y cajas. Sin conexión se guarda y se envía al volver.',
+    parts: [{ steps: ['Solo entra el personal dado de alta: RODRI añade el correo y el nombre de cada uno en Ajustes → Miembros y permisos.', 'Cada persona abre la app y crea su cuenta con ese correo; no hay que configurar nada.', 'Exporta una copia de seguridad de vez en cuando (incluye las fotos).'], img: ['ajustes', 'Ajustes', []] }],
+    example: 'RODRI da de alta los 13 correos y manda el enlace de la app al grupo: cada uno crea su cuenta y ya comparten datos.', tips: ['En Ajustes → General → Pantalla y avisos eliges el modo claro, noche o sol (alto contraste) y los botones grandes para usarla con guantes.', 'En Ajustes → General → Unidades eliges cómo se ven las coordenadas (latitud/longitud, UTM o MGRS) y las distancias (metros, kilómetros o centímetros).'] },
 
   { id: 'pantallas', area: 'help', icon: 'grid', title: 'Tablet y PC',
     what: 'En tablet en horizontal y en el ordenador, las secciones van en una barra fija a la izquierda y las pestañas de la operación en una columna, para ver más a la vez. En el PC se arrastra con el ratón.',

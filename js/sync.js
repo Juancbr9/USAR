@@ -1,7 +1,7 @@
 'use strict';
-// USAR 242 · Sincronización con Supabase (opcional)
+// USAR 242 · Sincronización con Supabase (la del equipo va integrada: SUPA en js/config.js)
 
-/* ==================== SINCRONIZACIÓN (Supabase, opcional) ====================
+/* ==================== SINCRONIZACIÓN (Supabase) ====================
    Cada registro es una fila (kind, id, data). Gana el cambio más reciente (_u).
    Los cambios se guardan primero en el móvil y se envían cuando hay conexión. */
 const Sync = (() => {
@@ -50,8 +50,8 @@ const Sync = (() => {
     const c = cfg();
     const rows = await api(`usar_members?select=email,role,name&email=eq.${encodeURIComponent(c.session.email)}`);
     role = rows[0]?.role || null;
-    writeJSON(KEY.sync, { ...cfg(), role });
-    if (!role) throw new Error('Tu usuario no está dado de alta en el equipo: pide a un jefe que te añada.');
+    writeJSON(KEY.sync, { ...cfg(), role, name: rows[0]?.name || '' });
+    if (!role) throw new Error(`Tu correo no está dado de alta en el equipo: pide a ${ADMIN} que te añada en Ajustes → Miembros y permisos.`);
     return role;
   }
   async function signIn(email, password) {
@@ -65,7 +65,15 @@ const Sync = (() => {
     const d = await auth('signup', { email: email.trim(), password });
     return d.access_token ? 'ok' : 'confirm';
   }
-  function signOut() { const c = cfg(); if (!c) return; delete c.session; c.role = null; role = null; writeJSON(KEY.sync, c); }
+  function signOut() { const c = cfg(); if (!c) return; delete c.session; c.role = null; c.name = ''; role = null; writeJSON(KEY.sync, c); }
+  // Comprobar la contraseña con el servidor (al abrir la app si este móvil aún no la conoce) y cambiarla
+  async function verify(email, password) { saveSession(await auth('token?grant_type=password', { email: email.trim(), password })); }
+  async function setPassword(password) {
+    const c = cfg();
+    if (c.session.expires_at - Date.now() < 60000) await refresh();
+    const res = await fetch(`${c.url}/auth/v1/user`, { method: 'PUT', headers: { apikey: c.key, Authorization: `Bearer ${cfg().session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.msg || d.error_description || `Error ${res.status}`); }
+  }
   const members = () => api('usar_members?select=email,role,name&order=role.asc,email.asc');
   const setMember = (email, r, name = '') => api('usar_members?on_conflict=email', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([{ email: email.trim().toLowerCase(), role: r, name }]) });
   const removeMember = email => api(`usar_members?email=eq.${encodeURIComponent(email)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
@@ -132,22 +140,26 @@ const Sync = (() => {
         // Primera conexión: si la nube está vacía se suben los datos de este móvil;
         // si ya tiene datos del equipo, este móvil adopta esos datos.
         const rows = await fetchRows();
+        if (rows.length && c.nuevo) { outbox = {}; writeJSON(KEY.outbox, outbox); }   // móvil nuevo: manda lo del equipo
         if (rows.length) { KINDS.forEach(k => { db[k] = {}; }); rows.forEach(merge); seedDefaults(true); }
         else { KINDS.forEach(k => Object.values(db[k]).forEach(r => queue(k, r))); Object.keys(await Img.all().catch(() => ({}))).forEach(id => queueImage(id)); }
-        Object.assign(c, { joined: true, since: newest(rows) });
-        writeJSON(KEY.sync, c);
+        // Sobre lo guardado ahora (no sobre «c»): entretanto se ha podido entrar o salir con otro usuario
+        const cc = { ...cfg(), joined: true, since: newest(rows) }; delete cc.nuevo;
+        writeJSON(KEY.sync, cc);
         persist(); render();
       } else {
         // Se repasan 30 s hacia atrás para no perder escrituras simultáneas
         const since = c.since ? new Date(new Date(c.since).getTime() - 30000).toISOString() : '';
         const rows = await fetchRows(since);
         if (rows.filter(merge).length) { persist(); render(); }
-        if (rows.length) { c.since = newest(rows, c.since); writeJSON(KEY.sync, c); }
+        if (rows.length) writeJSON(KEY.sync, { ...cfg(), since: newest(rows, c.since) });
       }
       error = '';
       await flush();
       if (!busy && !error) setStatus('online');
     } catch (e) {
+      // Modo seguro: sin usuario el servidor no deja leer nada; hace falta entrar con el correo
+      if (/42501|permission denied/.test(e.message) && !c.session) { writeJSON(KEY.sync, { ...cfg(), secure: true }); e.message = 'Modo seguro: entra con tu correo para ver y compartir los datos del equipo.'; }
       error = e.message;
       setStatus(navigator.onLine ? 'error' : 'offline');
     }
@@ -201,6 +213,15 @@ const Sync = (() => {
     poller = setInterval(() => { if (document.visibilityState === 'visible') pull(); }, 8000);
   }
 
+  // La base de datos del equipo va integrada (SUPA): cada móvil se conecta solo la primera vez que abre la app.
+  // Devuelve true si este móvil se acaba de conectar (aún no tiene los datos del equipo).
+  function ensure() {
+    if (!SUPA.url || cfg()?.url === SUPA.url) return false;
+    writeJSON(KEY.sync, { url: SUPA.url, key: SUPA.key, joined: false, since: '', nuevo: true });
+    outbox = {}; writeJSON(KEY.outbox, outbox);
+    return true;
+  }
+
   async function connect(url, key) {
     url = url.trim().replace(/\/+$/, '');
     if (!/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])[^\s]+$/.test(url)) throw new Error('La URL debe empezar por https://');
@@ -232,8 +253,9 @@ const Sync = (() => {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && cfg()) pull(); });
 
   return {
-    start, connect, disconnect, queue, queueImage, pull, cfg, signIn, signUp, signOut, members, setMember, removeMember,
+    start, ensure, connect, disconnect, queue, queueImage, pull, cfg, signIn, signUp, signOut, verify, setPassword, members, setMember, removeMember,
     get status() { return status; }, get locked() { return locked(); }, get error() { return error; }, get pending() { return Object.keys(outbox).length; },
-    get role() { return cfg()?.session ? role : null; }, get email() { return cfg()?.session?.email || ''; }
+    get role() { return cfg()?.session ? role : null; }, get email() { return cfg()?.session?.email || ''; },
+    get name() { return cfg()?.session ? cfg().name || '' : ''; }
   };
 })();

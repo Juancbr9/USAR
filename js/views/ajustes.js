@@ -11,31 +11,15 @@ function viewAjustes() {
   const logs = list('logs').sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 150);
 
   const sync = c ? `
-    <p class="muted">Conectado a <b style="color:var(--ink)">${esc(c.url.replace(/^https:\/\//, ''))}</b></p>
-    ${Sync.error ? `<p class="note" style="color:var(--bad); margin-top:8px">${esc(Sync.error)}</p>` : ''}
-    <div class="grid g2" style="margin-top:12px">
-      <button class="btn btn-a" onclick="inviteModal()">${ic('users')} Invitar al equipo</button>
-      <button class="btn btn-g" onclick="Sync.pull().then(() => toast('Sincronizado'))">${ic('refresh')} Sincronizar ahora</button>
-      <button class="btn btn-bad span2" onclick="if (confirm('Este dispositivo dejará de compartir datos. Se conservan los datos actuales en el móvil.')) { Sync.disconnect(); render(); }">Desconectar este dispositivo</button>
-    </div>
-    ${accountPanel()}` : `
-    <p class="muted" style="margin-bottom:12px">Para compartir los datos con todo el equipo:</p>
-    <ol class="muted" style="margin:0 0 14px; padding-left:18px">
-      <li>Crea un proyecto gratis en <b>supabase.com</b>.</li>
-      <li>En <b>SQL Editor</b> pega y ejecuta el contenido de <a href="supabase.sql" target="_blank">supabase.sql</a>.</li>
-      <li>En <b>Project Settings → API</b> copia la URL y la clave pública (<b>publishable</b>, o <b>anon</b> en proyectos antiguos) aquí.</li>
-    </ol>
-    <form class="form" onsubmit="event.preventDefault(); connectSync(this)">
-      <label class="lbl wide">URL del proyecto<input class="input" name="url" placeholder="https://xxxx.supabase.co" required></label>
-      <label class="lbl wide">Clave pública<input class="input" name="key" placeholder="sb_publishable_… o eyJhbGciOi…" required></label>
-      <button class="btn btn-a wide">${ic('cloud')} Conectar</button>
-    </form>
-    `;
+    ${Sync.error ? `<p class="note" style="color:var(--bad); margin-bottom:8px">${esc(Sync.error)}</p>` : ''}
+    ${accountPanel()}
+    <button class="btn btn-g full" style="margin-top:10px" onclick="Sync.pull().then(() => toast('Sincronizado'))">${ic('refresh')} Sincronizar ahora</button>`
+    : '<p class="muted">Los datos se guardan solo en este móvil.</p>';
 
   return `
     <div class="panel between wrap-row">
       <div class="who-row">${personPhoto(me())}<div><b>${esc(me().name)}</b><small>Sesión iniciada</small></div></div>
-      <div class="row"><button class="btn btn-g" onclick="pinForm()">${ic('pencil')} Cambiar contraseña</button>${bioPanel()}<button class="btn btn-g" onclick="logout()">${ic('out')} Cerrar sesión</button></div>
+      <div class="row">${Sync.email ? `<button class="btn btn-g" onclick="pinForm()">${ic('pencil')} Cambiar contraseña</button>` : ''}${bioPanel()}<button class="btn btn-g" onclick="logout()">${ic('out')} Cerrar sesión</button></div>
     </div>
     ${mantenimientoPanel()}
     <div class="grid g2">
@@ -48,7 +32,6 @@ function viewAjustes() {
           <h3 class="sec-title">${ic('sun')} Pantalla y avisos</h3>
           <div class="seg-row" role="group" aria-label="Modo de pantalla" style="margin-bottom:10px">${[['light', 'Claro'], ['dark', 'Noche'], ['sun', 'Sol']].map(([k, l]) => `<button class="${currentTheme() === k ? 'on' : ''}" aria-pressed="${currentTheme() === k}" onclick="setPref({ theme: '${k}' }); applyTheme()">${l}</button>`).join('')}</div>
           <label class="check-row"><input type="checkbox" ${prefs.big ? 'checked' : ''} onchange="setPref({ big: this.checked }); applyTheme()"><span>Botones y letra grandes (con guantes)</span></label>
-          <label class="check-row"><input type="checkbox" ${avanzado() ? 'checked' : ''} onchange="setPref({ avanzado: this.checked })"><span>Funciones avanzadas: patrimonio (BIC), espacios confinados y exportar a mapas</span></label>
           <button class="btn btn-g full" style="margin-top:10px" onclick="enableNotifications()" ${'Notification' in window && Notification.permission === 'granted' ? 'disabled' : ''}>${ic('bell')} ${'Notification' in window && Notification.permission === 'granted' ? 'Avisos del sistema activados' : 'Activar avisos del sistema'}</button>
           
         </div>
@@ -57,14 +40,6 @@ function viewAjustes() {
           <label class="lbl">Coordenadas<select class="input" onchange="setPref({ coordFmt: this.value })">${[['latlon', 'Latitud y longitud (28.12350, -15.43630)'], ['utm', 'UTM (28R 457151 E 3110960 N)'], ['mgrs', 'MGRS (28R DS 57150 10960)']].map(([k, l]) => `<option value="${k}" ${coordFmt() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
           <label class="lbl" style="margin-top:10px">Distancias<select class="input" onchange="setPref({ distUnit: this.value })">${[['m', 'Metros'], ['km', 'Kilómetros'], ['cm', 'Centímetros']].map(([k, l]) => `<option value="${k}" ${distUnit() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
           <p class="muted" style="margin-top:8px">Las coordenadas se pueden escribir en cualquiera de los tres formatos.</p>
-        </div>
-        <div class="panel">
-          <h3 class="sec-title">${ic('flag')} Indicativo del equipo</h3>
-          <p class="muted" style="margin-bottom:10px">Sale en el marcaje y en los informes (ej. ESP-1).</p>
-          <form class="row nowrap" onsubmit="event.preventDefault(); const v = this.code.value.trim().toUpperCase(); if (v) { put('meta', { id: 'teamcode', value: v }, 'Indicativo del equipo: ' + v); toast('Indicativo guardado'); }">
-            <input class="input" name="code" aria-label="Indicativo del equipo" value="${esc(teamCode())}" maxlength="12" autocomplete="off">
-            <button class="btn btn-a">Guardar</button>
-          </form>
         </div>
         <div class="panel">
           <h3 class="sec-title">${ic('phone')} Instalar en el móvil</h3>
@@ -89,31 +64,6 @@ function viewAjustes() {
         <div class="well" style="padding:8px 10px"><span class="t">[${fmtWhen(l.ts)}]</span> <span class="w">${esc(l.operator)}:</span> ${esc(l.action)}</div>`).join('')
         || '<p class="muted">Sin actividad registrada.</p>'}</div>
     </div>`;
-}
-
-async function connectSync(form) {
-  const btn = form.querySelector('button');
-  btn.disabled = true; btn.textContent = 'Conectando…';
-  try {
-    const r = await Sync.connect(form.url.value, form.key.value);
-    toast(r === 'login' ? 'Conectado. Este equipo usa el modo seguro: entra con tu usuario.' : 'Conectado. Los datos se comparten con el equipo.');
-  } catch (e) {
-    toast(e.message, 'bad');
-  }
-  render();
-}
-
-function inviteModal() {
-  const c = Sync.cfg();
-  const link = appUrl() + '#join=' + b64(JSON.stringify({ url: c.url, key: c.key }));
-  openModal('Invitar al equipo', `
-    <p class="muted" style="margin-bottom:12px">Escanéalo o envía el enlace.</p>
-    <div class="qr">${QR.svg(link)}</div>
-    <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:8px">
-      <button class="btn btn-a" onclick="open('https://wa.me/?text=' + encodeURIComponent('🤝 *USAR 242* · Únete al equipo:\\n🔗 ${link}'), '_blank')">${ic('chat')} WhatsApp</button>
-      <button class="btn btn-g" onclick="navigator.clipboard.writeText(${jsq(link)}).then(() => toast('Enlace copiado'))">${ic('link')} Copiar enlace</button>
-    </div>
-    <p class="muted" style="margin-top:12px">Comparte este enlace solo con el equipo: quien lo tenga puede ver y editar los datos.</p>`);
 }
 
 async function exportJSON() {
@@ -158,34 +108,12 @@ function replaceAll(data, msg) {
 
 /* ---------- Usuario y permisos (modo seguro) ---------- */
 function accountPanel() {
-  if (Sync.email) return `
-    <div class="well" style="margin-top:14px">
-      <div class="between"><div><b>${ic('lock', 'i-sm')} ${esc(Sync.email)}</b><small class="muted">${Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? 'Miembro: ve y usa todo; el material y los vehículos los da de alta el jefe' : 'Sin rol en el equipo'}</small></div>
-        <button class="btn btn-g btn-sm" onclick="Sync.signOut(); render(); toast('Sesión cerrada')">Salir</button></div>
+  if (!Sync.email) return '<p class="muted">Entra con tu correo para ver y compartir los datos del equipo.</p>';
+  return `
+    <div class="well">
+      <b>${ic('lock', 'i-sm')} ${esc(Sync.email)}</b><small class="muted">${Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? 'Miembro: ve y usa todo; el material y los vehículos los da de alta el jefe' : 'Sin rol en el equipo'}</small>
       ${Sync.role === 'jefe' ? `<button class="btn btn-g full" style="margin-top:10px" onclick="membersModal()">${ic('users')} Miembros y permisos</button>` : ''}
     </div>`;
-  return `
-    <details class="well" style="margin-top:14px" ${Sync.locked ? 'open' : ''}><summary><b>${ic('lock', 'i-sm')} Entrar con usuario (modo seguro)</b></summary>
-      <p class="muted" style="margin:8px 0">Si el equipo ha activado el modo seguro en Supabase (ver supabase.sql), cada persona entra con su correo y contraseña y solo el personal dado de alta ve los datos. Todos ven todo; los jefes además dan de alta a los miembros y son los únicos que añaden o eliminan material y vehículos.</p>
-      <form class="form" onsubmit="event.preventDefault(); accountSubmit(this, event.submitter?.value)">
-        <label class="lbl wide">Correo<input class="input" type="email" name="email" required autocomplete="username"></label>
-        <label class="lbl wide">Contraseña<input class="input" type="password" name="password" required minlength="6" autocomplete="current-password"></label>
-        <button class="btn btn-a" value="in">Entrar</button><button class="btn btn-g" value="up">Crear cuenta</button>
-      </form></details>`;
-}
-async function accountSubmit(form, action) {
-  const [email, pass] = [form.email.value, form.password.value];
-  try {
-    if (action === 'up') {
-      const r = await Sync.signUp(email, pass);
-      if (r === 'confirm') toast('Cuenta creada: confirma el correo que te ha llegado y después entra');
-      else { const role = await Sync.signIn(email, pass); toast(`Cuenta creada. Has entrado como ${role}`); }
-    } else {
-      const role = await Sync.signIn(email, pass);
-      toast(`Has entrado como ${role}`);
-    }
-  } catch (e) { toast(e.message, 'bad'); }
-  render();
 }
 async function membersModal() {
   let ms = [];
@@ -199,7 +127,7 @@ async function membersModal() {
       <label class="lbl">Permiso<select class="input" name="role"><option value="miembro">Miembro</option><option value="jefe">Jefe</option></select></label>
       <button class="btn btn-a wide">${ic('plus')} Añadir o cambiar</button>
     </form>
-    <p class="muted" style="margin-top:10px">La persona crea su cuenta en Ajustes → Entrar con usuario → Crear cuenta, con el mismo correo.</p>`);
+    <p class="muted" style="margin-top:10px">Después, la persona abre la app, pulsa «¿Primera vez? Crea tu cuenta» y usa este mismo correo. Entra con el nombre elegido aquí.</p>`);
   $('memberForm').onsubmit = e => {
     e.preventDefault();
     const f = e.target;

@@ -1,26 +1,37 @@
 """Las pruebas entran ya con sesión iniciada (GRANADOS, OP-01) para no pasar por la pantalla de entrada en cada página
 (ni por la que la pide de nuevo cada vez que se abre la app; para probarla: br.new_context(..., bloqueo=True)).
-Para probar la propia pantalla de entrada: br.new_context(..., autologin=False)."""
+Para probar la propia pantalla de entrada: br.new_context(..., autologin=False).
+La base de datos del equipo (SUPA en js/config.js) se sustituye: sin nada, cada móvil guarda los datos solo para sí;
+con supa=MOCK_URL, la app se conecta sola al servidor de prueba (tests/mock_supabase.py). Nunca se usa la de verdad."""
+import os
 from playwright.sync_api import Browser
+# Que context.route también vea lo que pide el service worker (si no, al recargar llega el config.js de verdad de su caché)
+os.environ.setdefault('PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS', '1')
 
 LOGIN = """try { const k = 'USAR_V4_PREFS', p = JSON.parse(localStorage.getItem(k) || '{}');
-  if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; p.avanzado ??= true; localStorage.setItem(k, JSON.stringify(p)); }
+  if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; localStorage.setItem(k, JSON.stringify(p)); }
   if (p.session && !sessionStorage.getItem('con-bloqueo')) sessionStorage.setItem('USAR_UNLOCK', '1'); } catch (e) {}"""
 _new_context = Browser.new_context
 # Las pruebas arrancan sin el modo mantenimiento (solo RODRI); test_mantenimiento.py lo prueba con mant=True (y RODRI de ADMIN).
 # Además, GRANADOS (la sesión de las pruebas) hace de ADMIN para dar de alta material y vehículos; test_flota.py prueba
 # el permiso de verdad (solo RODRI) con flota=True.
-def _config(mant, flota):
+SUPA_REAL = "url: 'https://lxjkpgdvhzjwkmxnllqp.supabase.co', key: 'sb_publishable_boxlf-dFI3dd-tdSMd3SJg_otPOwFCq'"
+def _config(mant, flota, supa):
     def route_(route):
         r = route.fetch(); body = r.text()
+        assert SUPA_REAL in body, 'cambia SUPA_REAL en tests/sesion.py'
+        body = body.replace(SUPA_REAL, f"url: '{supa}', key: 'sb_publishable_prueba'")
         if not mant: body = body.replace('const MANT_DEFECTO = true', 'const MANT_DEFECTO = false')
-        if not flota: body = body.replace("const ADMIN = 'RODRI'", "const ADMIN = 'GRANADOS'")
+        if not mant and not flota: body = body.replace("const ADMIN = 'RODRI'", "const ADMIN = 'GRANADOS'")
         route.fulfill(response=r, body=body)
     return route_
-def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=False, **kw):
+def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=False, supa='', **kw):
     c = _new_context(self, *args, **kw)
     if autologin: c.add_init_script(LOGIN.replace("!sessionStorage.getItem('con-bloqueo')", 'false') if bloqueo else LOGIN)
-    if not mant: c.route('**/js/config.js', _config(mant, flota))
+    c.route('**/js/config.js', _config(mant, flota, supa))
+    # Por si acaso: nada llega a la base de datos de verdad (se contesta como una nube vacía)
+    c.route('https://lxjkpgdvhzjwkmxnllqp.supabase.co/**', lambda r: r.fulfill(status=200 if r.request.method == 'GET' else 201,
+            content_type='application/json', body='[]' if r.request.method == 'GET' else '', headers={'Access-Control-Allow-Origin': '*'}))
     return c
 Browser.new_context = new_context
 

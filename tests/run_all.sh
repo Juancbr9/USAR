@@ -48,7 +48,7 @@ run test_manual.py
 run test_sin_conexion.py
 run test_seguridad.py
 run test_accesibilidad.py
-run test_sesion.py
+start_mock; run test_sesion.py
 run test_bloqueo.py
 run test_material2.py
 run test_mantenimiento.py

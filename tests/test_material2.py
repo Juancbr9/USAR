@@ -143,18 +143,17 @@ with sync_playwright() as p:
     assert '28R DS 57150 10960' in a.inner_text('#view'), 'la ficha muestra las coordenadas en MGRS'
     a.evaluate("setPref({ coordFmt: 'latlon', distUnit: 'm' })")
 
-    # ---------- Funciones avanzadas: ocultas si no se activan en Ajustes ----------
-    a.evaluate("closeModal(); setPref({ avanzado: false, ws: null }); openMission('M-1', 'seguridad')"); a.wait_for_timeout(200)
-    assert 'espacios confinados' not in a.inner_text('#view').lower(), 'confinados oculto sin funciones avanzadas'
+    # ---------- Funciones avanzadas siempre activas e indicativo fijo: sin opción en Ajustes ----------
+    a.evaluate("closeModal(); setPref({ ws: null }); openMission('M-1', 'seguridad')"); a.wait_for_timeout(200)
+    assert 'espacios confinados' in a.inner_text('#view').lower(), 'confinados siempre visible'
     a.evaluate("openMission('M-1', 'informes')"); a.wait_for_timeout(200)
-    assert 'posiciones (kml)' not in a.inner_text('#view').lower(), 'exportar oculto sin funciones avanzadas'
+    assert 'posiciones (kml)' in a.inner_text('#view').lower(), 'exportar siempre visible'
     a.evaluate("missionForm(null, 'intervencion')"); a.wait_for_timeout(150)
-    assert a.locator('#modalForm [name=scope]').count() == 0, 'sin ámbito BIC sin funciones avanzadas'
-    a.evaluate("closeModal(); go('ajustes')"); a.wait_for_timeout(200)
-    a.check('#view label:has-text("Funciones avanzadas") input'); a.wait_for_timeout(150)
-    assert a.evaluate("avanzado()")
-    a.evaluate("openMission('M-1', 'seguridad')"); a.wait_for_timeout(200)
-    assert 'espacios confinados' in a.inner_text('#view').lower()
+    assert a.locator('#modalForm [name=scope]').count() == 1, 'ámbito BIC siempre disponible'
+    a.evaluate("closeModal(); put('meta', { id: 'teamcode', value: 'ESP-9' }); go('ajustes')"); a.wait_for_timeout(200)
+    txt = a.inner_text('#view').lower()
+    assert 'funciones avanzadas' not in txt and 'indicativo' not in txt, 'sin opciones de avanzadas ni indicativo'
+    assert a.evaluate("teamCode()") == 'USAR-242', 'el indicativo es fijo'
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

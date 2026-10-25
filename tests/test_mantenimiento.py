@@ -26,7 +26,7 @@ with sync_playwright() as p:
     a.evaluate(f"location.hash = 'g={gid}'"); a.wait_for_timeout(300)
     assert a.locator('.modal:visible, dialog[open]').count() == 0 and a.locator('.mant-card').count() == 1
     # Cerrar sesión desde el aviso lleva a la pantalla de entrada
-    a.click('.mant-card button'); a.wait_for_selector('.login [name=op]')
+    a.click('.mant-card button'); a.wait_for_selector('.login [name=email]')
     # RODRI: la app completa y el interruptor en Ajustes
     rodri = a.evaluate("operators().find(o => o.name === 'RODRI').id")
     a.evaluate(f"ss.set(UNLOCK_KEY, '1'); setPref({{ session: '{rodri}', activeOperator: 'RODRI' }})"); a.wait_for_selector('.topbar:visible')

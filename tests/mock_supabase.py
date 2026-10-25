@@ -13,7 +13,7 @@ class H(BaseHTTPRequestHandler):
     def cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Headers', 'apikey, authorization, content-type, prefer')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     def reply(self, code, data=None):
         self.send_response(code); self.cors()
         if data is not None:
@@ -76,6 +76,12 @@ class H(BaseHTTPRequestHandler):
                 r['updated_at'] = datetime.now(timezone.utc).isoformat()
                 rows[(r['kind'], r['id'])] = r
         self.reply(201)
+    def do_PUT(self):
+        # Cambiar la contraseña del usuario con sesión
+        body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0) or 0)) or b'{}')
+        email, _ = self.who()
+        if urlparse(self.path).path != '/auth/v1/user' or not email: return self.reply(401, {'msg': 'sin sesión'})
+        users[email] = body['password']; self.reply(200, {'email': email})
     def do_DELETE(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         if u.path.endswith('/usar_members'): members.pop(q.get('email', [''])[0][3:], None)

@@ -92,13 +92,12 @@ with sync_playwright() as p:
     # Acceso con usuario: jefe y miembro (servidor de prueba)
     req = urllib.request.Request(MOCK + '/rest/v1/usar_members', data=json.dumps([{'email': 'jefe@usar.es', 'role': 'jefe'}, {'email': 'rescate@usar.es', 'role': 'miembro'}]).encode(), method='POST', headers={'Content-Type': 'application/json'})
     urllib.request.urlopen(req)
-    urllib.request.urlopen(MOCK + '/_secure')   # modo seguro: sin usuario no se puede leer, pero «Conectar» funciona igual
-    more('Ajustes'); a.fill('[name=url]', MOCK); a.fill('[name=key]', 'sb_publishable_prueba'); a.click('button:has-text("Conectar")'); a.wait_for_timeout(2500)
+    urllib.request.urlopen(MOCK + '/_secure')   # modo seguro: sin usuario no se puede leer, pero la conexión vale
+    a.evaluate(f"Sync.connect('{MOCK}', 'sb_publishable_prueba')"); a.wait_for_timeout(2500)
     assert a.evaluate("!!Sync.cfg() && Sync.locked"), 'en modo seguro debe quedar conectado a falta de entrar con usuario'
-    assert a.locator('details:has-text("Entrar con usuario")').get_attribute('open') is not None, 'debe abrirse «Entrar con usuario»'
-    a.fill('[name=email]', 'jefe@usar.es'); a.fill('[name=password]', 'secreto1')
-    a.click('button:has-text("Crear cuenta")'); a.wait_for_timeout(1500)
+    a.evaluate("Sync.signUp('jefe@usar.es', 'secreto1').then(() => Sync.signIn('jefe@usar.es', 'secreto1'))"); a.wait_for_timeout(1500)
     assert a.evaluate("Sync.role") == 'jefe', a.evaluate("Sync.error")
+    more('Ajustes')
     a.evaluate("put('readiness', { id: 'OP-03', passportNo: 'X1' })"); a.wait_for_timeout(1500)
     a.click('button:has-text("Miembros y permisos")'); a.wait_for_timeout(500)
     assert a.locator('#modal .item:has-text("rescate@usar.es")').count() == 1

@@ -70,19 +70,15 @@ with sync_playwright() as p:
     tab(a, 'Personal'); a.select_option('.panel select', 'vertical'); a.wait_for_timeout(150)
     assert a.locator('text=Jefe de Rescate en Altura').count() == 1
 
-    # Conectar A al servidor de prueba
-    tab(a, 'Ajustes'); a.fill('[name=url]', MOCK); a.fill('[name=key]', 'sb_publishable_prueba'); a.click('button:has-text("Conectar")')
+    # A se conecta al servidor de prueba (en la app de verdad va integrado: SUPA en js/config.js)
+    a.evaluate(f"Sync.connect('{MOCK}', 'sb_publishable_prueba')")
     a.wait_for_function("document.querySelector('#syncBadge').textContent.includes('conectado')", timeout=15000)
     print('Filas en la nube tras conectar A:', len(dump()))
-    a.click('button:has-text("Invitar al equipo")'); a.wait_for_timeout(200)
-    a.locator('.qr').screenshot(path=f'{OUT}/qr-invite.png')
-    invite = cv2.QRCodeDetectorAruco().detectAndDecode(cv2.imread(f'{OUT}/qr-invite.png'))[0]
-    print('Invitación leída del QR:', invite[:70], '…'); assert '#join=' in invite
-    a.click('#modal [aria-label=Cerrar]')
+    tab(a, 'Ajustes'); assert a.locator('[name=url], [name=key], button:has-text("Invitar")').count() == 0, 'no se configura nada a mano'
 
-    # B se une con la invitación y recibe los datos
-    B = br.new_context(**phone); b = B.new_page(); watch(b, 'B')
-    b.goto(invite.replace('index.html', 'index.html'))
+    # B, un móvil nuevo, se conecta solo al abrir la app y recibe los datos del equipo (no los suyos de serie)
+    B = br.new_context(**phone, supa=MOCK); b = B.new_page(); watch(b, 'B')
+    b.goto(APP)
     b.wait_for_function("document.querySelector('#syncBadge').textContent.includes('conectado')", timeout=15000)
     b.wait_for_timeout(300)
     b.wait_for_function("list('gear').some(g => /Radio Motorola/.test(g.name))", timeout=15000)
