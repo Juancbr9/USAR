@@ -183,17 +183,41 @@ function printBoxLabels(ids = boxes().map(b => b.id)) {
 }
 
 /* ---------- Dibujo del contenedor ---------- */
-function tokBox(b) {
-  const [, hex, ink] = colorOf(b), n = boxItems(b.id).length;
-  return `<div class="tok tok-box ${boxBad(b) ? 'has-bad' : ''} ${b.nov?.text || boxItems(b.id).some(g => g.nov?.text) ? 'has-nov' : ''} ${boxItems(b.id).length && boxItems(b.id).every(g => g.out && !g.out.mission) ? 'is-out' : ''}" data-box="${b.id}" style="--c:${hex}; --ink:${ink}" role="button" tabindex="0" aria-label="Caja ${esc(b.code)}: ${esc(b.name || '')}, ${n} equipos, ${esc(boxWeightText(b))}">
-    <span class="tok-lid"></span><b>${esc(b.code)}</b><small>${esc(b.name || '')}</small><em>${n} ${n === 1 ? 'equipo' : 'equipos'}${boxWeight(b).kg ? ' · ' + esc(boxWeightText(b)) : ''}</em></div>`;
+function tokBox(b, kase) {
+  const [, hex, ink] = colorOf(b), n = boxItems(b.id).length, [w, h] = kase ? caseSize(b) : [];
+  return `<div class="tok tok-box ${kase ? 'tok-case' : ''} ${boxBad(b) ? 'has-bad' : ''} ${b.nov?.text || boxItems(b.id).some(g => g.nov?.text) ? 'has-nov' : ''} ${boxItems(b.id).length && boxItems(b.id).every(g => g.out && !g.out.mission) ? 'is-out' : ''}" data-box="${b.id}" style="--c:${hex}; --ink:${ink}${kase ? `; --w:${w}; aspect-ratio:${w} / ${h}` : ''}" role="button" tabindex="0" aria-label="Caja ${esc(b.code)}: ${esc(b.name || '')}, ${n} equipos, ${esc(boxWeightText(b))}"${kase ? ` title="${esc(b.code)} · ${esc(b.name || '')}"` : ''}>
+    ${kase ? caseArt(w, h, b.color === 'negro' || !BOX_COLORS[b.color] ? '#3a3d42' : 'var(--c)') + `<b>${esc(b.code)}</b>` : `<span class="tok-lid"></span><b>${esc(b.code)}</b><small>${esc(b.name || '')}</small><em>${n} ${n === 1 ? 'equipo' : 'equipos'}${boxWeight(b).kg ? ' · ' + esc(boxWeightText(b)) : ''}</em>`}</div>`;
+}
+// Cajas en el dibujo del contenedor: estancas tipo Peli, de frente y a su tamaño real (escala del dibujo, en «cqw» del contenedor).
+// Ancho: el largo medido o el del modelo; alto: el medido o el de las cajas del equipo (foto: casi tan altas como anchas).
+const CASE_LEN = { 1450: 46, 1550: 52, 1600: 62, 1610: 62, 1620: 63, 1650: 80, 1660: 80, 1690: 90, 1730: 92, 1780: 103 };
+const caseSize = b => { const w = +b.len || CASE_LEN[String(b.model || '').match(/\d{4}/)?.[0]] || 62; return [w, +b.hei || Math.round(w * .84)]; };
+// Dibujo (en cm) con el trazo del contenedor: tapa, cierres, nervios laterales, asa negra abatible y patas
+function caseArt(W, H, fill) {
+  const L = Math.max(7, H * .26), k = '#1d1d1d', hx = W * .29, hy = H * .72;
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true" stroke="${k}" stroke-linejoin="round">
+    <rect x="3" y="${H - 3.5}" width="7" height="3" fill="${k}"/><rect x="${W - 10}" y="${H - 3.5}" width="7" height="3" fill="${k}"/>
+    <rect x="1" y="1" width="${W - 2}" height="${H - 3.5}" rx="3.5" fill="${fill}" stroke-width="1.3"/>
+    <path d="M2 ${L * .45}Q2 1.6 4.5 1.6H${W - 4.5}Q${W - 2} 1.6 ${W - 2} ${L * .45}Z" fill="#fff" fill-opacity=".3" stroke="none"/>
+    <rect x="1.6" y="${L}" width="${W - 3.2}" height="2.2" fill="#000" fill-opacity=".3" stroke="none"/><path d="M1 ${L}H${W - 1}" stroke-width=".9"/>
+    <rect x="1.6" y="${H - 9}" width="${W - 3.2}" height="5" fill="#000" fill-opacity=".18" stroke="none"/>
+    <rect x="4" y="${L + 4}" width="5" height="${H - L - 12}" rx="1.2" fill="#000" fill-opacity=".12" stroke-width=".8"/>
+    <rect x="${W - 9}" y="${L + 4}" width="5" height="${H - L - 12}" rx="1.2" fill="#000" fill-opacity=".12" stroke-width=".8"/>
+    ${[W * .2, W * .68].map(x => `<rect x="${x}" y="${L - 3.5}" width="${W * .12}" height="7.5" rx="1.5" fill="#1a1b1d" stroke-width=".8"/>
+    <path d="M${x + 1.5} ${L - 2}H${x + W * .12 - 1.5}" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>`).join('')}
+    <path d="M${hx} ${hy - 3}L${hx + 4} ${hy + 6}H${W - hx - 4}L${W - hx} ${hy - 3}" fill="none" stroke="#141414" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M${hx + 4.5} ${hy + 4.6}H${W - hx - 4.5}" stroke="#fff" stroke-opacity=".4" stroke-width=".8"/>
+  </svg>`;
 }
 // Dibujo pequeño (o la foto, si tiene) para listas
 const artMini = g => g.photo ? `<img class="thumb sm" data-img="${esc(g.photo)}" src="${String(g.photo).startsWith('data:') ? esc(g.photo) : ''}" alt="">` : `<span class="art art-sm">${toolArt(g.name)}</span>`;
 const tokGear = g => `<div class="tok tok-gear ${g.status !== 'OPERATIVO' ? 'has-bad' : ''} ${g.nov?.text ? 'has-nov' : ''} ${g.out && !g.out.mission ? 'is-out' : ''}" data-gear="${g.id}" role="button" tabindex="0" aria-label="${esc(g.name)}${g.out ? ', fuera: ' + esc(g.out.who) : ''}"><span class="tok-art">${toolArt(g.name)}</span><span class="tok-name">${esc(g.name)}${qtyText(g)}</span></div>`;
 
-function cellContent(items, bs) {
-  return bs.sort((a, b) => (a.pos || 0) - (b.pos || 0)).map(tokBox).join('') + items.filter(g => !g.box || !get('boxes', g.box)).sort(byName).map(tokGear).join('');
+function cellContent(items, bs, kase) {
+  const loose = items.filter(g => !g.box || !get('boxes', g.box)).sort(byName).map(tokGear).join(''), sorted = bs.sort((a, b) => (a.pos || 0) - (b.pos || 0));
+  // En el dibujo del contenedor, las cajas van posadas en el suelo del hueco, una junto a otra; el material suelto, encima
+  if (kase) return loose + (bs.length ? `<div class="cv-cases">${sorted.map(b => tokBox(b, true)).join('')}</div>` : '');
+  return sorted.map(b => tokBox(b)).join('') + loose;
 }
 
 function viewContVisual() {
@@ -213,7 +237,7 @@ function viewContVisual() {
         <img class="cvi-bg" src="img/contenedor-lateral.webp" alt="" aria-hidden="true" width="1200" height="708">
         <div class="cv-grid">${HUECOS.filter(h => h.id > off && h.id <= off + 10).map(h => { const [items, b] = at(h.id), [x, y, w, hh] = HUECO_RECT[h.id - off]; return `
           <div class="cv-cell ${h.label.includes(' y ') ? 'cv-wide' : ''}" style="left:${x}%; top:${y}%; width:${w}%; height:${hh}%" data-door="${h.id}" onclick="cvClick(event, ${h.id})">
-            <button class="cv-tag" aria-label="${esc(h.label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos sueltos">${esc(h.label)}</button>${cellContent(items, b)}<span class="cv-more" hidden></span></div>`; }).join('')}</div>
+            <button class="cv-tag" aria-label="${esc(h.label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos sueltos">${esc(h.label)}</button>${cellContent(items, b, true)}<span class="cv-more" hidden></span></div>`; }).join('')}</div>
       </div>
       <div class="cv-legend"><span><i class="lg-box"></i>Caja</span><span><i class="lg-gear"></i>Suelto</span><span><i class="lg-bad"></i>En revisión</span><span><i class="lg-nov"></i>Novedad</span></div>
     </div>
@@ -227,15 +251,18 @@ function viewContVisual() {
 // El dibujo no crece: lo que no cabe en un hueco se resume en «+N» (se ve todo al tocar el hueco)
 function fitCells() {
   document.querySelectorAll('.cvi .cv-cell').forEach(c => {
-    const more = c.querySelector('.cv-more'), toks = [...c.querySelectorAll(':scope > .tok')];
-    toks.forEach(t => t.classList.remove('cv-hide')); more.hidden = true;
-    const limit = c.getBoundingClientRect().bottom - 1;
-    const over = () => toks.some(t => !t.classList.contains('cv-hide') && t.getBoundingClientRect().bottom > limit) || (!more.hidden && more.getBoundingClientRect().bottom > limit);
+    const more = c.querySelector('.cv-more'), row = c.querySelector('.cv-cases');
+    const toks = [...c.querySelectorAll(':scope > .tok')], cases = [...c.querySelectorAll('.cv-cases > .tok')];
+    [...toks, ...cases].forEach(t => t.classList.remove('cv-hide')); more.hidden = true;
     let n = 0;
-    for (let i = toks.length - 1; i >= 0 && over(); i--) {
-      if (toks[i].classList.contains('found')) continue;
-      toks[i].classList.add('cv-hide'); n++; more.hidden = false; more.textContent = '+' + n;
-    }
+    const hide = t => { t.classList.add('cv-hide'); n++; more.hidden = false; more.textContent = '+' + n; };
+    // Cajas que no caben a lo ancho del hueco
+    const right = c.getBoundingClientRect().right - 1;
+    for (let i = cases.length - 1; i > 0 && cases.some(t => !t.classList.contains('cv-hide') && t.getBoundingClientRect().right > right); i--) if (!cases[i].classList.contains('found')) hide(cases[i]);
+    // Material suelto que no cabe encima de las cajas
+    const limit = (row && cases.length ? row.getBoundingClientRect().top : c.getBoundingClientRect().bottom) - 1;
+    const over = () => toks.some(t => !t.classList.contains('cv-hide') && t.getBoundingClientRect().bottom > limit) || (!row && !more.hidden && more.getBoundingClientRect().bottom > limit);
+    for (let i = toks.length - 1; i >= 0 && over(); i--) if (!toks[i].classList.contains('found')) hide(toks[i]);
   });
 }
 addEventListener('resize', () => document.querySelector('.cvi') && fitCells());
