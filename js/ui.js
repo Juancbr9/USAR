@@ -394,15 +394,15 @@ function printManifest() {
   print();
 }
 
-/* ==================== ENLACES (QR de equipo e invitaciones) ==================== */
+/* ==================== ENLACES (QR de equipo) ==================== */
 function handleHash() {
   const hash = location.hash.slice(1);
   const eq = hash.indexOf('=');
   if (eq < 0) return;
   const [key, value] = [hash.slice(0, eq), decodeURIComponent(hash.slice(eq + 1))];
   history.replaceState(history.state, '', location.pathname + location.search);
-  if (!loggedIn() && key !== 'join') { prefs.afterLogin = '#' + hash; writeJSON(KEY.prefs, prefs); return; }   // se abre al entrar
-  if (bloqueado() && key !== 'join') return;
+  if (!loggedIn()) { prefs.afterLogin = '#' + hash; writeJSON(KEY.prefs, prefs); return; }   // se abre al entrar
+  if (bloqueado()) return;
 
   if (key === 'g') {
     const g = get('gear', value);
@@ -413,13 +413,6 @@ function handleHash() {
   if (key === 'k') {
     if (!get('boxes', value)) return toast('Caja no encontrada en este dispositivo', 'bad');
     setPref({ tab: placeTab(get('boxes', value)?.door) }); boxDetail(value);
-  }
-  if (key === 'join') {
-    let c;
-    try { c = JSON.parse(unb64(value)); } catch { return toast('Enlace de invitación no válido', 'bad'); }
-    if (Sync.cfg()?.url === c.url) return toast('Este dispositivo ya está conectado al equipo');
-    if (!confirm('¿Conectar este dispositivo a los datos compartidos del equipo? Se usarán los datos del equipo en lugar de los de este móvil.')) return;
-    Sync.connect(c.url, c.key).then(r => { toast(r === 'login' ? 'Conectado al equipo: entra con tu usuario en Ajustes' : 'Conectado al equipo'); render(); }).catch(e => toast(e.message, 'bad'));
   }
 }
 

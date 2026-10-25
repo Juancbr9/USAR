@@ -45,6 +45,10 @@ const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections'
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
 const MANT_MSG = 'USAR 242 EN FASE DE MANTENIMIENTO';
+// Base de datos compartida del equipo (Supabase, modo seguro). Va integrada en la app: nadie tiene que configurarla,
+// cada persona solo entra con su correo (dado de alta antes por un jefe en Ajustes → Miembros y permisos).
+const SUPA = { url: 'https://lxjkpgdvhzjwkmxnllqp.supabase.co', key: 'sb_publishable_boxlf-dFI3dd-tdSMd3SJg_otPOwFCq' };
+const TEAM_CODE = 'USAR-242';   // indicativo del equipo: sale en el marcaje y en los informes
 const KEY = { db: 'USAR_V5_DB', prefs: 'USAR_V4_PREFS', sync: 'USAR_V4_SYNC', outbox: 'USAR_V4_OUTBOX' };
 
 // Un puesto por integrante, en el mismo orden que TEAM ("Célula|Puesto")

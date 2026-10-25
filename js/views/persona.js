@@ -140,7 +140,6 @@ function personForm(op) {
   }, `<div class="row span2" style="gap:8px">
     ${o.active === false ? `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', true)">${ic('check')} Volver a dar de alta</button>`
       : `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', false)">${ic('out')} Dar de baja</button>`}
-    ${o.pin?.h ? `<button type="button" class="btn btn-g" onclick="resetPin('${o.id}')">${ic('refresh')} Restablecer contraseña</button>` : ''}
     <button type="button" class="btn btn-bad" onclick="deletePerson('${o.id}')">${ic('trash')} Eliminar</button></div>`);
 }
 

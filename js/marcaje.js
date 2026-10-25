@@ -5,7 +5,7 @@
 const PAINT = '#ff6a13';
 const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 const markDate = iso => { if (!iso) return ''; const d = new Date(iso + 'T00:00'); return String(d.getDate()).padStart(2, '0') + MONTHS[d.getMonth()]; };
-const teamCode = () => get('meta', 'teamcode')?.value || 'USAR-242';
+const teamCode = () => TEAM_CODE;
 
 function wallSvg(w, h, inner, label) {
   return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" class="mark-svg" xmlns="http://www.w3.org/2000/svg">

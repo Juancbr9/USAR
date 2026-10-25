@@ -1,5 +1,5 @@
 """Prueba de la entrada al abrir la app: aunque el móvil recuerde la sesión, cada vez que se abre la app (y tras 5 minutos
-fuera de ella) pide la contraseña o la huella, y al entrar va siempre a Inicio. La huella se prueba con un lector virtual
+fuera de ella) pide la contraseña (comprobada en el propio móvil, sin cobertura) o la huella, y al entrar va siempre a Inicio. La huella se prueba con un lector virtual
 de Chromium; la app comprueba la firma con la llave guardada al activarla.
 Uso: python3 tests/test_bloqueo.py  (con la app servida en APP_URL)"""
 import os, sys, pathlib
@@ -24,9 +24,9 @@ with sync_playwright() as p:
     a = page(c)
     a.goto(APP); a.wait_for_selector('.login')
     assert a.locator('.topbar').is_hidden(), 'con la sesión recordada también pide entrar'
-    assert a.evaluate("document.querySelector('.login [name=op]').value") == 'OP-01', 'ya sale el nombre de quien estaba'
+    assert 'GRANADOS' in a.inner_text('.login h2') and a.locator('.login [name=email]:visible').count() == 0, 'solo pide la contraseña de quien estaba'
     assert a.locator('.bio-btn').count() == 0, 'sin huella activada no hay botón de huella'
-    a.evaluate("makePin('1357').then(pin => put('operators', { ...get('operators', 'OP-01'), pin }))"); a.wait_for_timeout(300)
+    a.evaluate("saveLlave('', '1357')"); a.wait_for_timeout(300)   # la que guarda el móvil al entrar con el correo
     a.evaluate("prefs.tab = 'ajustes'; writeJSON(KEY.prefs, prefs)")
     a.screenshot(path=f'{OUT}/bloqueo.png')
     a.fill('[name=pin]', '0000'); a.click('.login button.btn-a'); a.wait_for_timeout(500)

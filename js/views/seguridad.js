@@ -128,7 +128,7 @@ function tabSeguridad(m) {
     ${m.status === 'active' ? `<button class="btn btn-bad full" onclick="aftershock('${m.id}')">${ic('alert')} Ha habido una réplica</button>` : ''}
     ${commsPanel(m)}
     ${risksPanel(m)}
-    ${avanzado() || confinedOf(m.id).length ? confinedPanel(m) : ''}
+    ${confinedPanel(m)}
 
     <div class="panel">
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('shield')} Seguridad, contactos y notas</h3>

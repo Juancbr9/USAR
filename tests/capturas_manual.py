@@ -112,9 +112,9 @@ with sync_playwright() as p:
     # ---------- Cabecera y menú ----------
     a.evaluate("go('consumibles')"); a.wait_for_timeout(200)
     ann(a, 'cabecera', [('#menuBtn', 'b', {'d': 40}), ('[aria-label=Buscar]', 'b', {'d': 40})])
-    a.evaluate("setPref({ session: null, loginPick: 'OP-01' })"); a.wait_for_timeout(250)
-    ann(a, 'entrar', [('.login [name=op]', 'i'), ('.login [name=pin]', 'i')])
-    a.evaluate("setPref({ session: 'OP-01', loginPick: null, tab: 'consumibles' })"); a.wait_for_timeout(250)
+    a.evaluate("setPref({ session: null })"); a.wait_for_timeout(250)
+    ann(a, 'entrar', [('.login [name=email]', 'i'), ('.login [name=pin]', 'i')])
+    a.evaluate("setPref({ session: 'OP-01', tab: 'consumibles' })"); a.wait_for_timeout(250)
     ann(a, 'stock', [('#view .grid .panel .row.nowrap', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
     a.evaluate("prefs.menuOpen = ['log', 'mat']; renderDrawer()"); tall(1360); a.wait_for_timeout(200)

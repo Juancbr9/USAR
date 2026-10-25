@@ -38,11 +38,10 @@ La app está ordenada en **cuatro áreas, cada una con su color** (la cabecera t
 - **Listas y opciones**: todos los desplegables traen opciones de serie y se pueden añadir las vuestras («➕ Otra…» o desde Ajustes → Listas y opciones); las de serie se pueden ocultar. Los formularios recuerdan el último valor usado donde ahorra tiempo.
 - **Búsqueda** de material, personas, documentos, operaciones, worksites y bienes.
 - **Herramientas de campo**: botón «+» rojo con la operación en curso (nota de voz, fichar con QR, recuento, señales, víctima, worksite, foto…), **dictado por voz** en el diario y en los textos (frase a frase, sin palabras repetidas), **fotos por worksite** con hora, autor y GPS, **tarjetas QR del personal** (tamaño tarjeta) para fichar en la puerta escaneando con la cámara, y avisos del sistema cuando la app está en segundo plano.
-- **Funciones avanzadas** (Ajustes → General): patrimonio (BIC), espacios confinados y exportar a CSV, GeoJSON y KML quedan ocultos hasta que se activan, para que la app sea más sencilla en el día a día. Lo que ya tenga datos se sigue viendo.
 - **Modo sol** (alto contraste) y **botones grandes** para guantes; el botón de arriba cambia entre claro, noche y sol.
 - **Calendario** de ejercicios, formación, guardias y reuniones: convocatoria por WhatsApp, añadir al calendario del móvil (.ics), asistencia y horas de formación por persona; un ejercicio del calendario se convierte en operación con un toque.
 - **Mapa con calles** (OpenStreetMap) con los worksites por categoría, la base, el punto de reunión y tu posición; lo que se ve con cobertura queda guardado para verlo sin conexión.
-- **Usuarios y permisos (modo seguro, opcional)**: cada persona entra con su correo y contraseña y solo el personal dado de alta ve los datos; todos ven todo y los jefes dan de alta a los miembros. Se activa con el bloque «MODO SEGURO» de supabase.sql.
+- **Usuarios y permisos (modo seguro)**: cada persona entra con su correo y contraseña y solo el personal dado de alta ve los datos; todos ven todo y los jefes dan de alta a los miembros (Ajustes → Miembros y permisos).
 - **Manual de uso** (Ajustes → Manual de uso): cada apartado a fondo, paso a paso, con un ejemplo real y **capturas anotadas con números, recuadros y flechas** (leyenda debajo de cada imagen). Las capturas se regeneran con `python3 tests/capturas_manual.py`.
 - **Tablet y PC**: en tablet horizontal y ordenador, barra lateral con todas las secciones y pestañas de la operación en columna.
 - **Fotos con la cámara o la galería** en todos los campos de foto (bienes culturales, documentos, personas, material).
@@ -58,7 +57,7 @@ La app está ordenada en **cuatro áreas, cada una con su color** (la cabecera t
 - **Revista**: se elige qué se revista (laterales, sin ubicar, pasillo, armarios, otros) y el motivo; de cada equipo: correcto, con fallo, en el taller, en otro sitio (cambia su ubicación), de baja o no se revista; «solo lo que falta».
 - **Coordenadas** en latitud/longitud, UTM o MGRS (se escriben en cualquiera y se ven en la que elijas en Ajustes → Unidades) y distancias en m, km o cm.
 - **Modo mantenimiento**: activo de serie. Solo **RODRI** usa la app; el resto, al entrar, ve «USAR 242 EN FASE DE MANTENIMIENTO» con la animación de RODRI y puede cerrar sesión. RODRI lo quita o lo vuelve a poner en **Ajustes → Mantenimiento** y el cambio llega a todos los móviles con los datos compartidos.
-- **Inicio de sesión**: cada persona entra con su nombre y su contraseña, asignada por el jefe o creada por ella la primera vez. Solo se guarda una huella cifrada (PBKDF2), nunca la contraseña; bloqueo de 30 s tras 5 intentos; cambiar o restablecer la contraseña. Lo que hace cada uno queda con su nombre.
+- **Inicio de sesión**: con el correo y la contraseña del usuario de Supabase; la primera vez cada uno crea su cuenta con el correo con el que le dio de alta el jefe y se le asocia su nombre del equipo. Al abrir la app solo se pide la contraseña (o la huella), también sin cobertura: el móvil guarda una huella cifrada (PBKDF2), nunca la contraseña; bloqueo de 30 s tras 5 intentos. Lo que hace cada uno queda con su nombre.
 - **Guía de campo**: un apartado abierto a la vez.
 - **Códigos QR**: cada equipo tiene su QR; al escanearlo con la cámara se abre su ficha. Se pueden imprimir las etiquetas de una puerta entera.
 - **Préstamos**: registrar quién saca un equipo del contenedor y cuándo vuelve.
@@ -72,17 +71,14 @@ La app está ordenada en **cuatro áreas, cada una con su color** (la cabecera t
 - **Accesibilidad**: pensada para usar con guantes y al sol: botones de al menos 44 px, contraste WCAG AA en los tres modos, foco visible, ventanas que guardan el foco, movimiento reducido si el móvil lo pide y campos de 16 px. Por decisión del equipo la página no se amplía con dos dedos (fotos y mapas sí).
 - **Sin cobertura**: la app no espera a la red más de 3 s; si tarda, abre la copia guardada y se actualiza en segundo plano. Las tipografías y los mapas vistos también se guardan.
 
-## Datos compartidos del equipo (opcional)
+## Datos compartidos del equipo
 
-Sin configurar nada, los datos se guardan solo en cada dispositivo. Para que todo el equipo vea lo mismo:
+La conexión con la base de datos del equipo (Supabase, proyecto `usar-242`, modo seguro) va integrada en la app (`SUPA` en
+[`js/config.js`](js/config.js)): nadie tiene que configurar nada. Para dar acceso a alguien, un jefe añade su correo y su
+nombre en **Ajustes → Miembros y permisos**; esa persona abre la app, pulsa «¿Primera vez? Crea tu cuenta» y entra.
+El esquema de la base de datos está en [`supabase.sql`](supabase.sql).
 
-1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. En **SQL Editor**, ejecuta el contenido de [`supabase.sql`](supabase.sql).
-3. En **Project Settings → API**, copia la *Project URL* y la clave pública (*publishable*, `sb_publishable_…`; en proyectos antiguos, *anon public*).
-4. En la app: **Ajustes → Datos compartidos del equipo**, pega ambos datos y pulsa **Conectar**.
-5. Pulsa **Invitar al equipo** y comparte el QR o el enlace con los compañeros.
-
-Los cambios hechos sin cobertura se guardan en el móvil y se envían al recuperar la conexión. Quien tenga el enlace de invitación puede ver y editar los datos, así que compártelo solo con el equipo.
+Los cambios hechos sin cobertura se guardan en el móvil y se envían al recuperar la conexión.
 
 ## Publicarla
 
