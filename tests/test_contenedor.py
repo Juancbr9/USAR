@@ -28,6 +28,10 @@ with sync_playwright() as p:
     # El dibujo sigue la hoja del contenedor: 9 huecos por lateral (B3 y B6 comparten hueco arriba)
     assert a.locator('.cv-grid .cv-cell').count() == 9 and a.locator('.cv-cell[data-door="3"] .cv-tag').text_content() == 'B3 y B6'
     assert a.locator('.cv-cell[data-door="5"] .tok-box:has-text("H-2")').count() == 1 and a.locator('.cv-cell[data-door="5"] .tok-box:has-text("H-30")').count() == 1
+    # Las cajas se dibujan como estancas a tamaño real, posadas en el suelo del hueco (dos Peli caben juntas en B5)
+    assert a.locator('.cv-cell[data-door="5"] .cv-cases .tok-case svg').count() == 2 and a.locator('.cv-cell[data-door="5"] .cv-hide').count() == 0
+    cb, kb = a.locator('.cv-cell[data-door="5"]').bounding_box(), a.locator('.tok-case[data-box="K-H2"]').bounding_box()
+    assert abs((cb['y'] + cb['height']) - (kb['y'] + kb['height'])) < 2 and 1.1 < kb['width'] / kb['height'] < 1.3, (cb, kb)
     assert a.evaluate("[boxItems('K-H2').length, boxItems('K-H30').length, boxItems('K-U6').length, get('gear', 'G-U8-1').serial]") == [8, 9, 6, '40073']
 
     # Caja nueva en B1 desde el hueco (código siguiente del lateral izquierdo: H-31)

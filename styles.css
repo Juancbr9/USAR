@@ -1105,7 +1105,7 @@ body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-
 .tok.is-out { opacity: .5; } .tok.is-out .tok-name { text-decoration: line-through; }
 
 /* ---------- Dibujo del contenedor sobre la imagen del lateral (no crece: lo que no cabe sale como «+N») ---------- */
-.cv.cvi { position: relative; aspect-ratio: 1200 / 708; padding: 0; background: #7a1e22; box-shadow: none; border-radius: 8px; overflow: hidden; }
+.cv.cvi { position: relative; aspect-ratio: 1200 / 708; container-type: inline-size; padding: 0; background: #7a1e22; box-shadow: none; border-radius: 8px; overflow: hidden; }
 .cvi-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .cvi .cv-grid { position: absolute; inset: 0; display: block; background: none; border: 0; padding: 0; }
 .cvi .cv-cell { position: absolute; min-height: 0; padding: 14px 2px 2px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 2px;
@@ -1123,6 +1123,19 @@ body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-
 .cvi .tok.has-bad::before, .cvi .tok.has-nov::after { width: 6px; height: 6px; top: 1px; }
 .cvi .tok.has-bad::before { right: 1px; } .cvi .tok.has-nov::after { left: 1px; }
 .cvi .tok.cv-hide { display: none; }
+/* Cajas estancas a tamaño real (16 cqw por metro, como el dibujo del contenedor), posadas en el suelo del hueco */
+.cvi .cv-cases { position: absolute; left: 2px; right: 2px; bottom: 0; display: flex; align-items: flex-end; gap: .35cqw; pointer-events: none; }
+.cvi .tok-case { flex: 0 0 auto; width: calc(var(--w) * .16cqw); max-width: none; padding: 0; background: none; box-shadow: none; border-radius: 4px; color: #1d1d1d;
+  container-type: inline-size; pointer-events: auto; filter: drop-shadow(0 .25cqw .2cqw rgba(0,0,0,.45)); }
+.tok-case svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.cvi .tok-case b { position: absolute; left: 33%; width: 34%; top: 44%; display: block; text-align: center; background: #fbfbf7; color: #1d1d1d; border: 1px solid #1d1d1d;
+  border-radius: 1px; font: 800 max(7px, 13cqw)/1.15 var(--cond); white-space: nowrap; overflow: hidden; }
+.tok-ghost.tok-case { container-type: inline-size; padding: 0; background: none; box-shadow: none; }
+.cvi .cv-cell:has(.cv-cases) .cv-more { top: 2px; bottom: auto; }
+.tok-ghost.tok-case svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tok-ghost.tok-case b { position: absolute; left: 33%; width: 34%; top: 44%; text-align: center; background: #fbfbf7; color: #1d1d1d; font: 800 13cqw/1.15 var(--cond); }
+.cvi .tok-case.has-bad::before { right: 3px; top: 3px; } .cvi .tok-case.has-nov::after { left: 3px; top: 3px; }
+@media (min-width: 560px) { .cvi .cv-cases { left: 4px; right: 4px; } }
 .cv-more { position: absolute; right: 2px; bottom: 2px; background: #f5b800; color: #1d1d1d; font: 800 10px/1 var(--num); padding: 3px 4px; border-radius: 8px; pointer-events: none; }
 @media (min-width: 560px) {
   .cvi .cv-cell { padding: 20px 4px 4px; gap: 3px; }
