@@ -53,10 +53,10 @@ function sectionStatus(id) {
     case 'entregas': { const late = list('loans').filter(l => !l.returned && l.due && daysTo(l.due) < 0).length; return late ? [`${late} sin devolver a tiempo`, 'bad'] : ['', 'neutral']; }
     case 'contenedor': { const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
       return [`${pct} % operativo`, pct >= 90 ? 'ok' : pct >= 75 ? 'warn' : 'bad']; }
-    case 'revista': { const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
-      if (!last || !t(last)) return ['Sin revistas', 'neutral'];   // sin ninguna revista no hay nada atrasado: sin punto
-      const day = new Date(t(last)).toISOString().slice(0, 10);
-      return [`Última: ${fmtDate(day)}`, daysTo(day) < -30 ? 'warn' : 'ok']; }
+    case 'revista': { // el punto del menú solo avisa de una revista empezada y sin finalizar
+      if (prefs.draft) return ['Revista en curso sin finalizar', 'warn'];
+      const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
+      return last && t(last) ? [`Última: ${fmtDate(new Date(t(last)).toISOString().slice(0, 10))}`, 'ok'] : ['Sin revistas', 'neutral']; }
     case 'consumibles': return a.low.length ? [`${a.low.length} bajo mínimo`, 'bad'] : ['Stock correcto', 'ok'];
     case 'vehiculos': return [`${list('vehicles').length} vehículos`, 'neutral'];
     case 'despliegue': { const fs = get('meta', 'factsheet')?.value; return [TEAM_STATUS[fs?.status || 'base'], fs?.status && fs.status !== 'base' ? 'warn' : 'neutral']; }
