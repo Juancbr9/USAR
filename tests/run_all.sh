@@ -54,6 +54,7 @@ run test_material2.py
 run test_mantenimiento.py
 start_mock; run test_flota.py
 run test_actividades.py
+run test_iphone.py
 
 echo
 if [ $status -eq 0 ]; then echo "✓ Todas las pruebas pasaron"; else echo "✗ Alguna prueba falló"; fi

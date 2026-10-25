@@ -1099,6 +1099,8 @@ body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-
 .login-brand .wordmark { color: #fff; font-size: 40px; }
 .login-card { width: min(100%, 380px); display: grid; gap: 12px; }
 .login-card h2 { margin-bottom: 2px; }
+.ios-install ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.ios-install .sec-title { margin: 0; }
 .mant-msg { font-weight: 800; font-size: 18px; line-height: 1.35; }
 .mant-img { width: 100%; height: auto; border-radius: 12px; background: #fff; }
 .bad-text { color: var(--bad); font-weight: 700; min-height: 1.2em; }

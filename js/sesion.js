@@ -44,6 +44,23 @@ const bloqueado = () => enMantenimiento() && !isAdmin();
 const FLOTA_KINDS = ['gear', 'boxes', 'consumables', 'vehicles'];
 const puedeFlota = () => isAdmin() && (!Sync.email || Sync.role === 'jefe');
 const soloFlota = () => puedeFlota() || (toast(`Solo ${ADMIN} puede añadir o cambiar material, vehículos y extras`, 'bad'), false);
+// iPhone y iPad: la app de Android (APK) no sirve; la web se instala desde Safari en la pantalla de inicio y funciona igual
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const instalada = () => matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+function iosInstall() {
+  if (!IOS || instalada()) return '';
+  return `
+    <div class="panel login-card ios-install">
+      <h3 class="sec-title">${ic('phone')} ¿Tienes iPhone? Instálala así</h3>
+      <ol>
+        <li>Ábrela en <b>Safari</b>. Si vienes de WhatsApp u otra app, pulsa antes <b>«Abrir en Safari»</b>.</li>
+        <li>Pulsa <b>Compartir</b> ${ic('upload', 'i-sm')} (abajo, el cuadrado con la flecha).</li>
+        <li>Elige <b>«Añadir a pantalla de inicio»</b> y pulsa <b>Añadir</b>.</li>
+      </ol>
+      <p class="muted">Queda como una app más: a pantalla completa y funciona sin cobertura. La app de Android (APK) no se puede instalar en iPhone.</p>
+    </div>`;
+}
+
 function renderMantenimiento() {
   document.body.classList.add('login-on');
   $('view').innerHTML = `
@@ -55,7 +72,7 @@ function renderMantenimiento() {
         <p class="mant-msg">${esc(MANT_MSG)}</p>
         <p class="muted">Vuelve a entrar más tarde. Tus datos no se pierden.</p>
         <button class="btn btn-g full" onclick="logout()">${ic('out')} Cerrar sesión</button>
-      </div>
+      </div>${iosInstall()}
     </div>`;
 }
 function setMantenimiento(on) { put('meta', { id: 'mantenimiento', value: on }, on ? 'Mantenimiento activado' : 'Mantenimiento terminado'); toast(on ? 'Solo tú tienes acceso' : 'Todo el equipo tiene acceso'); }
@@ -92,7 +109,7 @@ function renderLogin() {
           <button class="btn btn-a full">${ic('in')} ${first ? 'Crear y entrar' : 'Entrar'}</button>
           ${!first && bioOf(o.id) ? `<button type="button" class="btn btn-g full bio-btn" onclick="bioLogin('${o.id}')">${ic('finger')} Entrar con huella</button>` : ''}
           <p id="loginMsg" class="bad-text" role="alert"></p>` : ''}
-      </form>
+      </form>${iosInstall()}
     </div>`;
   // Con la huella activada, se pide nada más abrir la app (una vez; luego queda el botón)
   if (o && !first && bioOf(o.id) && !BIO_TRIED) { BIO_TRIED = true; bioLogin(o.id); }
