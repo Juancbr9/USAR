@@ -1225,3 +1225,12 @@ img.doc-full, .gal img, img.art-lg, .person-photo { cursor: zoom-in; }
 @media (hover: hover) and (pointer: fine) { .nav .dr-item:hover, .nav .dr-group-head:hover { background: rgba(255,255,255,.08); } }
 .nav .dr-item .count { margin-left: auto; }
 .op-new.one { grid-template-columns: 1fr; } .op-new.one .op-tile { min-height: 88px; }
+
+/* Contenedor y almacén: una página con saltos a cada apartado */
+.alm-sec, #alm-fungible { scroll-margin-top: calc(var(--top-h, 67px) + 60px); }
+.alm-jump { display: flex; width: 100%; position: sticky; top: calc(var(--top-h, 67px) + 6px); z-index: 5; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
+.alm-jump button { flex: 1; padding: 10px 4px; white-space: nowrap; }
+.cons-item { gap: 8px; flex-wrap: wrap; }
+.cons-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2, rgba(127, 127, 127, .12)); flex: none; }
+.cons-head { margin-top: 12px; }
+.add-mat .item { text-align: left; }
