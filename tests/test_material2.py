@@ -26,18 +26,31 @@ with sync_playwright() as p:
     a.click('#menuBtn'); a.click('#drawer .dr-group-head:has-text("Logística")'); a.wait_for_timeout(100)
     assert a.locator('#drawer .dr-item.sub2').count() == 0, 'Material empieza plegado'
     a.click('#drawer .dr-group-head:has-text("Material")'); a.wait_for_timeout(100)
-    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Contenedor', 'En revisión', 'Fuera del contenedor', 'Material fungible', 'Entregas']
+    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Contenedor y almacén', 'En revisión', 'Entregas']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
-    a.click('#drawer .dr-item:has-text("Material fungible")'); a.wait_for_timeout(150)
-    assert 'material fungible' in a.inner_text('#view h2').lower()
-    # Fuera del contenedor: una entrada del menú con Pasillo, Armarios y Otros en pestañas; recuerda la última
-    a.click('#menuBtn'); a.click('#drawer .dr-item:has-text("Fuera del contenedor")'); a.wait_for_timeout(150)
-    assert a.inner_text('#view h2').lower() == 'pasillo' and a.locator('#view .seg-row button').all_inner_texts() == ['Pasillo', 'Armarios', 'Otros']
-    a.click('#view .seg-row button:has-text("Armarios")'); a.wait_for_timeout(150)
-    assert a.inner_text('#view h2').lower() == 'armarios'
-    a.evaluate("go('avisos')"); a.evaluate("go('fuera')"); a.wait_for_timeout(150)
-    assert a.inner_text('#view h2').lower() == 'armarios', 'Fuera del contenedor vuelve a la última pestaña'
-    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Fuera del contenedor")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
+    # Contenedor y almacén: contenedor, pasillo, armarios, otros y el fungible de cada sitio en una sola página
+    a.click('#drawer .dr-item:has-text("Contenedor y almacén")'); a.wait_for_timeout(150)
+    for sec in ['contenedor', 'pasillo', 'armarios', 'otros']: assert a.locator(f'#view #alm-{sec}').count() == 1, sec
+    assert a.locator('#view .alm-jump button').all_inner_texts() == ['Contenedor', 'Pasillo', 'Armarios', 'Otros']
+    assert a.locator('#view .arm-cab').count() == 3 and a.locator('#view .cvi').count() == 1
+    # Sin botón «Caja» suelto: «+ Material» deja elegir equipo, caja o fungible
+    assert a.locator('#view button:text-is("Caja")').count() == 0
+    a.click('#view button.btn-a:has-text("Material")'); a.wait_for_timeout(100)
+    assert [t.split('\n')[0] for t in a.locator('#modal .add-mat button').all_inner_texts()] == ['Equipo o herramienta', 'Caja', 'Material fungible']
+    # Fungible nuevo en el pasillo: sale en el apartado del pasillo y en su lista al tocar el sitio
+    a.click('#modal .add-mat [data-add=package]'); a.fill('#modalForm [name=name]', 'Bridas grandes'); a.select_option('#modalForm [name=place]', '101')
+    a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
+    cid = a.evaluate("list('consumables').find(c => c.name === 'Bridas grandes').id")
+    assert a.locator(f'#alm-pasillo [data-cons="{cid}"]').count() == 1
+    a.click(f'#alm-pasillo [data-cons="{cid}"] button:has-text("+5")'); a.wait_for_timeout(100)
+    assert a.evaluate(f"get('consumables', '{cid}').stock") == 15
+    # Los antiguos (solo con el texto «Ubicación») salen en su sitio: «Caja H-2» → el hueco de esa caja
+    assert a.evaluate("consDoor({ location: 'Caja H-2' })") == a.evaluate("boxes().find(b => b.code === 'H-2')?.door || 0")
+    assert a.evaluate("consDoor({ location: 'Almacén' })") == 301 and a.evaluate("consDoor({ location: 'B11' })") == 11
+    # Los nombres antiguos (pasillo, armarios, otros, fungible, fuera) llevan a esta página
+    for t in ['pasillo', 'armarios', 'otros', 'consumibles', 'fuera']:
+        a.evaluate(f"go('avisos'); go('{t}')"); a.wait_for_timeout(100); assert a.evaluate("prefs.tab") == 'contenedor', t
+    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Contenedor y almacén")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
 
     # ---------- Entrega con firma ----------
     a.evaluate("go('entregas')"); a.wait_for_timeout(150); a.click('#view button:has-text("Entrega")')

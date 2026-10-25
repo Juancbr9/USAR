@@ -25,7 +25,7 @@ def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=Fa
 Browser.new_context = new_context
 
 # Ir a una sección por el menú de tres rayas, desplegando sus grupos (Actividades, Logística › Material…)
-LABELS = {'Operaciones': 'Activación', 'Intervenciones': 'Activación', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Material fungible',
+LABELS = {'Operaciones': 'Activación', 'Intervenciones': 'Activación', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Contenedor y almacén', 'Material': 'Contenedor y almacén',
           'Alistamiento': 'Alistamiento y despliegue', 'Avisos': 'Inicio'}
 def menu(pg, label, wait=150):
     label = LABELS.get(label, label)
@@ -33,7 +33,7 @@ def menu(pg, label, wait=150):
     if root == '#drawer': pg.click('#menuBtn')
     if label == 'Inicio':
         pg.click(f'{root} .dr-item[data-area=home]'); pg.wait_for_timeout(wait); return
-    tab = pg.evaluate("l => (SECTIONS.find(s => s[2] === l) || SECTIONS.find(s => s[2].startsWith(l)))?.[0]", label)
+    tab = pg.evaluate("l => (SECTIONS.find(s => !s[6] && s[2] === l) || SECTIONS.find(s => !s[6] && s[2].startsWith(l)))?.[0]", label)
     assert tab, f'no hay sección «{label}» en el menú'
     for g in pg.evaluate("t => tabGroups(t)", tab):
         head = pg.locator(f'{root} .dr-group-head[onclick="toggleMenuGroup(\'{g}\')"]')
