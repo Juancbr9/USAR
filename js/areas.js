@@ -83,14 +83,14 @@ function viewVehiculos() {
   const active = list('missions').filter(m => m.status === 'active'), edit = puedeFlota();
   return `
     <div class="panel">
-      <div class="between sec-head"><div><h2>Vehículos</h2><p class="muted">En cada actividad se añaden los que salen, con matrícula y carga.</p></div>
-        ${puedeFlota() ? `<button class="btn btn-a" onclick="vehicleForm()">${ic('plus')} Modelo</button>` : ''}</div>
+      <div class="sec-head"><h2>Vehículos</h2></div>
       <div class="grid g3">${vehicles().map(v => {
         const out = active.flatMap(m => (m.vehicles || []).filter(x => x.id === v.id)).length;
         return `<${edit ? `button onclick="vehicleForm('${v.id}')"` : 'div'} class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
           <small>${[v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div>
           ${out ? `<span class="tag bad">${out} en salida</span>` : ''}</${edit ? 'button' : 'div'}>`; }).join('')
         || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
+      ${edit ? `<div class="row" style="margin-top:14px"><button class="btn btn-a" onclick="vehicleForm()">${ic('plus')} Modelo</button></div>` : ''}
     </div>`;
 }
 

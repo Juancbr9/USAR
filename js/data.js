@@ -92,7 +92,7 @@ function defaultData() {
     ],
     vehicles: DEFAULT_VEHICLES,
     logs: [], inspections: [], missions: [], mlog: [],
-    meta: [{ id: 'mission', value: 'estandar' }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 7 }]
+    meta: [{ id: 'mission', value: 'estandar' }, { id: 'gearbase', value: 3 }, { id: 'vehbase', value: 8 }]
   };
 }
 
@@ -102,7 +102,6 @@ const DEFAULT_VEHICLES = [
   veh('V-SANGYONG', 'SsangYong'),
   veh('V-VPI', 'VPI (contenedor USAR)', 'Lleva el contenedor USAR'),
   veh('V-AMAROK', 'Amarok'),
-  veh('V-MOTO', 'Moto PM'),
   veh('V-AMB', 'Ambulancia'),
   veh('V-GUAGUA-P', 'Guagua pequeña'),
   veh('V-GUAGUA-G', 'Guagua grande'),
@@ -113,10 +112,7 @@ const DEFAULT_VEHICLES = [
   veh('V-AB', 'Autobomba'),
   veh('V-ATB-M1', 'ATB Iveco M1'),
   veh('V-ATB-M2', 'ATB Iveco M2'),
-  veh('V-CAM-ROJO', 'Camión rojo'),
-  veh('V-CAM-VERDE', 'Camión verde'),
-  veh('V-GRUA', 'Grúa'),
-  veh('V-MINI', 'Minimáquina')
+  veh('V-CAM-VERDE', 'Camión verde')
 ];
 const OLD_VEHICLES = { 'V-1': ['Camión portacontenedor', 'V-VPI'], 'V-2': ['Furgón de rescate', ''], 'V-3': ['Vehículo de mando', ''] };
 
@@ -298,6 +294,12 @@ function seedDefaults(share = false) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     list('vehicles').filter(v => /\bsang ?yong\b/i.test(v.name || '')).forEach(v => stampIt('vehicles', { ...v, name: v.name.replace(/\bsang ?yong\b/gi, 'SsangYong') }));
     stampIt('meta', { id: 'vehbase', value: 7 });
+  }
+  // v8: fuera de la flota la moto PM, el camión rojo, la grúa y la minimáquina (las salidas pasadas conservan su nombre)
+  if (!(get('meta', 'vehbase')?.value >= 8)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    ['V-MOTO', 'V-CAM-ROJO', 'V-GRUA', 'V-MINI'].filter(id => get('vehicles', id)).forEach(id => stampIt('vehicles', { id, _del: true }));
+    stampIt('meta', { id: 'vehbase', value: 8 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
