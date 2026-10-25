@@ -82,9 +82,18 @@ alter table public.usar_members enable row level security;
 drop policy if exists "ver miembros" on public.usar_members;
 create policy "ver miembros" on public.usar_members for select to authenticated
   using ((select private.usar_role()) is not null);
+-- Los jefes dan de alta, cambian y quitan miembros. Una regla por acción (no «for all») para que la lectura tenga una
+-- sola regla y no se evalúen dos en cada consulta.
 drop policy if exists "jefes gestionan miembros" on public.usar_members;
-create policy "jefes gestionan miembros" on public.usar_members for all to authenticated
+drop policy if exists "jefes: alta de miembros" on public.usar_members;
+drop policy if exists "jefes: cambiar miembros" on public.usar_members;
+drop policy if exists "jefes: quitar miembros" on public.usar_members;
+create policy "jefes: alta de miembros" on public.usar_members for insert to authenticated
+  with check ((select private.usar_role()) = 'jefe');
+create policy "jefes: cambiar miembros" on public.usar_members for update to authenticated
   using ((select private.usar_role()) = 'jefe') with check ((select private.usar_role()) = 'jefe');
+create policy "jefes: quitar miembros" on public.usar_members for delete to authenticated
+  using ((select private.usar_role()) = 'jefe');
 revoke all on public.usar_members from anon;
 grant select, insert, update, delete on public.usar_members to authenticated;
 
