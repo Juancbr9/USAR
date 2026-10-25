@@ -2,9 +2,25 @@
 // USAR 242 · Material: contenedor, revisión, pasillo 3, armarios y otros; préstamos y QR
 
 /* ==================== VISTA: MATERIAL ==================== */
-// Material: contenedor (dibujo), en revisión, pasillo 3, armarios y otros
-function viewContenedor() { return viewContVisual(); }
-const viewPasillo = () => fueraTabs() + viewPlace(PASILLO), viewOtros = () => fueraTabs() + viewPlace(OTROS);
+// Contenedor y almacén: todo el material guardado en una página (contenedor, pasillo, armarios y otros, con su fungible)
+function viewContenedor() {
+  return `${almacenJump()}
+    <section id="alm-contenedor" class="alm-sec">${viewContVisual()}</section>
+    <section id="alm-pasillo" class="alm-sec">${viewPlace(PASILLO)}</section>
+    <section id="alm-armarios" class="alm-sec">${viewArmarios()}</section>
+    <section id="alm-otros" class="alm-sec">${viewPlace(OTROS)}</section>`;
+}
+
+// «+ Material» elige qué se añade: equipo o herramienta, caja o material fungible (en ese sitio, si se pasa)
+function addMaterial(at = {}) {
+  if (!soloFlota()) return;
+  const a = JSON.stringify(at).replace(/"/g, '&quot;');
+  const opt = (fn, icon, title, sub) => `<button class="item" data-add="${icon}" onclick="${fn}"><div class="who-row">${ic(icon, 'i-lg')}<div><b>${title}</b><small>${sub}</small></div></div>${ic('chev', 'i-sm')}</button>`;
+  openModal('Añadir material', `<div class="list add-mat">
+    ${opt(`gearFormAt(${a})`, 'plus', 'Equipo o herramienta', 'Suelto o dentro de una caja')}
+    ${opt(`boxForm(null, ${a})`, 'case', 'Caja', 'Caja Peli con su código y lo que lleva')}
+    ${opt(`consForm(null, ${a})`, 'package', 'Material fungible', 'Discos, cadenas, gasolina…: con stock y mínimo')}</div>`);
+}
 
 // Marca de novedad y de revisión en fichas y listas
 const novTag = x => x.nov?.text ? `<span class="tag nov" title="${esc(x.nov.text)}">${ic('alert', 'i-sm')} Novedad</span>` : '';

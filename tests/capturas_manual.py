@@ -115,7 +115,7 @@ with sync_playwright() as p:
     a.evaluate("setPref({ session: null })"); a.wait_for_timeout(250)
     ann(a, 'entrar', [('.login [name=email]', 'i'), ('.login [name=pin]', 'i')])
     a.evaluate("setPref({ session: 'OP-01', tab: 'consumibles' })"); a.wait_for_timeout(250)
-    ann(a, 'stock', [('#view .grid .panel .row.nowrap', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
+    ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
     a.evaluate("prefs.menuOpen = ['log', 'mat']; renderDrawer()"); tall(1360); a.wait_for_timeout(200)
     ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Logística")', 'r', {'d': 60}),
@@ -207,7 +207,7 @@ with sync_playwright() as p:
     ann(a, 'cont-arrastrar', [('.tok-ghost', 't', {'d': 34, 'box': False}), ('.drop-on', 'b', {'d': 30, 'box': False})])
     a.mouse.up(); a.wait_for_timeout(200); a.evaluate("moveBox('K-H30', 5)"); a.wait_for_timeout(200)
     a.locator('.cv-cell[data-door="7"]').click(position={'x': 30, 'y': 8}); a.wait_for_timeout(250)
-    ann(a, 'cont-hueco', [('#modal .cell-box >> nth=0', 'i'), ('#modal .list', 'i'), ('#modal button:has-text("Caja aquí")', 't', {'d': 26}), ('#modal button:has-text("Material aquí")', 't', {'d': 26})])
+    ann(a, 'cont-hueco', [('#modal .cell-box >> nth=0', 'i'), ('#modal .list', 'i'), ('#modal button:has-text("Material aquí")', 't', {'d': 26})])
     esc()
     a.evaluate("boxDetail('K-H12')"); a.wait_for_timeout(250)
     ann(a, 'cont-caja', [('.box-hero', 'i'), ('.color-pick', 'r', {'d': 14}), ('#modal .dl', 'i'), ('#modal button:has-text("Meter material")', 't', {'d': 22}), ('#modal .list .item >> nth=0', 'i'), ('#modal button:has-text("Mover")', 't', {'d': 22, 'ox': 120})])
@@ -229,7 +229,7 @@ with sync_playwright() as p:
     ann(a, 'nota', [('#modalForm .lbl:has([name=text])', 'i')]); esc(); tall(760)
     # Armarios
     a.evaluate("['B-901', 'B-902'].forEach((id, i) => stamp('gear', { ...get('gear', id), door: 201 + i * 3 })); commit(); go('armarios')"); a.wait_for_timeout(250); tall(1100)
-    ann(a, 'armarios', [('.arm-cab >> nth=0', 'i'), ('.arm-door[data-door="201"]', 'r', {'d': 14}), ('#view .panel:last-child .item >> nth=0', 'i')])
+    ann(a, 'armarios', [('.arm-cab >> nth=0', 'i'), ('.arm-door[data-door="201"]', 'r', {'d': 14}), ('#alm-armarios .panel:nth-child(2) .item >> nth=0', 'i')])
     # Entrega con firma
     a.evaluate("go('entregas'); loanForm()"); a.wait_for_timeout(250); tall(1300)
     a.fill('[name=to]', 'Cabo 1º Pérez Gil'); a.fill('[name=unit]', 'BIEM II'); a.fill('#modalForm input[type=search]', 'botiq'); a.wait_for_timeout(100); a.click('#modalForm .check-row:visible >> nth=0')

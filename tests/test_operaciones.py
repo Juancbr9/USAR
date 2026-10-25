@@ -18,7 +18,7 @@ with sync_playwright() as p:
     a.goto(APP); a.wait_for_selector('#view > *')
     MAIN = {'Avisos': 'Inicio', 'Operaciones': 'Operaciones'}
     def tab(n):
-        n = {'Stock': 'Material fungible'}.get(n, n)
+        n = {'Stock': 'Contenedor y almacén'}.get(n, n)
         sesion.menu(a, MAIN.get(n, n))
     save = lambda: (a.click('#modalForm button:has-text("Guardar")'), a.wait_for_timeout(150))
     mtab = lambda n: (a.click(f'.tab:has-text("{n}")'), a.wait_for_timeout(150))

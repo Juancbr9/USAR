@@ -29,7 +29,7 @@ with sync_playwright() as p:
         tab(a, name); a.screenshot(path=f'{OUT}/tab-{name}.png', full_page=True)
 
     # Añadir material
-    tab(a, 'Contenedor'); a.click('#view button.btn-a:has-text("Material")')
+    tab(a, 'Contenedor'); a.click('#view button.btn-a:has-text("Material")'); a.click('#modal .add-mat [data-add=plus]')
     a.fill('[name=name]', 'Radio Motorola DP4400'); a.select_option('[name=place]', '5'); a.fill('[name=service]', '2026-11-01')
     a.set_input_files('input[type=file]', files=[{'name': 'f.png', 'mimeType': 'image/png', 'buffer': open(ROOT / 'icon-512.png','rb').read()}])
     a.wait_for_timeout(400); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
