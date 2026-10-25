@@ -21,14 +21,14 @@ const SECTIONS = [
   ['maniobras', 'tent', 'Maniobras', 'Traslado de personal, vehículos y material, alojamientos y planning diario', 'ops'],
   ['convoy', 'route', 'Convoy', 'Movimiento de un sitio a otro, solo ida o ida y vuelta', 'ops'],
   // Material: con subopciones (sexto campo) que el menú pinta sangradas bajo «Material»
-  ['contenedor', 'box', 'Contenedor', 'Dibujo por laterales, huecos y cajas', 'log', 'mat'],
+  // Todo el material guardado en una sola página: contenedor, pasillo, armarios, otros y el fungible de cada sitio
+  ['contenedor', 'box', 'Contenedor y almacén', 'Contenedor, pasillo, armarios y otros, con su material fungible', 'log', 'mat'],
   ['revision', 'refresh', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
-  ['fuera', 'layers', 'Fuera del contenedor', 'Pasillo, armarios y otros sitios', 'log', 'mat'],
-  // Las tres pantallas de «Fuera del contenedor» (séptimo campo: no salen sueltas en el menú)
+  // Apartados de esa página (séptimo campo: no salen sueltos en el menú; llevan a la página, a su altura)
   ['pasillo', 'layers', 'Pasillo', 'Material guardado en el pasillo', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios de dos puertas', 'log', 'mat', true],
   ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
-  ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat'],
+  ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],
   ['entregas', 'out', 'Entregas', 'Material prestado a personal de fuera, con firma', 'log', 'mat'],
   ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log'],
   ['vehiculos', 'truck', 'Vehículos', 'Flota de la unidad y plazas', 'log'],
@@ -52,12 +52,12 @@ function sectionStatus(id) {
     case 'revision': { const n = gearList.filter(g => g.status !== 'OPERATIVO').length; return n ? [`${n} en revisión`, 'warn'] : ['Nada en revisión', 'ok']; }
     case 'entregas': { const late = list('loans').filter(l => !l.returned && l.due && daysTo(l.due) < 0).length; return late ? [`${late} sin devolver a tiempo`, 'bad'] : ['', 'neutral']; }
     case 'contenedor': { const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
+      if (a.low.length) return [`${a.low.length} fungibles bajo mínimo`, 'bad'];
       return [`${pct} % operativo`, pct >= 90 ? 'ok' : pct >= 75 ? 'warn' : 'bad']; }
-    case 'revista': { const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
-      if (!last || !t(last)) return ['Sin revistas', 'warn'];
-      const day = new Date(t(last)).toISOString().slice(0, 10);
-      return [`Última: ${fmtDate(day)}`, daysTo(day) < -30 ? 'warn' : 'ok']; }
-    case 'consumibles': return a.low.length ? [`${a.low.length} bajo mínimo`, 'bad'] : ['Stock correcto', 'ok'];
+    case 'revista': { // el punto del menú solo avisa de una revista empezada y sin finalizar
+      if (prefs.draft) return ['Revista en curso sin finalizar', 'warn'];
+      const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
+      return last && t(last) ? [`Última: ${fmtDate(new Date(t(last)).toISOString().slice(0, 10))}`, 'ok'] : ['Sin revistas', 'neutral']; }
     case 'vehiculos': return [`${list('vehicles').length} vehículos`, 'neutral'];
     case 'despliegue': { const fs = get('meta', 'factsheet')?.value; return [TEAM_STATUS[fs?.status || 'base'], fs?.status && fs.status !== 'base' ? 'warn' : 'neutral']; }
     case 'personal': { const n = operators().reduce((s, o) => s + readinessIssues(o.id).length, 0); return n ? [`${n} avisos`, 'warn'] : [`${operators().length} personas`, 'ok']; }
@@ -71,10 +71,12 @@ function sectionStatus(id) {
 // Las antiguas portadas de área (Logística, Equipo, Más) repetían el menú: ahora llevan a su primera sección
 const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', epi: 'personal', puestos: 'personal' };
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
-const FUERA_TABS = ['pasillo', 'armarios', 'otros'];
-// Pestañas de «Fuera del contenedor» (Pasillo, Armarios y Otros en una sola entrada del menú)
-const fueraTabs = () => `<div class="seg-row" role="group" aria-label="Fuera del contenedor" style="margin-bottom:12px">${FUERA_TABS.map(id => { const on = prefs.tab === id;
-  return `<button class="${on ? 'on' : ''}" aria-pressed="${on}" onclick="go('${id}')">${sectionOf(id)[2]}</button>`; }).join('')}</div>`;
+// Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
+const ALMACEN_TABS = ['pasillo', 'armarios', 'otros', 'consumibles', 'fuera'];
+const ALMACEN_JUMP = [['contenedor', 'Contenedor'], ['pasillo', 'Pasillo'], ['armarios', 'Armarios'], ['otros', 'Otros']];
+const almacenJump = () => `<div class="seg-row alm-jump" role="group" aria-label="Ir a" style="margin-bottom:12px">${ALMACEN_JUMP.map(([id, l]) =>
+  `<button onclick="almacenGo('${id}', true)">${l}</button>`).join('')}</div>`;
+function almacenGo(id, smooth) { document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
 const areaHeader = () => '';
 

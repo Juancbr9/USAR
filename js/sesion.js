@@ -46,6 +46,8 @@ const puedeFlota = () => isAdmin() && (!Sync.email || Sync.role === 'jefe');
 const soloFlota = () => puedeFlota() || (toast(`Solo ${ADMIN} puede añadir o cambiar material, vehículos y extras`, 'bad'), false);
 // iPhone y iPad: la app de Android (APK) no sirve; la web se instala desde Safari en la pantalla de inicio y funciona igual
 const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// En iPhone el lector es Face ID (o Touch ID): se nombra así en los botones y avisos
+const HUELLA = IOS ? 'Face ID' : 'huella';
 const instalada = () => matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
 function iosInstall() {
   if (!IOS || instalada()) return '';
@@ -67,7 +69,7 @@ function renderMantenimiento() {
     <div class="login">
       <div class="login-brand"><span class="wordmark">USAR <span class="plate">242</span></span></div>
       <div class="panel login-card mant-card" role="status">
-        <img class="mant-img" src="img/mantenimiento.webp" width="300" height="210" alt="RODRI trabajando en el ordenador">
+        <img class="mant-img" src="img/mantenimiento.webp" width="600" height="420" alt="RODRI trabajando en el ordenador">
         <h2>${ic('wrench')} En mantenimiento</h2>
         <p class="mant-msg">${esc(MANT_MSG)}</p>
         <p class="muted">Vuelve a entrar más tarde. Tus datos no se pierden.</p>
@@ -107,7 +109,7 @@ function renderLogin() {
           <label class="lbl">Contraseña<input class="input" name="pin" type="password" inputmode="numeric" autocomplete="${first ? 'new-password' : 'current-password'}" minlength="4" maxlength="20" required></label>
           ${first ? '<label class="lbl">Repite la contraseña<input class="input" name="pin2" type="password" inputmode="numeric" autocomplete="new-password" minlength="4" maxlength="20" required></label>' : ''}
           <button class="btn btn-a full">${ic('in')} ${first ? 'Crear y entrar' : 'Entrar'}</button>
-          ${!first && bioOf(o.id) ? `<button type="button" class="btn btn-g full bio-btn" onclick="bioLogin('${o.id}')">${ic('finger')} Entrar con huella</button>` : ''}
+          ${!first && bioOf(o.id) ? `<button type="button" class="btn btn-g full bio-btn" onclick="bioLogin('${o.id}')">${ic('finger')} Entrar con ${HUELLA}</button>` : ''}
           <p id="loginMsg" class="bad-text" role="alert"></p>` : ''}
       </form>${iosInstall()}
     </div>`;
@@ -167,11 +169,11 @@ async function bioRegister(o = me()) {
       timeout: 60000, attestation: 'none' } });
     const r = cred.response, pk = r.getPublicKey?.();
     setPref({ bio: { ...prefs.bio, [o.id]: { id: bufB64(cred.rawId), pk: pk ? bufB64(pk) : null, alg: r.getPublicKeyAlgorithm?.() ?? -7 } } });
-    closeModal(); toast('Huella activada: la próxima vez entra con ella');
-  } catch (e) { toast(e?.name === 'NotAllowedError' ? 'No se activó la huella' : 'Este móvil no permite entrar con huella', 'bad'); }
+    closeModal(); toast(IOS ? 'Face ID activado: la próxima vez entra con él' : 'Huella activada: la próxima vez entra con ella');
+  } catch (e) { toast(e?.name === 'NotAllowedError' ? `No se activó ${IOS ? '' : 'la '}${HUELLA}` : `Este móvil no permite entrar con ${HUELLA}`, 'bad'); }
 }
 function bioRemove(id = me().id) {
-  const bio = { ...prefs.bio }; delete bio[id]; setPref({ bio }); toast('Huella quitada en este móvil');
+  const bio = { ...prefs.bio }; delete bio[id]; setPref({ bio }); toast(IOS ? 'Face ID quitado en este móvil' : 'Huella quitada en este móvil');
 }
 // Firma ECDSA en DER (la que da WebAuthn) → r‖s de 32 bytes cada uno (la que entiende WebCrypto)
 function derToRaw(der) {
@@ -198,23 +200,23 @@ async function bioLogin(id) {
   try {
     const cred = await navigator.credentials.get({ publicKey: { challenge, timeout: 60000, userVerification: 'required',
       allowCredentials: [{ type: 'public-key', id: b64Buf(b.id), transports: ['internal'] }] } });
-    if (!(await bioVerify(b, challenge, cred.response))) return msg('La huella no es válida. Entra con la contraseña.');
+    if (!(await bioVerify(b, challenge, cred.response))) return msg(`${IOS ? 'Face ID no es válido' : 'La huella no es válida'}. Entra con la contraseña.`);
     enter(o);
-  } catch (e) { if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') msg('No se pudo usar la huella. Entra con la contraseña.'); }
+  } catch (e) { if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') msg(`No se pudo usar ${IOS ? '' : 'la '}${HUELLA}. Entra con la contraseña.`); }
 }
 // Tras entrar con contraseña, se ofrece una vez activar la huella en este móvil
 async function bioOffer(o) {
   if (prefs.bio?.[o.id] || prefs.bioAsked?.[o.id] || !(await bioAvailable())) return;
   setPref({ bioAsked: { ...prefs.bioAsked, [o.id]: true } });
-  openModal('Entrar con huella', `
-    <p>¿Quieres entrar con tu huella (o la cara) en este móvil? La contraseña seguirá valiendo.</p>
-    <div class="row" style="margin-top:14px"><button class="btn btn-a" onclick="bioRegister()">${ic('finger')} Activar huella</button>
+  openModal(`Entrar con ${HUELLA}`, `
+    <p>¿Quieres entrar con ${IOS ? 'Face ID' : 'tu huella (o la cara)'} en este móvil? La contraseña seguirá valiendo.</p>
+    <div class="row" style="margin-top:14px"><button class="btn btn-a" onclick="bioRegister()">${ic('finger')} Activar ${HUELLA}</button>
       <button class="btn btn-g" onclick="closeModal()">Ahora no</button></div>`);
 }
 function bioPanel() {
   if (!window.PublicKeyCredential) return '';
   const on = !!prefs.bio?.[me().id];
-  return `<button class="btn btn-g" onclick="${on ? 'bioRemove()' : 'bioRegister()'}">${ic('finger')} ${on ? 'Quitar huella' : 'Activar huella'}</button>`;
+  return `<button class="btn btn-g" onclick="${on ? 'bioRemove()' : 'bioRegister()'}">${ic('finger')} ${on ? 'Quitar' : 'Activar'} ${HUELLA}</button>`;
 }
 
 // Cambiar la contraseña propia (Ajustes) o borrar la de otra persona para que la cree de nuevo (ficha de la persona)

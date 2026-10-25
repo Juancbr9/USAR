@@ -23,7 +23,12 @@ def botones(pg):
     """Qué botones de alta y edición ve la persona con sesión en cada pantalla"""
     r = {}
     go(pg, 'contenedor'); r['material'] = pg.locator('#view button:has-text("Material")').count() > 0
-    r['caja'] = pg.locator('#view button:has-text("Caja")').count() > 0
+    r['caja'] = r['consumible'] = False
+    if r['material']:
+        pg.click('#view button.btn-a:has-text("Material")'); pg.wait_for_timeout(100)
+        r['caja'] = pg.locator('#modal .add-mat [data-add=case]').count() > 0
+        r['consumible'] = pg.locator('#modal .add-mat [data-add=package]').count() > 0
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(100)
     gid = pg.evaluate("list('gear')[0].id")
     pg.evaluate(f"gearDetail('{gid}')"); pg.wait_for_timeout(100)
     r['editar'] = pg.locator('#modal button:has-text("Editar")').count() > 0
@@ -32,7 +37,6 @@ def botones(pg):
     pg.keyboard.press('Escape')
     go(pg, 'vehiculos'); r['vehiculo'] = pg.locator('#view button:has-text("Modelo")').count() > 0
     r['veh_editar'] = pg.locator('#view button.veh-item').count() > 0
-    go(pg, 'consumibles'); r['consumible'] = pg.locator('#view button:has-text("Consumible")').count() > 0
     return r
 
 with sync_playwright() as p:
@@ -64,7 +68,7 @@ with sync_playwright() as p:
     # RODRI: todo
     como(a, rodri, 'RODRI')
     b = botones(a); assert all(b.values()), b
-    go(a, 'contenedor'); a.click('#view button:has-text("Material")')
+    go(a, 'contenedor'); a.click('#view button.btn-a:has-text("Material")'); a.click('#modal .add-mat [data-add=plus]')
     a.fill('#modalForm [name=name]', 'Taladro nuevo de RODRI'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     assert a.evaluate("list('gear').some(g => g.name === 'Taladro nuevo de RODRI')")
 

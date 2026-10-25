@@ -36,7 +36,7 @@ with sync_playwright() as p:
 
     # Caja nueva en B1 desde el hueco (código siguiente del lateral izquierdo: H-31)
     a.locator('.cv-cell[data-door="1"]').click(position={'x': 30, 'y': 8}); a.wait_for_timeout(150)
-    a.click('#modal button:has-text("Caja aquí")')
+    a.click('#modal button:has-text("Material aquí")'); a.click('#modal .add-mat [data-add=case]')
     assert a.input_value('[name=code]') == 'H-31' and a.input_value('[name=place]') == '1' and a.locator('[name=shelf]').count() == 0
     a.fill('[name=name]', 'Cizallas Holmatro'); a.select_option('[name=color]', 'amarillo'); a.fill('[name=tare]', '13')
     a.fill('[name=len]', '81'); a.fill('[name=wid]', '52'); a.fill('[name=hei]', '31'); save()
@@ -143,7 +143,7 @@ with sync_playwright() as p:
       mk('K-1', 'C-01', 1, 300); mk('K-2', 'C-02', 2, 250); mk('K-3', 'C-03', 4, 200);
       commit(); go('contenedor');
     })()"""); b.wait_for_timeout(200)
-    assert b.evaluate("MAT_TABS") == ['contenedor', 'revision', 'fuera', 'consumibles', 'entregas']
+    assert b.evaluate("MAT_TABS") == ['contenedor', 'revision', 'entregas']
     drag = lambda src, dst: (lambda s, t: (b.mouse.move(s['x'] + 8, s['y'] + 8), b.mouse.down(), b.mouse.move(s['x'] + 20, s['y'] + 20, steps=3),
                                           b.mouse.move(t['x'] + t['width'] / 2, t['y'] + t['height'] / 2, steps=10), b.mouse.up(), b.wait_for_timeout(250)))(b.locator(src).bounding_box(), b.locator(dst).bounding_box())
     drag('.tok-gear:has-text("Pistola de clavos")', '.tok-box[data-box="K-3"]')
@@ -189,7 +189,7 @@ with sync_playwright() as p:
     assert b.evaluate("get('gear', 'B-901').door") == 206 and 'Armario 3' in b.evaluate("whereIs(get('gear', 'B-901'))")
     b.screenshot(path=f'{OUT}/armarios.png', full_page=True)
     # Pasillo 3 y Otros (con el sitio exacto)
-    b.evaluate("go('otros')"); b.wait_for_timeout(150); b.click('#view button.btn-a:has-text("Material")')
+    b.evaluate("go('otros')"); b.wait_for_timeout(150); b.click('#alm-otros button:has-text("Material")'); b.click('#modal .add-mat [data-add=plus]')
     b.fill('[name=name]', 'Grupo electrógeno'); assert b.input_value('[name=place]') == '301'; b.fill('[name=where]', 'Nave del parque'); b.click('#modalForm button:has-text("Guardar")'); b.wait_for_timeout(200)
     assert b.locator('#view .item:has-text("Grupo electrógeno"):has-text("Nave del parque")').count() == 1
     gid = b.evaluate("list('gear').find(g => g.name === 'Grupo electrógeno').id")

@@ -32,13 +32,13 @@ with sync_playwright() as p:
     a.keyboard.press('Escape')
 
     # Áreas: color de cabecera, menú sin repeticiones y franja de activación
-    sesion.menu(a, 'Material fungible')
+    sesion.menu(a, 'En revisión')
     assert a.evaluate("document.documentElement.dataset.area") == 'log' and a.locator('.crumb').count() == 0
     assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
     # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Logística › Material)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
     assert a.locator('#drawer .dr-group-head').all_inner_texts()[:4] == ['Actividades', 'Logística', 'Material', 'Equipo'], a.locator('#drawer .dr-group-head').all_inner_texts()
-    assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 2 and a.locator('#drawer .dr-item.on:has-text("Material fungible")').count() == 1
+    assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 2 and a.locator('#drawer .dr-item.on:has-text("En revisión")').count() == 1
     assert a.locator('#drawer .dr-item:has-text("Activación")').count() == 0, 'Actividades está plegada'
     a.click('#drawer .dr-group-head:has-text("Actividades")')
     assert a.locator('#drawer .dr-item').all_inner_texts()[1:5] == ['Activación', 'Ejercicios', 'Maniobras', 'Convoy'] and a.locator('#drawer .dr-item:has-text("Contenedor")').count() == 0, 'un grupo abierto a la vez'
@@ -51,8 +51,8 @@ with sync_playwright() as p:
     a.evaluate("gearDetail('G-B19-5')"); a.go_back(); a.wait_for_timeout(200)
     assert a.locator('#modal').is_hidden() and a.evaluate("prefs.tab") == 'personal', 'atrás cierra la ventana'
     a.go_back(); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'contenedor', a.evaluate("prefs.tab")
-    a.go_back(); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'consumibles', a.evaluate("prefs.tab")
-    a.click('#menuBtn'); a.go_back(); a.wait_for_timeout(200); assert a.locator('#drawer').is_hidden() and a.evaluate("prefs.tab") == 'consumibles'
+    a.go_back(); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'revision', a.evaluate("prefs.tab")
+    a.click('#menuBtn'); a.go_back(); a.wait_for_timeout(200); assert a.locator('#drawer').is_hidden() and a.evaluate("prefs.tab") == 'revision'
     a.go_forward(); a.wait_for_timeout(200)
     assert a.locator('#actbar').count() == 0
     a.evaluate("put('missions', { id: 'M-T', title: 'Simulacro', type: 'ejercicio', status: 'active', startedAt: Date.now(), teams: [], vehicles: [], gear: [] })"); a.wait_for_timeout(150)
