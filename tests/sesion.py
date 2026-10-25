@@ -3,7 +3,10 @@
 Para probar la propia pantalla de entrada: br.new_context(..., autologin=False).
 La base de datos del equipo (SUPA en js/config.js) se sustituye: sin nada, cada móvil guarda los datos solo para sí;
 con supa=MOCK_URL, la app se conecta sola al servidor de prueba (tests/mock_supabase.py). Nunca se usa la de verdad."""
+import os
 from playwright.sync_api import Browser
+# Que context.route también vea lo que pide el service worker (si no, al recargar llega el config.js de verdad de su caché)
+os.environ.setdefault('PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS', '1')
 
 LOGIN = """try { const k = 'USAR_V4_PREFS', p = JSON.parse(localStorage.getItem(k) || '{}');
   if (!p.session && !sessionStorage.getItem('sin-sesion')) { p.session = 'OP-01'; localStorage.setItem(k, JSON.stringify(p)); }
@@ -26,6 +29,9 @@ def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=Fa
     c = _new_context(self, *args, **kw)
     if autologin: c.add_init_script(LOGIN.replace("!sessionStorage.getItem('con-bloqueo')", 'false') if bloqueo else LOGIN)
     c.route('**/js/config.js', _config(mant, flota, supa))
+    # Por si acaso: nada llega a la base de datos de verdad (se contesta como una nube vacía)
+    c.route('https://lxjkpgdvhzjwkmxnllqp.supabase.co/**', lambda r: r.fulfill(status=200 if r.request.method == 'GET' else 201,
+            content_type='application/json', body='[]' if r.request.method == 'GET' else '', headers={'Access-Control-Allow-Origin': '*'}))
     return c
 Browser.new_context = new_context
 
