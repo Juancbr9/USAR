@@ -358,7 +358,7 @@ const TOOL_COLOR = {
 const TOOL_TINT = [
   [/bosch/i, '#1f5fa8'], [/makita/i, '#0f8a8f'], [/hilti|w[uü]rth/i, '#d6332a'], [/stihl|husqvarna/i, '#f37021'],
   [/gasoil|di[eé]sel/i, '#262626'], [/mezcla/i, '#3f8f3f'], [/aceite (de cadena|hidr)/i, '#d6332a'],
-  [/naranja/i, '#f39200'], [/azul/i, '#1f5fa8'], [/verde/i, '#3f8f3f'], [/amarill/i, '#f6c400'], [/roj/i, '#d6332a'], [/negr/i, '#262626']
+  [/naranja/i, '#f39200'], [/azul/i, '#1f5fa8'], [/verde/i, '#3f8f3f'], [/amarill/i, '#f6c400'], [/roj/i, '#d6332a'], [/negr/i, '#262626'], [/blanc/i, '#f2f2ee']
 ];
 const TOOL_MATCH = [
   [/cizalla/i, 'cizalla'], [/separador/i, 'separador'], [/combinad/i, 'combinada'], [/cilindro|gato|ram/i, 'cilindro'],

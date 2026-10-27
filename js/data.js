@@ -261,7 +261,9 @@ function gearGroups(items = list('gear')) {
   const vs = [...new Set(items.filter(g => g.vehicle).map(g => g.vehicle))].map(v => [v, vehName(v), items.filter(g => g.vehicle === v)]);
   return [...doors, ...vs].filter(([, , gs]) => gs.length).map(([k, l, gs]) => [k, l, gs.sort((a, b) => (a.box || '').localeCompare(b.box || '') || byName(a, b))]);
 }
-const epiLabel = e => EPI_TYPES[e.type] || e.name || 'EPI';
+// Nombre de un EPI: su modelo (si tiene) o el tipo, y el color (p. ej. «Casco USAR con orejeras · Rojo»)
+const epiLabel = e => [e.desc || EPI_TYPES[e.type] || e.name || 'EPI', e.color].filter(Boolean).join(' · ');
+const epiQty = e => +e.qty > 1 ? +e.qty : 1;
 
 function stamp(kind, rec) { rec._u = Date.now(); db[kind][rec.id] = rec; Sync.queue(kind, rec); }
 function addLog(action) { stamp('logs', { id: uid('L'), ts: Date.now(), operator: prefs.activeOperator, action }); }
@@ -369,6 +371,14 @@ function seedDefaults(share = false) {
     ['gear', 'boxes', 'consumables'].forEach(kind => list(kind).filter(x => !x.vehicle && +x.door >= 201 && +x.door <= 206)
       .forEach(x => stampIt(kind, { ...x, door: nueva(+x.door) })));
     stampIt('meta', { id: 'armbase', value: 1 });
+  }
+  // EPI de reserva (27/10/2026): cascos USAR con orejeras por color y monos USAR por talla (ids fijos: no se duplican)
+  if (!(get('meta', 'epibase')?.value >= 1)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    const res = (id, type, desc, color, size, qty) => !db.epis[id] && stampIt('epis', { id, type, name: EPI_TYPES[type], desc, color, size, qty, status: 'OK', expires: '', holder: RESERVA });
+    [['ROJO', 'Rojo', 17], ['BLANCO', 'Blanco', 7], ['VERDE', 'Verde', 1]].forEach(([k, c, n]) => res(`EPI-RES-CASCO-${k}`, 'casco', 'Casco USAR con orejeras', c, 'Universal', n));
+    [['44', 7], ['46', 8], ['48', 6], ['52', 1]].forEach(([t, n]) => res(`EPI-RES-MONO-${t}`, 'mono', 'Mono USAR', '', t, n));
+    stampIt('meta', { id: 'epibase', value: 1 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
