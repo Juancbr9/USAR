@@ -361,6 +361,15 @@ function seedDefaults(share = false) {
     });
     stampIt('meta', { id: 'vehbase', value: 8 });
   }
+  // Armarios v1: antes cada armario eran dos puertas (201–206); ahora son baldas. Lo que había en un armario pasa a su
+  // balda de abajo, para colocarlo luego arrastrando
+  if (!(get('meta', 'armbase')?.value >= 1)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    const nueva = d => 200 + Math.ceil((d - 200) / 2) * 10 + ARM_BALDAS;
+    ['gear', 'boxes', 'consumables'].forEach(kind => list(kind).filter(x => !x.vehicle && +x.door >= 201 && +x.door <= 206)
+      .forEach(x => stampIt(kind, { ...x, door: nueva(+x.door) })));
+    stampIt('meta', { id: 'armbase', value: 1 });
+  }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
     const code = String(g.box).trim(), bid = 'K-' + code.toUpperCase().replace(/[^A-Z0-9]+/g, '');

@@ -179,14 +179,23 @@ with sync_playwright() as p:
     g = b.evaluate("get('gear', 'G-B10-2')"); assert g['status'] == 'OPERATIVO' and not g['rev'] and g['revHistory'][0]['where'] == 'Taller Holmatro Telde'
     b.evaluate("closeModal(); render()"); assert b.locator('#view details:has-text("Revisiones terminadas")').count() == 1
 
-    # Armarios: tres armarios de dos puertas; se arrastra material a una puerta
+    # Armarios: tres armarios abiertos con 5 baldas y el suelo delante; se arrastra material de una balda a otra
     b.evaluate("go('armarios')"); b.wait_for_timeout(150)
-    assert b.locator('.arm-cab').count() == 3 and b.locator('.arm-door').count() == 6
+    assert b.locator('.arm-cab').count() == 3 and b.locator('.arm-shelf').count() == 15 and b.locator('.arm-floor').count() == 1
     b.evaluate("go('contenedor'); setPref({ cside: 'izq' })"); b.wait_for_timeout(150)
-    b.evaluate("moveGear('B-901', 203)"); b.evaluate("go('armarios')"); b.wait_for_timeout(150)
-    assert b.locator('.arm-door[data-door="203"] .tok-gear').count() == 1
-    drag('.arm-door[data-door="203"] .tok-gear', '.arm-door[data-door="206"]')
-    assert b.evaluate("get('gear', 'B-901').door") == 206 and 'Armario 3' in b.evaluate("whereIs(get('gear', 'B-901'))")
+    b.evaluate("moveGear('B-901', 212)"); b.evaluate("go('armarios')"); b.wait_for_timeout(150)
+    assert b.locator('.arm-shelf[data-door="212"] .tok-gear').count() == 1
+    drag('.arm-shelf[data-door="212"] .tok-gear', '.arm-shelf[data-door="235"]')
+    assert b.evaluate("get('gear', 'B-901').door") == 235 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Armario 3 · balda 5'
+    drag('.arm-shelf[data-door="235"] .tok-gear', '.arm-floor')
+    assert b.evaluate("get('gear', 'B-901').door") == 290
+    # Pasillo: estantería de 5 módulos × 5 niveles; se arrastra de un hueco a otro
+    b.evaluate("moveGear('B-901', 110)"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
+    assert b.locator('.pas .pas-cell').count() == 25 and b.locator('.pas-cell[data-door="110"] .tok-gear').count() == 1
+    drag('.pas-cell[data-door="110"] .tok-gear', '.pas-cell[data-door="143"]')
+    assert b.evaluate("get('gear', 'B-901').door") == 143 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Pasillo · módulo 4 · nivel 3'
+    b.screenshot(path=f'{OUT}/pasillo.png', full_page=True)
+    b.evaluate("moveGear('B-901', 235)"); b.evaluate("go('armarios')"); b.wait_for_timeout(150)
     b.screenshot(path=f'{OUT}/armarios.png', full_page=True)
     # Pasillo 3 y Otros (con el sitio exacto)
     b.evaluate("go('otros')"); b.wait_for_timeout(150); b.click('#alm-otros button:has-text("Material")'); b.click('#modal .add-mat [data-add=plus]')

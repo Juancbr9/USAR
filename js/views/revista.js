@@ -11,8 +11,8 @@ const revGroups = () => [
   ['izq', 'Contenedor · lateral izquierdo', g => g.door >= 1 && g.door <= 10],
   ['der', 'Contenedor · lateral derecho', g => g.door >= 11 && g.door <= 20],
   ['sin', 'Contenedor · sin ubicar', g => !g.door],
-  ['pasillo', 'Pasillo', g => g.door === PASILLO],
-  ['armarios', 'Armarios', g => g.door > 200 && g.door < 300],
+  ['pasillo', 'Pasillo', g => enPasillo(g.door)],
+  ['armarios', 'Armarios', g => enArmarios(g.door)],
   ['otros', 'Otros', g => g.door === OTROS]
 ];
 const markOf = r => !r ? '' : r.mark || (r.ok === true ? 'ok' : r.ok === false ? 'bad' : '');

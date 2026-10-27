@@ -336,7 +336,7 @@ function endDrag() {
   document.body.classList.remove('cv-dragging'); $('dragDock')?.remove(); DRAG = null;
 }
 document.addEventListener('pointerdown', e => {
-  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok, .drag-it, .cons-item'); if (!tok || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
+  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok, .pas .tok, .drag-it, .cons-item'); if (!tok || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
   DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, touch: e.pointerType !== 'mouse', started: false };
   if (DRAG.touch) { const d = DRAG; d.timer = setTimeout(() => DRAG === d && startDrag(d), 280); }
 });
@@ -415,30 +415,54 @@ function findGo(kind, id) {
   toast(`${kind === 'box' ? 'Caja ' + x.code : x.name}: ${whereIs(x)}${kind === 'gear' && box ? ' · caja ' + box.code : ''}`);
 }
 
-/* ---------- Armarios: tres armarios marrones de dos puertas (monos, botas, gafas, guantes, documentación…) ---------- */
+/* ---------- Armarios: tres armarios de dos puertas sobre la estantería, abiertos, con sus baldas ---------- */
+// Lo que hay en un sitio (sin vehículo): [equipos, cajas]
+const enSitio = d => [list('gear').filter(g => !g.vehicle && g.door === d), list('boxes').filter(b => !b.vehicle && b.door === d)];
+// Un hueco que admite soltar material: se toca para verlo y se mantiene pulsado lo de dentro para arrastrarlo
+const hueco = (d, cls, label, extra = '') => { const [items, b] = enSitio(d); return `
+  <div class="cv-cell ${cls}" data-door="${d}" aria-label="${esc(placeRec(d).label)}" onclick="cvClick(event, ${d})">
+    <button class="cv-tag" aria-label="${esc(placeRec(d).label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos">${label}</button>${extra}${cellContent(items, b)}</div>`; };
 function viewArmarios() {
-  const gear = list('gear'), bs = list('boxes');
-  const at = d => [gear.filter(g => !g.vehicle && g.door === d), bs.filter(b => !b.vehicle && b.door === d)];
-  const cons = consIn(d => ARMARIOS.some(a => a.id === d));
+  const cons = consIn(enArmarios), lleno = ARMARIOS.map(a => a.id).concat(ARM_SUELO).filter(d => enSitio(d).flat().length);
   return `
     <div class="panel">
       <div class="between sec-head"><h2>Armarios</h2></div>
-      <p class="muted" style="margin:-4px 0 12px">Toca una puerta para verla; mantén pulsado para arrastrar.</p>
-      <div class="arm">${[1, 2, 3].map(n => `
-        <div class="arm-cab" aria-label="Armario ${n}"><div class="arm-top">Armario ${n}</div>
-          <div class="arm-doors">${ARMARIOS.filter(a => a.n === n).map(a => { const [items, b] = at(a.id); return `
-            <div class="cv-cell arm-door" data-door="${a.id}" onclick="cvClick(event, ${a.id})">
-              <button class="cv-tag" aria-label="Armario ${n}, puerta ${a.side}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos">${a.side === 'izquierda' ? 'Izq.' : 'Dcha.'}</button>
-              <span class="arm-knob" aria-hidden="true"></span>${cellContent(items, b) || '<span class="cv-empty">Vacía</span>'}</div>`; }).join('')}</div>
-          <div class="arm-feet" aria-hidden="true"><i></i><i></i></div></div>`).join('')}</div>
+      <p class="muted" style="margin:-4px 0 12px">Toca una balda para verla; mantén pulsado para arrastrar.</p>
+      <div class="arm">
+        <div class="arm-row">${[1, 2, 3].map(n => `
+          <div class="arm-cab" aria-label="Armario ${n}">
+            <div class="arm-top">Armario ${n}</div>
+            <div class="arm-body"><span class="arm-leaf" aria-hidden="true"><i></i></span>
+              <div class="arm-in">${ARMARIOS.filter(a => a.n === n).map(a => hueco(a.id, 'arm-shelf', a.balda)).join('')}</div>
+              <span class="arm-leaf r" aria-hidden="true"><i></i></span></div></div>`).join('')}</div>
+        ${hueco(ARM_SUELO, 'arm-floor', 'Delante de los armarios')}
+        <div class="rack-beam" aria-hidden="true"></div>
+      </div>
     </div>
-    ${ARMARIOS.some(a => at(a.id).flat().length) ? `<div class="panel"><div class="list">${ARMARIOS.filter(a => at(a.id).flat().length).map(a => { const [items, b] = at(a.id), loose = items.filter(g => !get('boxes', g.box)); return `
-      <button class="item" onclick="cellModal(${a.id})"><div><b>${esc(placeRec(a.id).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g))].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
+    ${lleno.length ? `<div class="panel"><div class="list">${lleno.map(d => { const [items, b] = enSitio(d), loose = items.filter(g => !get('boxes', g.box)); return `
+      <button class="item" onclick="cellModal(${d})"><div><b>${esc(placeRec(d).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g))].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
     ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}`;
 }
 
+/* ---------- Pasillo: estantería de palés, módulos y niveles (el suelo abajo) ---------- */
+function viewPasillo() {
+  const cons = consIn(d => PASILLO_SITIOS.some(p => p.id === d));
+  return `
+    <div class="panel">
+      <div class="between wrap-row sec-head"><h2>Pasillo</h2></div>
+      <p class="muted" style="margin:-4px 0 12px">La estantería del pasillo por módulos y niveles. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
+      <div class="pas-scroll"><div class="pas" style="--mods:${PAS_MOD}">
+        ${[...PAS_NIV.keys()].reverse().map(nv => `
+          <div class="pas-lvl${nv ? '' : ' floor'}">${nv ? PAS_NIV[nv].replace('Nivel ', 'N') : 'Suelo'}</div>
+          ${Array.from({ length: PAS_MOD }, (_, m) => hueco(100 + (m + 1) * 10 + nv, 'pas-cell' + (nv ? '' : ' pas-floor'), nv === PAS_NIV.length - 1 ? 'M' + (m + 1) : '')).join('')}`).join('')}
+      </div></div>
+    </div>
+    ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}
+    ${viewPlace(PASILLO, 'En el pasillo, sin hueco concreto')}`;
+}
+
 // Pasillo 3 y Otros: lista de lo que hay, con sus cajas
-function viewPlace(door) {
+function viewPlace(door, title) {
   const p = placeRec(door), at = JSON.stringify({ door }).replace(/"/g, '&quot;');
   const bs = list('boxes').filter(b => !b.vehicle && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
   const loose = list('gear').filter(g => !g.vehicle && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
@@ -446,7 +470,7 @@ function viewPlace(door) {
   const row = g => `<button class="item drag-it" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
   return `
     <div class="panel drop-zone" data-door="${door}">
-      <div class="between wrap-row sec-head"><h2>${esc(p.label)}</h2>
+      <div class="between wrap-row sec-head"><h2>${esc(title || p.label)}</h2>
         ${puedeFlota() ? `<button class="btn btn-g" onclick="addMaterial(${at})">${ic('plus')} Material</button>` : ''}</div>
       ${bs.map(b => { const [, hex, ink] = colorOf(b), items = boxItems(b.id); return `
         <div class="well drag-it place-box" data-box="${b.id}">

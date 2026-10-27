@@ -228,8 +228,8 @@ with sync_playwright() as p:
     esc(); a.evaluate("novForm('gear', 'G-B19-5')"); a.wait_for_timeout(250)
     ann(a, 'nota', [('#modalForm .lbl:has([name=text])', 'i')]); esc(); tall(760)
     # Armarios
-    a.evaluate("['B-901', 'B-902'].forEach((id, i) => stamp('gear', { ...get('gear', id), door: 201 + i * 3 })); commit(); go('armarios')"); a.wait_for_timeout(250); tall(1100)
-    ann(a, 'armarios', [('.arm-cab >> nth=0', 'i'), ('.arm-door[data-door="201"]', 'r', {'d': 14}), ('#alm-armarios .panel:nth-child(2) .item >> nth=0', 'i')])
+    a.evaluate("['B-901', 'B-902'].forEach((id, i) => stamp('gear', { ...get('gear', id), door: 211 + i * 12 })); commit(); go('armarios')"); a.wait_for_timeout(250); tall(1100)
+    ann(a, 'armarios', [('.arm-cab >> nth=0', 'i'), ('.arm-shelf[data-door="211"]', 'r', {'d': 14}), ('#alm-armarios .panel:nth-child(2) .item >> nth=0', 'i')])
     # Entrega con firma
     a.evaluate("go('entregas'); loanForm()"); a.wait_for_timeout(250); tall(1300)
     a.fill('[name=to]', 'Cabo 1º Pérez Gil'); a.fill('[name=unit]', 'BIEM II'); a.fill('#modalForm input[type=search]', 'botiq'); a.wait_for_timeout(100); a.click('#modalForm .check-row:visible >> nth=0')

@@ -6,7 +6,7 @@
 function viewContenedor() {
   return `${almacenJump()}
     <section id="alm-contenedor" class="alm-sec">${viewContVisual()}</section>
-    <section id="alm-pasillo" class="alm-sec">${viewPlace(PASILLO)}</section>
+    <section id="alm-pasillo" class="alm-sec">${viewPasillo()}</section>
     <section id="alm-armarios" class="alm-sec">${viewArmarios()}</section>
     <section id="alm-otros" class="alm-sec">${viewPlace(OTROS)}</section>`;
 }

@@ -52,6 +52,11 @@ with sync_playwright() as p:
     cid = a.evaluate("const c = list('consumables')[0]; put('consumables', { ...c, door: 101, location: '' }); c.id"); a.wait_for_timeout(200)
     arrastra(f'#alm-pasillo .cons-item[data-cons="{cid}"]', '#dragDock .dock-zone[data-door="301"]')
     assert a.evaluate(f"consDoor(get('consumables', '{cid}'))") == 301
+    # Armarios de antes (dos puertas por armario): lo que había en una puerta pasa a la balda de abajo de ese armario
+    a.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); const g = Object.values(d.gear)[0]; g.door = 204; g.vehicle = '';
+      delete d.meta.armbase; localStorage.setItem(KEY.db, JSON.stringify(d)); window.__gid = g.id; sessionStorage.setItem('gid', g.id); })()""")
+    a.reload(); a.wait_for_selector('#view > *')
+    assert a.evaluate("get('gear', sessionStorage.getItem('gid')).door") == 225 and a.evaluate("get('meta', 'armbase').value") == 1
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')
