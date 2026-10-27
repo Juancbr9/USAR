@@ -36,7 +36,7 @@ def botones(pg):
     r['mover'] = pg.locator('#modal button:has-text("Mover")').count() > 0
     pg.keyboard.press('Escape')
     go(pg, 'vehiculos'); r['vehiculo'] = pg.locator('#view button:has-text("Modelo")').count() > 0
-    r['veh_editar'] = pg.locator('#view button.veh-item').count() > 0
+    r['veh_editar'] = pg.locator('#view button.veh-item[onclick^="vehicleForm"]').count() > 0
     return r
 
 with sync_playwright() as p:
