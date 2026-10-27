@@ -61,7 +61,8 @@ function viewMissionList(type) {
     ${block('active', 'En curso', 'play')}
     ${block('prep', 'En preparación', 'clock')}
     ${block('done', 'Terminadas', 'history', false)}
-    ${!ms.length ? `<div class="panel"><p class="muted">Todavía no hay ${type === 'ejercicio' ? 'ningún ejercicio' : type ? 'ninguna intervención' : 'ninguna'}.</p></div>` : ''}
+    ${!ms.length ? `<div class="panel">${emptyState(type === 'ejercicio' ? 'flag' : 'alert', `Todavía no hay ${type === 'ejercicio' ? 'ningún ejercicio' : type ? 'ninguna intervención' : 'ninguna'}`,
+      type === 'ejercicio' ? 'Crea el primero con «Nuevo ejercicio» o empieza desde una plantilla.' : 'Cuando haya una salida real, pulsa «Nueva intervención» o empieza desde una plantilla.')}</div>` : ''}
     ${templatesPanel()}`;
 }
 

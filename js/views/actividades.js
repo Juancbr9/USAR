@@ -31,11 +31,12 @@ function viewActs(type) {
       <button class="op-tile ex" onclick="actForm('${type}')">${ic(icon, 'i-lg')}<b>${type === 'convoy' ? 'Nuevo convoy' : 'Nueva maniobra'}</b>
         <small>${type === 'convoy' ? 'Movimiento de un sitio a otro' : 'Traslado, alojamiento y planning'}</small></button>
     </div>
-    <div class="panel"><h3 class="sec-title">${ic('calendar')} Próximas y en curso (${next.length})</h3>
-      ${next.length ? `<div class="list">${next.map(card).join('')}</div>` : `<p class="muted">No hay ${type === 'convoy' ? 'ningún convoy' : 'ninguna maniobra'} prevista.</p>`}</div>
+    ${all.length ? `<div class="panel"><h3 class="sec-title">${ic('calendar')} Próximas y en curso (${next.length})</h3>
+      ${next.length ? `<div class="list">${next.map(card).join('')}</div>` : `<p class="muted">No hay ${type === 'convoy' ? 'ningún convoy previsto' : 'ninguna maniobra prevista'}.</p>`}</div>`
+      : `<div class="panel">${emptyState(icon, `Todavía no hay ${type === 'convoy' ? 'ningún convoy' : 'ninguna maniobra'}`,
+        `${plural}: ${SECTIONS.find(s => s[0] === ACT_TYPES[type][1])[3].toLowerCase()}. ${name === 'Convoy' ? 'Crea el primero' : 'Crea la primera'} con el botón de arriba.`)}</div>`}
     ${past.length ? `<details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('history')} Pasadas (${past.length})</summary>
-      <div class="list" style="margin-top:10px">${past.map(card).join('')}</div></details>` : ''}
-    ${!all.length ? `<div class="panel"><p class="muted">${plural}: ${SECTIONS.find(s => s[0] === ACT_TYPES[type][1])[3].toLowerCase()}. ${name === 'Convoy' ? 'Crea el primero' : 'Crea la primera'} con el botón de arriba.</p></div>` : ''}`;
+      <div class="list" style="margin-top:10px">${past.map(card).join('')}</div></details>` : ''}`;
 }
 
 /* ---------- Datos generales ---------- */

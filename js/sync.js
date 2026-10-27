@@ -81,12 +81,13 @@ const Sync = (() => {
      entonces el invitado no ve nada. Los PIN los ponen los jefes. */
   async function rpc(fn, args = {}) {
     const c = cfg();
+    if (!c) throw new Error('Este móvil no está conectado con la base de datos del equipo');
     if (c.session && c.session.expires_at - Date.now() < 60000) await refresh();
     const token = cfg().session?.access_token;
     const res = await fetch(`${c.url}/rest/v1/rpc/${fn}`, { method: 'POST', body: JSON.stringify(args),
       headers: { apikey: c.key, ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' } });
     const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(res.status === 404 || /PGRST202/.test(JSON.stringify(data)) ? 'Falta preparar el acceso con PIN en la base de datos (supabase.sql)' : `Servidor ${res.status}`);
+    if (!res.ok) throw new Error(res.status === 404 || /PGRST202/.test(JSON.stringify(data)) ? `El acceso con PIN todavía no está activado: entra con tu correo o pide a ${ADMIN} que lo active` : `Servidor ${res.status}`);
     if (data?.error) throw new Error(data.error);
     return data;
   }

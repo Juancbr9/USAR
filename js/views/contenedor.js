@@ -121,7 +121,7 @@ function viewRevision() {
       ${r.reason ? `<small>${esc(r.reason)}</small>` : ''}</div></div>${revTag(g)}</button>`; };
   return `
     <div class="panel"><div class="between sec-head"><h2>En revisión</h2><span class="tag ${inRev.length ? 'warn' : 'ok'}">${inRev.length}</span></div>
-      ${inRev.length ? `<div class="list">${inRev.map(card).join('')}</div>` : '<p class="muted">Nada en revisión.</p>'}</div>
+      ${inRev.length ? `<div class="list">${inRev.map(card).join('')}</div>` : emptyState('checkc', 'Nada en revisión', 'Todo el material está operativo.')}</div>
     ${nov.length ? `<div class="panel"><h3 class="sec-title">${ic('alert')} Con novedad (${nov.length})</h3><div class="list">${nov.map(x => x.code !== undefined && get('boxes', x.id) ? `
       <button class="item" onclick="boxDetail('${x.id}')"><div><b>Caja ${esc(x.code)} · ${esc(x.name || '')}</b><small>${esc(x.nov.text)}</small></div>${novTag(x)}</button>` : `
       <button class="item" onclick="gearDetail('${x.id}')"><div class="who-row">${artMini(x)}<div><b>${esc(x.name)}</b><small>${esc(x.nov.text)}</small></div></div>${novTag(x)}</button>`).join('')}</div></div>` : ''}
