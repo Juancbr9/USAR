@@ -116,8 +116,57 @@ const DEFAULT_VEHICLES = [
   veh('V-CAM-ROJO', 'Camión rojo'),
   veh('V-CAM-VERDE', 'Camión verde'),
   veh('V-GRUA', 'Grúa'),
-  veh('V-MINI', 'Minimáquina')
+  veh('V-MINI', 'Minimáquina'),
+  veh('V-AB-CHASIS', 'Autobomba Renault (sin módulo)', 'Elige el módulo que lleva en cada matrícula'),
+  veh('V-IVECO-V', 'Camión Iveco verde'),
+  veh('V-VITO', 'Mercedes Vito'),
+  veh('V-CADENAS', 'Vehículo de cadenas'),
+  veh('V-CARRETILLA', 'Carretilla elevadora'),
+  veh('V-RQ-CARGA', 'Remolque de carga'),
+  veh('V-RQ-PERROS', 'Remolque de perros'),
+  veh('V-RQ-GE', 'Grupo electrógeno (remolque)'),
+  veh('V-RQ-TORRE', 'Torre de luz Tecnove (remolque)'),
+  veh('V-RQ-COMP', 'Compresor neumático (remolque)'),
+  veh('V-RQ-ARGOS', 'Remolque Argos'),
+  veh('V-RQ-ROJO', 'Remolque rojo')
 ];
+// Matrículas de la flota (hoja «Vehículos Dto Los Rodeos (SIEN 242) feb26» y pizarra de ITV, octubre 2026).
+// Cada modelo guarda las suyas; una matrícula se pasa a otro modelo desde su ficha (ATB M1/M2, módulo del Renault…).
+// [matrícula, caducidad ITV, destino, titular, suplente, próxima cita]
+const FLOTA_2026 = {
+  'V-AMAROK': [['ET-120111', '2027-12-17', 'Eq. cinológico', 'CBO Gutiérrez', 'CBO Sevilla'], ['ET-120206', '2027-03-06', 'Eq. cinológico', 'CBO Abora', 'CBO Chinea'],
+    ['ET-120171', '2027-02-20', '2º JSIEN', 'CBO Lubary', 'CBO Sabina']],
+  'V-SANGYONG': [['ET-124281', '', 'JCIEN 24', 'CBO Ortega', 'CBO Calixto'], ['ET-124278', '', 'Aux. CIEN 24', 'CBO Calixto', 'CBO Ortega'],
+    ['ET-124277', '2026-12-12', 'JSIEN', 'CBO Lee', 'CBO Sabina'], ['ET-124279', '2026-12-12', '1º pelotón', 'CBO Valdivia', 'CBO Aguiar'],
+    ['ET-124280', '2026-12-12', '2º pelotón', 'CBO Moreno', 'CBO Lenis'], ['ET-124460', '', 'PM (Eq. RPAS)', 'CBO Calixto', 'CBO Ortega']],
+  'V-ATB-M1': [['ET-110940', '2026-10-29', '1º pelotón', 'CBO Cuñat', 'Sold. Fraile', '28/10 11:00'], ['ET-110941', '2027-03-20', '2º pelotón', 'CBO Raúl Marrero', 'CBO1 Alberto'],
+    ['ET-110785', '2026-11-18', '1º pelotón', 'CBO Eros', 'CBO Ricardo Marrero'], ['ET-112668', '2026-12-15', '1º pelotón', 'CBO Peraza · Sold. Ander Heiden', 'CBO Peraza'],
+    ['ET-112313', '2026-11-21', '2º pelotón', 'Sold. Nicolás', ''], ['ET-112773', '2026-12-10', '2º pelotón', 'CBO Cristofer', 'Sold. Arévalo'],
+    ['ET-110771', '2027-03-31', '2º pelotón', 'CBO Rodríguez', 'Sold. Arévalo'], ['ET-110770', '2026-12-10', '2º pelotón', 'CBO Raúl Marrero', 'CBO Batista'],
+    ['ET-110766', '2027-04-14', '1º pelotón', 'Adasat', 'CBO Peraza']],
+  'V-VPI': [['ET-121338', '2027-03-30', '1º/2º pelotón · contenedor IMEU 003149 0', 'CBO Bosch', 'Sold. Adasat']],
+  'V-AB-CHASIS': [['ET-121931', '2027-03-12', '2º pelotón', 'CBO Ibáñez', 'CBO Bosch'], ['ET-121345', '2027-04-07', '1º pelotón', 'CBO Rosa Marrero', 'Sold. Adasat']],
+  'V-AB': [['ET-109870', '2027-03-09', '2º pelotón · nodriza', 'CBO Pestano', 'CBO Riverol'], ['ET-109871', '2027-03-08', '1º pelotón · nodriza', 'CBO Núñez', 'CBO Prada']],
+  'V-CAM-VERDE': [['ET-110704', '2027-03-24', 'Parque · M250', 'CBO Chano', 'CBO Sierra'], ['ET-110730', '2027-01-14', 'Parque · M250', 'CBO Chano', 'CBO Sierra']],
+  'V-IVECO-V': [['ET-110584', '2027-01-16', 'Parque', 'CBO Chano', 'CBO Sierra'], ['ET-110588', '2026-11-21', '', '', '']],
+  'V-CADENAS': [['ET-121232', '', '', 'CBO Prada', 'CBO Lenis']],
+  'V-MINI': [['ET-116784 VE', '', '1º/2º pelotón', 'CBO Lenis', 'CBO Núñez']],
+  'V-GUAGUA-G': [['ET-109490', '2027-04-23', '1º pelotón', 'CBO Ricardo', 'CBO Eros'], ['ET-109492', '2026-11-08', '2º pelotón', 'CBO Lenis', '']],
+  'V-GUAGUA-P': [['ET-125458', '2027-01-09', '1º/2º pelotón', 'CBO Ricardo', 'CBO Lenis']],
+  'V-MOTO': [['ET-123535', '', 'PM', 'CBO Ibáñez', 'CBO Fraile'], ['ET-123534', '', 'PM', 'CBO Fraile', 'CBO Ibáñez']],
+  'V-AMB': [['ET-112717', '2026-11-22', '', '', '']],
+  'V-VITO': [['ET-109122', '2026-11-27', 'Parque · 3070FFW', '', '']],
+  'V-CARRETILLA': [['ET-118298', '', 'Parque', '', '']],
+  'V-RQ-CARGA': [['RQ-112426', '2026-12-12', '', '', ''], ['RQ-112427', '2027-03-10', 'Parque', '', '']],
+  'V-RQ-PERROS': [['RQ-118470', '2027-03-07', 'Parque', '', '']],
+  'V-RQ-GE': [['RQ-111091', '2027-03-25', '15 kVA', '', ''], ['RQ-113113', '2026-12-25', '30 kVA', '', ''], ['RQ-115550', '2027-01-28', '50 kVA', '', '']],
+  'V-RQ-TORRE': [['RQ-112146', '2027-04-13', 'Parque', '', '']],
+  'V-RQ-COMP': [['RQ-112094', '2026-11-23', 'Parque', '', '']],
+  'V-RQ-ARGOS': [['RQ-122070', '2027-03-22', '', '', '']],
+  'V-RQ-ROJO': [['RQ-124500', '2026-11-26', 'Parque', '', '']]
+};
+const unitId = plate => 'U-' + String(plate).replace(/[^A-Za-z0-9]+/g, '');
+const flotaUnit = ([plate, itv, use, titular, suplente, cita = '']) => ({ id: unitId(plate), plate, itv, use, titular, suplente, cita });
 const OLD_VEHICLES = { 'V-1': ['Camión portacontenedor', 'V-VPI'], 'V-2': ['Furgón de rescate', ''], 'V-3': ['Vehículo de mando', ''] };
 
 function newEpi(type, holder) {
@@ -298,6 +347,19 @@ function seedDefaults(share = false) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     list('vehicles').filter(v => /\bsang ?yong\b/i.test(v.name || '')).forEach(v => stampIt('vehicles', { ...v, name: v.name.replace(/\bsang ?yong\b/gi, 'SsangYong') }));
     stampIt('meta', { id: 'vehbase', value: 7 });
+  }
+  // v8: matrículas de la flota. Solo se añaden las que no están ya en ningún modelo (las movidas o editadas no se tocan);
+  // los modelos que falten se crean (aunque se hubieran borrado, si tienen matrículas)
+  if (!(get('meta', 'vehbase')?.value >= 8)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    const have = new Set(list('vehicles').flatMap(v => (v.units || []).map(u => u.id)));
+    Object.entries(FLOTA_2026).forEach(([vid, rows]) => {
+      const add = rows.map(flotaUnit).filter(u => !have.has(u.id));
+      if (!add.length) return;
+      const base = get('vehicles', vid) || DEFAULT_VEHICLES.find(v => v.id === vid);
+      stampIt('vehicles', { ...base, units: [...(base.units || []), ...add] });
+    });
+    stampIt('meta', { id: 'vehbase', value: 8 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {
