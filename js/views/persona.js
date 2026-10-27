@@ -98,8 +98,8 @@ function viewPerson(o) {
         <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('hardhat')} EPI asignado</h3>
           <span class="tag ${epiBad.length ? 'warn' : 'ok'}">${epiBad.length ? epiBad.length + ' por revisar' : 'Todo OK'}</span></div>
         <div class="list">${Object.keys(EPI_TYPES).map(t => { const e = epis.find(x => x.type === t), st = epiState(e); return `
-          <button class="item" onclick="${e ? `epiForm('${e.id}')` : `epiForm(null, '${t}', '${o.id}')`}"><div><b>${esc(e ? epiLabel(e) : EPI_TYPES[t])}</b>
-            <small>${esc(e ? [e.size && 'Talla ' + e.size, e.expires && 'Caduca ' + fmtDate(e.expires)].filter(Boolean).join(' · ') || 'Sin talla' : 'Toca para asignar')}</small></div><span class="tag ${st.cls}">${st.text}</span></button>`; }).join('')}
+          <button class="item" onclick="${e ? `epiForm('${e.id}')` : `epiForm(null, '${t}', '${o.id}')`}"><div class="who-row"><span class="art art-sm">${toolArt(EPI_TYPES[t])}</span><div><b>${esc(e ? epiLabel(e) : EPI_TYPES[t])}</b>
+            <small>${esc(e ? [e.size && 'Talla ' + e.size, e.expires && 'Caduca ' + fmtDate(e.expires)].filter(Boolean).join(' · ') || 'Sin talla' : 'Toca para asignar')}</small></div></div><span class="tag ${st.cls}">${st.text}</span></button>`; }).join('')}
           ${epis.filter(e => !EPI_TYPES[e.type]).map(e => `<button class="item" onclick="epiForm('${e.id}')"><div><b>${esc(epiLabel(e))}</b><small>${esc(e.size ? 'Talla ' + e.size : '')}</small></div><span class="tag ${epiState(e).cls}">${epiState(e).text}</span></button>`).join('')}</div>
       </div>
     </div>

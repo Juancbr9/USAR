@@ -292,9 +292,13 @@ const TOOL_ART = (() => {
     busqueda: `${T('M20 32 39 11', MT, 2.4)}${T('M17 35l5-5', BK, 3.4)}<rect x="36" y="3" width="10" height="8" rx="2" fill="${DK}" transform="rotate(-45 41 7)"/>
       <circle cx="43" cy="9" r="2.2" fill="${YE}"/><rect x="3" y="27" width="20" height="16" rx="2.5" fill="${BK}"/><rect x="5.5" y="29.5" width="15" height="11" rx="1" fill="#5aa0d8"/>
       <path d="M7 38l4-4 3 3 3-5 3 4" stroke="#fff" stroke-width="1.1"/>`,
-    casco: `<path d="M5 32a19 18 0 0 1 38 0z" fill="{c}"/><path d="M2 31h44v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" fill="{c}"/>
-      <path d="M24 14v17M16 17v14M32 17v14" stroke="rgba(0,0,0,.25)" stroke-width="1.6"/><path d="M10 25a15 14 0 0 1 8-10" stroke="${HI}" stroke-width="2"/>
-      <rect x="20" y="8" width="8" height="5" rx="2" fill="${DK}"/><circle cx="24" cy="10.5" r="1.6" fill="#fff6c2"/>${T('M10 37c3 6 10 8 14 8', BK, 1.6)}`,
+    // Casco del equipo (fotos): rojo, franjas blancas fluorescentes, tira reflectante arriba, orejeras amarillas y frontal
+    casco: `<path d="M5 32C5 17 14 8 26 8s19 9 19 22v2z" fill="{c}"/><path d="M4 31h41v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" fill="{c}"/>
+      ${hi(11, 14, 9, 2)}<path d="M13 24c4-6 11-9 19-8" stroke="#eef3e8" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M21 9c8 0 15 3 19 9" stroke="${MT}" stroke-width="2.6" stroke-dasharray="2.2 1.2" stroke-linecap="butt"/>
+      <path d="M6 33h16" stroke="#eef3e8" stroke-width="2.4"/><path d="M28 33h12" stroke="${MT}" stroke-width="2.2"/>
+      ${T('M20 23l-5 7', MT, 1)}<ellipse cx="13" cy="33" rx="6" ry="8" fill="#d4f01e"/><path d="M17.5 27.5a6 8 0 0 1 0 11" stroke="${BK}" stroke-width="2.4"/>
+      <rect x="39" y="23" width="7" height="7" rx="1.5" fill="${BK}"/><circle cx="44.5" cy="26.5" r="2.4" fill="${YE}"/><circle cx="44.5" cy="26.5" r="1" fill="#fff6c2"/>`,
     botiquin: `${T('M17 13v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3', BK, 2.6)}<rect x="4" y="13" width="40" height="30" rx="5" fill="${RD}"/>${hi(7, 15.5, 34)}
       <path d="M4 20h40" stroke="rgba(0,0,0,.3)" stroke-width="1.2"/><path d="M21 22h6v6h6v6h-6v6h-6v-6h-6v-6h6z" fill="#fff"/>`,
     radio: `<rect x="16" y="2" width="4.5" height="12" rx="2.2" fill="${DK}"/><rect x="26" y="7" width="4" height="5" rx="1" fill="${DK}"/><rect x="21.5" y="8" width="4" height="4" rx="1" fill="${OR}"/>
@@ -348,7 +352,7 @@ const TOOL_COLOR = {
   motodisco: '#f37021', martillo: '#d6332a', taladro: '#d6332a', motosierra: '#f39200', sierra_circular: '#0f8a8f', sierra_sable: '#d6332a',
   radial: '#d6332a', ventilador: '#d6332a', extractor: '#f6c400', mangote: '#f6c400', alargadera: '#f39200', puntal_hidraulico: '#f39200',
   desbrozadora: '#f37021', garrafa: '#d6332a', aceite: '#f6c400', ingletadora: '#0f8a8f', motor: '#d6332a', generador: '#d6332a',
-  carretilla: '#3f8f3f', cuerda: '#d6332a', linterna: '#262626', pistola_clavos: '#d6332a', casco: '#f6c400', polea: '#f39200',
+  carretilla: '#3f8f3f', cuerda: '#d6332a', linterna: '#262626', pistola_clavos: '#d6332a', casco: '#e2231a', polea: '#f39200',
   palanca: '#d6332a', bomba: '#1f5fa8', bomba_manual: '#f39200', manguera: '#d6332a'
 };
 const TOOL_TINT = [

@@ -1055,24 +1055,6 @@ button, [role="button"], .tab, .ctab, .chip { -webkit-user-select: none; user-se
 .cv-tag { background: none; border: 0; padding: 0; cursor: pointer; z-index: 1; }
 .cv-tag:focus-visible { outline: 2px solid #f5b800; outline-offset: 1px; }
 
-/* ---------- Armarios: tres armarios verticales de madera, dos puertas cada uno ---------- */
-.arm { --steel: #8a5a33; --in: #5a3519; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; user-select: none; -webkit-user-select: none; }
-.arm-cab { background: linear-gradient(90deg, #7a4a26, #8d5a30 50%, #7a4a26); border-radius: 6px 6px 2px 2px; padding: 0 5px 0; box-shadow: inset 0 0 0 2px #5b3418, 0 6px 14px rgba(60, 30, 10, .25); min-width: 0; display: flex; flex-direction: column; }
-.arm-top { font: 800 13px var(--cond); color: #ffe2b8; text-align: center; padding: 6px 0 5px; letter-spacing: .4px; border-bottom: 3px solid #5b3418; }
-.arm-doors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; padding: 5px 0; flex: 1; }
-.arm .cv-cell.arm-door { min-height: 260px; border: 0; border-radius: 3px; padding: 24px 3px 6px; align-content: flex-start; flex-direction: column; flex-wrap: nowrap;
-  background: linear-gradient(90deg, rgba(0,0,0,.12), transparent 30%, transparent 70%, rgba(0,0,0,.12)), #6b3f1f; box-shadow: inset 0 0 0 2px #4e2c13; }
-.arm .cv-cell.arm-door::after { display: none; }
-.arm .cv-tag { font: 800 12px var(--cond); color: #ffd9a3; left: 6px; top: 5px; }
-.arm-knob { position: absolute; top: 50%; width: 5px; height: 26px; border-radius: 3px; background: linear-gradient(#e9d3a8, #b8955c); box-shadow: 0 1px 2px rgba(0,0,0,.4); }
-.arm-door[data-door$="1"] .arm-knob, .arm-door[data-door$="3"] .arm-knob, .arm-door[data-door$="5"] .arm-knob { right: 3px; }
-.arm-door[data-door$="2"] .arm-knob, .arm-door[data-door$="4"] .arm-knob, .arm-door[data-door$="6"] .arm-knob { left: 3px; }
-.arm .cv-empty { color: #e8c79a; margin: auto; }
-.arm .tok { max-width: 100%; }
-.arm .cv-cell.drop-on { background-color: #8a5528; }
-.arm-feet { display: flex; justify-content: space-between; padding: 0 6px; height: 8px; }
-.arm-feet i { width: 12px; height: 8px; background: #3e230f; border-radius: 0 0 3px 3px; }
-@media (min-width: 720px) { .arm .cv-cell.arm-door { min-height: 340px; } }
 
 /* ---------- Novedades (notas en el material) ---------- */
 .tag.nov { color: #6b4a00; background: #fff1c2; }
@@ -1085,11 +1067,6 @@ button, [role="button"], .tab, .ctab, .chip { -webkit-user-select: none; user-se
 .callout.rev.ok { background: var(--ok-soft); border-color: var(--ok); }
 .callout.rev .link { margin-top: 6px; }
 .ctab .n { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--warn); color: #fff; font: 800 12px var(--num); }
-/* En las puertas de los armarios, cada cosa es un icono (el nombre sale al tocarla y en la lista de abajo) */
-.arm .tok-gear { padding: 4px; justify-content: center; }
-.arm .tok-gear .tok-name { display: none; }
-.arm .tok-box { padding: 3px 4px; } .arm .tok-box small, .arm .tok-box em { display: none; }
-.arm .cv-cell.arm-door { flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
 
 /* ---------- Inicio de sesión ---------- */
 body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-on .fab, body.login-on #fab, body.login-on #results, body.login-on #drawer { display: none !important; }
@@ -1281,3 +1258,41 @@ body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
 .name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .name-grid .btn { justify-content: center; min-height: 52px; font-weight: 700; }
 .pin-in { font: 700 24px/1 var(--num, monospace); letter-spacing: .4em; text-align: center; }
+
+/* ---------- Armarios: tres armarios de madera sobre la estantería, abiertos, con 5 baldas (como en la foto) ---------- */
+.arm { --wood: #c9824a; --wood2: #b46f3a; --beam: #e8742a; user-select: none; -webkit-user-select: none;
+  background: #4a4f55; border-radius: 8px; padding: 10px 8px 0; box-shadow: inset 0 0 0 3px #2b6cb0; }
+.arm-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.arm-cab { min-width: 0; display: flex; flex-direction: column; }
+.arm-top { font: 800 13px var(--cond); color: #3b2210; text-align: center; padding: 4px 0; letter-spacing: .4px;
+  background: linear-gradient(var(--wood), var(--wood2)); border-radius: 4px 4px 0 0; box-shadow: inset 0 -2px 0 rgba(0,0,0,.18); }
+.arm-body { display: grid; grid-template-columns: 9px minmax(0, 1fr) 9px; background: #1e1f22; flex: 1; }
+.arm-leaf { position: relative; background: linear-gradient(90deg, var(--wood2), var(--wood)); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.arm-leaf i { position: absolute; top: 46%; left: 2px; width: 4px; height: 22px; border-radius: 2px; background: #d9dde2; box-shadow: 0 1px 1px rgba(0,0,0,.4); }
+.arm-in { display: flex; flex-direction: column; padding: 0 3px; }
+.arm .cv-cell { min-height: 58px; border: 0; border-bottom: 5px solid #3a3d42; padding: 15px 3px 4px; align-content: flex-end; background: #232428; }
+.arm .cv-cell::after { display: none; }
+.arm .cv-tag { font: 800 10px var(--cond); color: rgba(255,255,255,.5); left: 4px; top: 2px; }
+.arm .cv-cell.drop-on { background: rgba(245, 184, 0, .3); outline: 3px dashed #f5b800; outline-offset: -3px; }
+.arm .arm-floor { margin-top: 0; min-height: 64px; border-bottom: 0; background: repeating-linear-gradient(45deg, #5d6167 0 3px, #555a60 3px 6px); border-radius: 0; }
+.arm .arm-floor .cv-tag { color: rgba(255,255,255,.75); }
+.rack-beam { height: 12px; margin: 0 -8px; background: linear-gradient(#f08a3c, var(--beam) 60%, #c95f1d); border-radius: 0 0 8px 8px; }
+.arm .tok, .pas .tok { max-width: 100%; }
+.arm .tok-gear, .pas .tok-gear { padding: 4px; justify-content: center; }
+.arm .tok-gear .tok-name, .pas .tok-gear .tok-name { display: none; }
+.arm .tok-box, .pas .tok-box { padding: 3px 4px; } .arm .tok-box small, .arm .tok-box em, .pas .tok-box small, .pas .tok-box em { display: none; }
+@media (min-width: 720px) { .arm .cv-cell { min-height: 74px; } }
+
+/* ---------- Pasillo: estantería de palés (montantes azules, largueros naranjas), módulos × niveles ---------- */
+.pas-scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px 4px; }
+.pas { display: grid; grid-template-columns: 30px repeat(var(--mods), minmax(56px, 1fr)); user-select: none; -webkit-user-select: none;
+  background: #f4f1ea; border-left: 8px solid #2b5ea8; border-right: 8px solid #2b5ea8; min-width: calc(30px + var(--mods) * 56px); }
+:root[data-theme="dark"] .pas { background: #2a2c30; }
+.pas-lvl { display: grid; place-items: center; font: 800 12px var(--cond); color: var(--muted); border-bottom: 9px solid #e8742a; }
+.pas .cv-cell { min-height: 70px; padding: 15px 3px 4px; align-content: flex-end; background: transparent; border: 0; border-left: 6px solid #2b5ea8;
+  border-bottom: 9px solid #e8742a; box-shadow: inset 0 -3px 0 #c9a36a; }
+.pas .cv-cell::after { display: none; }
+.pas .cv-tag { color: var(--muted); font: 800 11px var(--cond); }
+.pas .pas-floor, .pas .pas-lvl.floor { border-bottom: 0; }
+.pas .pas-floor { box-shadow: none; background: repeating-linear-gradient(0deg, transparent 0 18px, rgba(0,0,0,.04) 18px 19px); }
+.pas .cv-cell.drop-on { background: rgba(245, 184, 0, .3); outline: 3px dashed #f5b800; outline-offset: -3px; }

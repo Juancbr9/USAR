@@ -9,7 +9,7 @@ function consDoor(c) {
   const t = String(c.location || ''), box = t.match(/\b([HU])\s*-?\s*(\d+)\b/i), hueco = t.match(/\bB\s*(\d{1,2})\b/i), arm = t.match(/armario\s*(\d)/i);
   if (box) { const b = list('boxes').find(x => fold(x.code).replace(/\W/g, '') === fold(box[1] + box[2])); if (b && !b.vehicle) return b.door || 0; }
   if (hueco && +hueco[1] >= 1 && +hueco[1] <= 20) return +hueco[1];
-  if (arm && +arm[1] >= 1 && +arm[1] <= 3) return 199 + +arm[1] * 2;
+  if (arm && +arm[1] >= 1 && +arm[1] <= 3) return 200 + +arm[1] * 10 + ARM_BALDAS;
   if (/pasillo/i.test(t)) return PASILLO;
   if (/almac|nave|parque|otro/i.test(t)) return OTROS;
   return 0;
