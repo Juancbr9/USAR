@@ -1,5 +1,6 @@
 /* USAR 242 · colores inspirados en la UME: verde de uniformidad y amarillo señal */
 :root {
+  --logo-orange: #e4701e;   /* naranja del emblema */
   --paper: #edefea;       /* fondo */
   --surface: #ffffff;     /* tarjetas */
   --sunk: #f5f6f3;        /* zonas hundidas */
@@ -803,7 +804,7 @@ body.drawer-open { overflow: hidden; }
 .dr-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 10px; border-radius: 10px; text-align: left; color: var(--ink); position: relative; }
 .dr-item b { display: block; font-size: 15px; font-weight: 700; }
 .dr-item small { display: block; color: var(--muted); font-size: 12.5px; }
-.dr-item svg { color: var(--area, var(--muted)); flex: none; }
+.dr-item svg { color: var(--muted); flex: none; }
 @media (hover: hover) and (pointer: fine) { .dr-item:hover { background: var(--area-soft, rgba(0,0,0,.05)); } }
 .dr-item.on { background: var(--area, var(--yellow)); color: #fff; }
 .dr-item.on svg, .dr-item.on small { color: rgba(255,255,255,.85); }
@@ -1093,8 +1094,11 @@ button, [role="button"], .tab, .ctab, .chip { -webkit-user-select: none; user-se
 /* ---------- Inicio de sesión ---------- */
 body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-on .fab, body.login-on #fab, body.login-on #results, body.login-on #drawer { display: none !important; }
 .login { min-height: 92vh; min-height: 92dvh; display: grid; align-content: center; justify-items: center; gap: 18px; padding: 24px 0; }
-.login-brand { background: var(--green); border-radius: 14px; padding: 14px 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); }
-.login-brand .wordmark { color: #fff; font-size: 40px; }
+.login-brand { line-height: 0; }
+/* Emblema de las camisetas (UIEM Canarias · USAR Sección 242), en la entrada y en el menú */
+.login-logo { width: min(240px, 62vw); height: auto; border-radius: 50%; box-shadow: 0 12px 34px rgba(0, 0, 0, .35), 0 0 0 3px var(--logo-orange); }
+.dr-brand { display: flex; align-items: center; gap: 10px; }
+.dr-brand img { width: 44px; height: 44px; border-radius: 50%; box-shadow: 0 0 0 2px var(--logo-orange); }
 .login-card { width: min(100%, 380px); display: grid; gap: 12px; }
 .login-card h2 { margin-bottom: 2px; }
 .ios-install ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
@@ -1208,7 +1212,7 @@ img.doc-full, .gal img, img.art-lg, .person-photo { cursor: zoom-in; }
 .dr-group { margin-top: 6px; padding-top: 6px; }
 .dr-group.sub { margin: 0; padding: 0; border: 0; }
 .dr-group-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px; padding: 6px 10px; border-radius: 10px; text-align: left; color: var(--ink); }
-.dr-group-head .i-lg { color: var(--area); }
+.dr-group-head .i-lg { color: var(--ink); }
 .area-ic { width: 30px; height: 30px; flex: none; margin: -3px 0; }
 .dr-group-head b { font-weight: 800; font-size: 16px; }
 .dr-group-head .chev { transition: transform .15s; color: var(--muted); }
@@ -1257,3 +1261,23 @@ main > .aj-group + * { margin-top: 8px; }
 .aj-danger { border-color: var(--bad); }
 .aj-log summary { list-style: none; cursor: pointer; }
 .aj-log summary::-webkit-details-marker { display: none; }
+
+/* Entrada con el fondo oscuro de las camisetas y el naranja del emblema */
+body.login-on { background: radial-gradient(circle at 50% 22%, #2b2b2b 0, #151515 55%, #0d0d0d 100%) fixed; }
+body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
+
+/* Arrastrar desde Pasillo, Otros y el fungible; barra de destinos abajo mientras se arrastra */
+.drag-it, .cons-item { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.drag-it.dragging, .cons-item.dragging { opacity: .35; }
+.drop-zone.drop-on, .place-box.drop-on { outline: 3px dashed #f5b800; outline-offset: -3px; }
+.drag-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 89; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 6px;
+  padding: 8px 8px calc(8px + var(--sa-b, 0px)); background: rgba(20, 20, 20, .92); backdrop-filter: blur(6px); }
+.dock-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 58px; border: 2px dashed rgba(255,255,255,.45);
+  border-radius: 10px; color: #fff; font: 700 12.5px var(--sans, inherit); text-align: center; }
+.dock-zone.drop-on { border-color: #f5b800; background: rgba(245, 184, 0, .25); }
+.dock-zone[data-rev] { border-color: rgba(255, 160, 120, .7); }
+
+/* Entrada con nombre y PIN */
+.name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.name-grid .btn { justify-content: center; min-height: 52px; font-weight: 700; }
+.pin-in { font: 700 24px/1 var(--num, monospace); letter-spacing: .4em; text-align: center; }

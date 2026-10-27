@@ -18,9 +18,9 @@ function viewAjustes() {
     <div class="panel">
       <div class="between wrap-row">
         <div class="who-row">${personPhoto(me())}<div><b>${esc(me().name)}</b><small>${Sync.email ? esc(Sync.email) : 'Sesión iniciada'}</small></div></div>
-        <div class="row">${Sync.email ? `<button class="btn btn-g" onclick="pinForm()">${ic('pencil')} Cambiar contraseña</button>` : ''}${bioPanel()}<button class="btn btn-g" onclick="logout()">${ic('out')} Cerrar sesión</button></div>
+        <div class="row">${Sync.user ? `<button class="btn btn-g" onclick="pinForm()">${ic('pencil')} Cambiar ${Sync.email ? 'contraseña' : 'PIN'}</button>` : ''}${bioPanel()}<button class="btn btn-g" onclick="logout()">${ic('out')} Cerrar sesión</button></div>
       </div>
-      ${Sync.email ? `<p class="muted" style="margin-top:10px">${ic('lock', 'i-sm')} ${rolTexto()}</p>` : ''}
+      ${Sync.user ? `<p class="muted" style="margin-top:10px">${ic('lock', 'i-sm')} ${rolTexto()}</p>` : ''}
     </div>
 
     ${grupo('Este móvil', 'Solo cambia cómo ves la app tú; no afecta al resto.')}
@@ -49,7 +49,7 @@ function viewAjustes() {
     ${grupo('Equipo', 'Afecta a todo el equipo.')}
     <div class="panel">
       <h3 class="sec-title">${ic('cloud')} Datos compartidos</h3>
-      ${!c ? '<p class="muted">Los datos se guardan solo en este móvil.</p>' : !Sync.email ? '<p class="muted">Entra con tu correo para ver y compartir los datos del equipo.</p>' : `
+      ${!c ? '<p class="muted">Los datos se guardan solo en este móvil.</p>' : !Sync.user ? '<p class="muted">Entra con tu nombre y PIN para ver y compartir los datos del equipo.</p>' : `
         ${Sync.error ? `<p class="note" style="color:var(--bad); margin-bottom:8px">${esc(Sync.error)}</p>` : ''}
         <div class="grid g2">
           <button class="btn btn-g" onclick="Sync.pull().then(() => toast('Sincronizado'))">${ic('refresh')} Sincronizar ahora</button>
@@ -125,22 +125,34 @@ function replaceAll(data, msg) {
 
 /* ---------- Usuario y permisos (modo seguro) ---------- */
 const rolTexto = () => Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? 'Miembro: ve y usa todo; el material y los vehículos los da de alta el jefe' : 'Sin rol en el equipo';
+// Personas que entran con nombre y PIN (y las cuentas con correo de antes). Solo los jefes.
 async function membersModal() {
-  let ms = [];
-  try { ms = await Sync.members(); } catch (e) { return toast(e.message, 'bad'); }
+  let ps = [], ms = [];
+  try { [ps, ms] = await Promise.all([Sync.people(), Sync.members().catch(() => [])]); } catch (e) { return toast(e.message, 'bad'); }
   openModal('Miembros y permisos', `
-    <div class="list" style="margin-bottom:14px">${ms.map(m => `<div class="item"><div><b>${esc(m.name || m.email)}</b><small>${esc(m.email)}</small></div>
-      <div class="row"><span class="tag ${m.role === 'jefe' ? 'warn' : 'neutral'}">${m.role}</span>${m.email !== Sync.email ? `<button class="link bad" onclick="Sync.removeMember(${jsq(m.email)}).then(membersModal).catch(e => toast(e.message, 'bad'))">Quitar</button>` : ''}</div></div>`).join('')}</div>
-    <form id="memberForm" class="form">
-      <label class="lbl wide">Correo<input class="input" type="email" name="email" required></label>
-      <label class="lbl">Nombre<select class="input" name="name">${operators().map(o => `<option>${esc(o.name)}</option>`).join('')}</select></label>
-      <label class="lbl">Permiso<select class="input" name="role"><option value="miembro">Miembro</option><option value="jefe">Jefe</option></select></label>
-      <button class="btn btn-a wide">${ic('plus')} Añadir o cambiar</button>
-    </form>
-    <p class="muted" style="margin-top:10px">Después, la persona abre la app, pulsa «¿Primera vez? Crea tu cuenta» y usa este mismo correo. Entra con el nombre elegido aquí.</p>`);
-  $('memberForm').onsubmit = e => {
-    e.preventDefault();
-    const f = e.target;
-    Sync.setMember(f.email.value, f.role.value, f.name.value).then(() => { toast('Miembro guardado'); membersModal(); }).catch(err => toast(err.message, 'bad'));
-  };
+    <p class="muted" style="margin-bottom:10px">Cada persona entra eligiendo su nombre y con el PIN que le pongas aquí (luego lo puede cambiar). Si olvida el PIN o se bloquea, ponle uno nuevo.</p>
+    <div class="list" style="margin-bottom:14px">${ps.map(p => `<div class="item"><div><b>${esc(p.name)}</b><small>${p.bloqueado ? 'Bloqueado por intentos: ponle un PIN nuevo' : 'Entra con PIN'}</small></div>
+      <div class="row"><span class="tag ${p.role === 'jefe' ? 'warn' : 'neutral'}">${p.role}</span>
+        <button class="link" onclick="memberPinForm(${jsq(p.name)}, ${jsq(p.role)})">PIN / permiso</button>
+        ${p.name !== Sync.pinName ? `<button class="link bad" onclick="if (confirm(${jsq('¿Quitar el acceso a ' + p.name + '? Sus móviles dejan de ver los datos.')})) Sync.removePerson(${jsq(p.name)}).then(membersModal).catch(e => toast(e.message, 'bad'))">Quitar</button>` : ''}</div></div>`).join('')
+      || '<p class="muted">Aún no hay nadie con PIN.</p>'}</div>
+    <button class="btn btn-a full" onclick="memberPinForm()">${ic('plus')} Dar acceso a una persona</button>
+    ${ms.length ? `<h4 class="sec-title" style="margin-top:16px">Cuentas con correo (de antes)</h4><div class="list">${ms.map(m => `<div class="item"><div><b>${esc(m.name || m.email)}</b><small>${esc(m.email)}</small></div>
+      <div class="row"><span class="tag ${m.role === 'jefe' ? 'warn' : 'neutral'}">${m.role}</span>${m.email !== Sync.email ? `<button class="link bad" onclick="Sync.removeMember(${jsq(m.email)}).then(membersModal).catch(e => toast(e.message, 'bad'))">Quitar</button>` : ''}</div></div>`).join('')}</div>` : ''}`);
+}
+function memberPinForm(name, role = 'miembro') {
+  const opts = name ? [[name, name]] : operators().map(o => [o.name.toUpperCase(), o.name]);
+  openForm(name ? `${name}: PIN y permiso` : 'Dar acceso', [
+    { k: 'name', label: 'Persona', value: name || '', options: opts, required: true, wide: true },
+    { k: 'role', label: 'Permiso', value: role, options: [['miembro', 'Miembro: ve y usa todo'], ['jefe', 'Jefe: además da acceso y el alta del material']], wide: true },
+    { k: 'pin', label: name ? 'PIN nuevo (vacío: no se cambia)' : 'PIN inicial (4 a 8 cifras)', type: 'text', value: '', placeholder: 'Ej: 4821', required: !name }
+  ], async v => {
+    if (v.pin && !/^[0-9]{4,8}$/.test(v.pin)) return toast('El PIN son de 4 a 8 cifras', 'bad');
+    try {
+      if (v.pin) await Sync.setPin(v.name, v.role, v.pin); else await Sync.setRole(v.name, v.role);
+      toast(v.pin ? `${v.name} entra con el PIN ${v.pin}. Díselo en persona.` : 'Permiso guardado');
+      membersModal();
+    } catch (e) { toast(e.message, 'bad'); }
+  });
+  const pin = $('modalForm')?.elements.pin; if (pin) { pin.setAttribute('inputmode', 'numeric'); pin.setAttribute('autocomplete', 'off'); }
 }

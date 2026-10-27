@@ -1,4 +1,4 @@
-"""Prueba del inicio de sesión con correo (usuario de Supabase, servidor de prueba): la conexión va integrada y no se
+"""Prueba del inicio de sesión con correo (cuentas de antes; se llega por «Entrar con correo») (usuario de Supabase, servidor de prueba): la conexión va integrada y no se
 configura nada; la primera vez cada persona crea su cuenta con el correo con el que la dio de alta el jefe y entra con su
 nombre del equipo; correo no dado de alta o sin nombre; al volver a abrir solo pide la contraseña (comprobada en el móvil,
 también sin cobertura); cerrar sesión, cambiar la contraseña, bloqueo tras 5 intentos y enlace QR abierto antes de entrar.
@@ -18,6 +18,8 @@ urllib.request.urlopen(urllib.request.Request(MOCK + '/rest/v1/usar_members', me
 urllib.request.urlopen(MOCK + '/_secure')
 
 def msg(a): a.wait_for_timeout(600); return a.inner_text('#loginMsg')
+def correo(a):   # la entrada es con nombre y PIN; el correo (cuentas de antes) va en un enlace
+    a.wait_for_selector('.login button:has-text("Entrar con correo")'); a.click('.login button:has-text("Entrar con correo")'); a.wait_for_selector('.login [name=email]')
 def entrar(a, email, pin):
     a.fill('.login [name=email]', email); a.fill('.login [name=pin]', pin); a.click('.login button.btn-a')
 
@@ -27,7 +29,7 @@ with sync_playwright() as p:
     a = c.new_page()
     a.on('pageerror', lambda e: problems.append(f'ERROR {e}'))
     a.on('dialog', lambda d: d.accept())
-    a.goto(APP); a.wait_for_selector('.login [name=email]')
+    a.goto(APP); correo(a)
     assert a.locator('.topbar').is_hidden(), 'sin sesión no se ve la app'
     assert a.evaluate("Sync.cfg().url") == MOCK, 'la conexión va integrada: no se configura nada'
     assert a.locator('[name=url], [name=key], [name=op]').count() == 0
@@ -43,7 +45,7 @@ with sync_playwright() as p:
     # Cerrar sesión: vuelve a pedir el correo
     a.evaluate("go('ajustes')"); a.wait_for_timeout(150)
     assert 'cabrera@usar.es' in a.inner_text('#view')
-    a.click('#view button:has-text("Cerrar sesión")'); a.wait_for_selector('.login [name=email]')
+    a.click('#view button:has-text("Cerrar sesión")'); correo(a)
     assert not a.evaluate("Sync.email")
     entrar(a, 'cabrera@usar.es', 'mala-clave'); assert 'incorrectos' in msg(a)
     # Correo sin dar de alta y correo sin nombre del equipo
@@ -83,7 +85,7 @@ with sync_playwright() as p:
     a.wait_for_timeout(300); assert 'escalera' in a.inner_text('#modalTitle').lower(), a.inner_text('#modalTitle')
     # «No soy yo»: vuelve a pedir el correo
     a.evaluate("closeModal(); lockApp()"); a.wait_for_selector('.login [name=pin]')
-    a.click('.login button:has-text("No soy CABRERA")'); a.wait_for_selector('.login [name=email]')
+    a.click('.login button:has-text("No soy CABRERA")'); correo(a)
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

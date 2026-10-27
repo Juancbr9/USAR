@@ -112,8 +112,8 @@ with sync_playwright() as p:
     # ---------- Cabecera y menú ----------
     a.evaluate("go('consumibles')"); a.wait_for_timeout(200)
     ann(a, 'cabecera', [('#menuBtn', 'b', {'d': 40}), ('[aria-label=Buscar]', 'b', {'d': 40})])
-    a.evaluate("setPref({ session: null })"); a.wait_for_timeout(250)
-    ann(a, 'entrar', [('.login [name=email]', 'i'), ('.login [name=pin]', 'i')])
+    a.evaluate("setPref({ session: null, loginPick: null })"); a.wait_for_timeout(600)
+    ann(a, 'entrar', [('.login .name-grid', 'i'), ('.login button:has-text("Entrar con correo")', 'r')])
     a.evaluate("setPref({ session: 'OP-01', tab: 'consumibles' })"); a.wait_for_timeout(250)
     ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)

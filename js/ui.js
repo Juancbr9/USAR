@@ -44,17 +44,17 @@ function menuTree(count, active) {
   const curTab = prefs.tab === 'operaciones' ? (get('missions', prefs.mission)?.type === 'ejercicio' ? 'ejercicios' : 'intervenciones') : ALMACEN_TABS.includes(prefs.tab) ? 'contenedor' : prefs.tab;
   const item = (id, icon, title, cls = '') => { const st = sectionStatus(id); return `
     <button class="dr-item ${cls} ${curTab === id ? 'on' : ''}" data-area="${areaOf(id)}" ${curTab === id ? 'aria-current="page"' : ''} onclick="go('${id}')">
-      ${id === 'avisos' ? areaIc('home') : ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + ' avisos' : 'Todo en orden'}</small>` : ''}</span>
+      ${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + ' avisos' : 'Todo en orden'}</small>` : ''}</span>
       ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${id === 'intervenciones' && active ? '<span class="live-dot"></span>' : ''}
       ${st && st[1] !== 'neutral' && st[1] !== 'ok' ? `<span class="dr-dot ${st[1]}" title="${esc(st[0])}"></span>` : ''}</button>`; };
   const head = (g, icon, title, cls = '') => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
-    return `<button class="dr-group-head ${cls} ${on ? 'has-on' : ''}" data-area="${g === 'mat' ? 'log' : g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${AREA_ART[g] ? areaIc(g) : ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
+    return `<button class="dr-group-head ${cls} ${on ? 'has-on' : ''}" data-area="${g === 'mat' ? 'log' : g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
   const items = (filter, cls) => SECTIONS.filter(s => !s[6] && filter(s)).map(([id, icon, title]) => item(id, icon, title, cls)).join('');
   return item('avisos', 'home', 'Inicio') + ['ops', 'log', 'team', 'help'].map(ar => `
     <div class="dr-group ${menuOpen(ar) ? 'open' : ''}" data-area="${ar}">
       ${head(ar, AREAS[ar].icon, AREAS[ar].name)}
       ${menuOpen(ar) ? `<div class="dr-children">${ar === 'log'
-        ? `<div class="dr-group sub ${menuOpen('mat') ? 'open' : ''}">${head('mat', 'box', 'Material', 'sub')}${menuOpen('mat') ? `<div class="dr-children">${items(s => s[5] === 'mat', 'sub2')}</div>` : ''}</div>` + items(s => s[4] === ar && !s[5], 'sub')
+        ? `<div class="dr-group sub ${menuOpen('mat') ? 'open' : ''}">${head('mat', 'case', 'Material', 'sub')}${menuOpen('mat') ? `<div class="dr-children">${items(s => s[5] === 'mat', 'sub2')}</div>` : ''}</div>` + items(s => s[4] === ar && !s[5], 'sub')
         : items(s => s[4] === ar, 'sub')}</div>` : ''}
     </div>`).join('');
 }
@@ -65,7 +65,7 @@ function renderDrawer(count = alertCount(alerts()), active = list('missions').so
   if (mc) { mc.textContent = count > 99 ? '99+' : count; mc.classList.toggle('hidden', !count); }
   const panel = $('drawerPanel'); if (!panel || $('drawer').classList.contains('hidden')) return;
   panel.innerHTML = `
-    <div class="dr-head"><div class="wordmark">USAR <span class="plate">242</span></div>
+    <div class="dr-head"><div class="dr-brand"><img src="img/logo.webp" width="44" height="44" alt=""><div class="wordmark">USAR <span class="plate">242</span></div></div>
       <button class="icon-btn" aria-label="Cerrar menú" onclick="toggleDrawer(false)">${ic('x', 'i-lg')}</button></div>
     ${menuTree(count, active)}`;
 }

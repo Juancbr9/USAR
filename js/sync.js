@@ -33,12 +33,16 @@ const Sync = (() => {
     const c = cfg();
     const res = await fetch(`${c.url}/auth/v1/${path}`, { method: 'POST', headers: { apikey: c.key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(/invalid/i.test(data.error_description || data.msg || '') ? 'Correo o contraseña incorrectos' : (data.error_description || data.msg || `Error ${res.status}`));
+    const m = data.error_description || data.msg || '';
+    if (/anonymous/i.test(m)) throw new Error('El acceso con PIN no está activado en Supabase (Authentication → «Allow anonymous sign-ins»)');
+    if (!res.ok) throw new Error(/invalid/i.test(m) ? 'Correo o contraseña incorrectos' : (m || `Error ${res.status}`));
     return data;
   }
-  function saveSession(d) {
-    const c = cfg();
-    c.session = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: Date.now() + (d.expires_in || 3600) * 1000, email: (d.user?.email || c.session?.email || '').toLowerCase() };
+  // keep: al renovar la sesión se conserva si es de invitado con PIN (y su nombre)
+  function saveSession(d, keep = true) {
+    const c = cfg(), prev = keep ? c.session || {} : {};
+    c.session = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: Date.now() + (d.expires_in || 3600) * 1000,
+      email: (d.user?.email || prev.email || '').toLowerCase(), anon: !!(d.user?.is_anonymous ?? prev.anon), pinName: prev.pinName || '' };
     writeJSON(KEY.sync, c);
   }
   async function refresh() {
@@ -55,7 +59,7 @@ const Sync = (() => {
     return role;
   }
   async function signIn(email, password) {
-    saveSession(await auth('token?grant_type=password', { email: email.trim(), password }));
+    saveSession(await auth('token?grant_type=password', { email: email.trim(), password }), false);
     try { await loadRole(); } catch (e) { signOut(); throw e; }
     const c = cfg(); c.joined = false; c.since = ''; writeJSON(KEY.sync, c);   // vuelve a descargar con sus permisos
     start();
@@ -65,7 +69,41 @@ const Sync = (() => {
     const d = await auth('signup', { email: email.trim(), password });
     return d.access_token ? 'ok' : 'confirm';
   }
-  function signOut() { const c = cfg(); if (!c) return; delete c.session; c.role = null; c.name = ''; role = null; writeJSON(KEY.sync, c); }
+  function signOut() {
+    const c = cfg(); if (!c) return;
+    // Con PIN, el invitado de este móvil se conserva (para no crear otro) pero deja de tener nombre en el servidor
+    if (c.session?.pinName) { rpc('usar_salir').catch(() => {}); c.session = { ...c.session, pinName: '' }; } else delete c.session;
+    c.role = null; c.name = ''; role = null; writeJSON(KEY.sync, c);
+  }
+
+  /* ---------- Acceso con nombre y PIN (sin correo) ----------
+     El móvil entra en Supabase como invitado y la base de datos comprueba el nombre y el PIN (supabase.sql); hasta
+     entonces el invitado no ve nada. Los PIN los ponen los jefes. */
+  async function rpc(fn, args = {}) {
+    const c = cfg();
+    if (c.session && c.session.expires_at - Date.now() < 60000) await refresh();
+    const token = cfg().session?.access_token;
+    const res = await fetch(`${c.url}/rest/v1/rpc/${fn}`, { method: 'POST', body: JSON.stringify(args),
+      headers: { apikey: c.key, ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' } });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(res.status === 404 || /PGRST202/.test(JSON.stringify(data)) ? 'Falta preparar el acceso con PIN en la base de datos (supabase.sql)' : `Servidor ${res.status}`);
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+  const names = () => rpc('usar_nombres').then(r => (r || []).map(x => x.name));
+  async function pinSignIn(name, pin) {
+    if (!cfg().session?.anon) saveSession(await auth('signup', {}), false);   // invitado de este móvil
+    const r = await rpc('usar_entrar', { p_name: name, p_pin: pin });
+    role = r.role;
+    const c = cfg(); c.session.pinName = r.name; Object.assign(c, { role, name: r.name, joined: false, since: '' }); writeJSON(KEY.sync, c);
+    start();
+    return r;
+  }
+  const changePin = (oldPin, pin) => rpc('usar_cambiar_mi_pin', { p_old: oldPin, p_new: pin });
+  const people = () => rpc('usar_personas');
+  const setPin = (name, r, pin) => rpc('usar_poner_pin', { p_name: name, p_role: r, p_pin: pin });
+  const setRole = (name, r) => rpc('usar_cambiar_permiso', { p_name: name, p_role: r });
+  const removePerson = name => rpc('usar_quitar', { p_name: name });
   // Comprobar la contraseña con el servidor (al abrir la app si este móvil aún no la conoce) y cambiarla
   async function verify(email, password) { saveSession(await auth('token?grant_type=password', { email: email.trim(), password })); }
   async function setPassword(password) {
@@ -254,6 +292,8 @@ const Sync = (() => {
 
   return {
     start, ensure, connect, disconnect, queue, queueImage, pull, cfg, signIn, signUp, signOut, verify, setPassword, members, setMember, removeMember,
+    names, pinSignIn, changePin, people, setPin, setRole, removePerson,
+    get pinName() { return cfg()?.session?.pinName || ''; }, get user() { return cfg()?.session?.email || cfg()?.session?.pinName || ''; },
     get status() { return status; }, get locked() { return locked(); }, get error() { return error; }, get pending() { return Object.keys(outbox).length; },
     get role() { return cfg()?.session ? role : null; }, get email() { return cfg()?.session?.email || ''; },
     get name() { return cfg()?.session ? cfg().name || '' : ''; }
