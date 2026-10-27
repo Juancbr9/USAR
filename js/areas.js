@@ -25,7 +25,7 @@ const SECTIONS = [
   ['contenedor', 'box', 'Contenedor y almacén', 'Contenedor, pasillo, armarios y otros, con su material fungible', 'log', 'mat'],
   ['revision', 'wrench', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
   // Apartados de esa página (séptimo campo: no salen sueltos en el menú; llevan a la página, a su altura)
-  ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos y niveles', 'log', 'mat', true],
+  ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos, suelo y balda', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios con sus baldas', 'log', 'mat', true],
   ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],
@@ -92,8 +92,8 @@ function viewVehiculos() {
       <div class="grid g3">${vehicles().map(v => {
         const out = active.flatMap(m => (m.vehicles || []).filter(x => x.id === v.id)).length;
         return `<${edit ? `button onclick="vehicleForm('${v.id}')"` : 'div'} class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
-          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div>
-          ${out ? `<span class="tag bad">${out} en salida</span>` : itvSoon(v)}</${edit ? 'button' : 'div'}>`; }).join('')
+          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small>
+          ${out ? `<span class="tag bad">${out} en salida</span>` : itvSoon(v)}</div></${edit ? 'button' : 'div'}>`; }).join('')
         || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
     </div>`;
 }

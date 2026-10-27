@@ -28,9 +28,9 @@ with sync_playwright() as p:
     cur = lambda js: a.evaluate(f"(m => {js})(mget(prefs.mission))")
     dlocal = lambda dt: dt.strftime('%Y-%m-%dT%H:%M')
 
-    # EPI mínimo INSARAG: 7 por persona
-    assert a.evaluate("list('epis').filter(e => e.holder === 'OP-01').length") == 7
-    more('Personal'); a.click('.item:has-text("GRANADOS")'); assert a.locator('.panel:has-text("EPI asignado") .item:has-text("Botas")').count() == 1
+    # EPI de cada persona: casco USAR, protectores auditivos y mono
+    assert a.evaluate("list('epis').filter(e => e.holder === 'OP-01').length") == 3
+    more('Personal'); a.click('.item:has-text("GRANADOS")'); assert a.locator('.panel:has-text("EPI asignado") .item:has-text("Casco USAR · Blanco")').count() == 1
 
     # Alistamiento: pasaporte que caduca en 3 meses → aviso; datos médicos solo locales
     more('Alistamiento')

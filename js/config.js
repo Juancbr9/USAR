@@ -12,15 +12,16 @@ const SIDE_L = [{ id: 1, c: '1', r: '1 / 3' }, { id: 2, c: '1', r: '3' }, { id: 
   { id: 7, c: '3', r: '2' }, { id: 5, c: '2', r: '3' }, { id: 8, c: '3', r: '3' }, { id: 9, c: '4', r: '1 / 3' }, { id: 10, c: '4', r: '3' }];
 const HUECOS = [...SIDE_L.map(h => ({ ...h, label: h.label || 'B' + h.id })), ...SIDE_L.map(h => ({ ...h, id: h.id + 10, label: h.label ? 'B13 y B16' : 'B' + (h.id + 10) }))];
 // Dibujos de los vehículos de la unidad (img/veh/<id>.webp); los demás usan su foto si se pone, o un icono
-const VEH_ART = ['V-SANGYONG', 'V-AB-LCIF', 'V-GUAGUA-G', 'V-GUAGUA-P', 'V-VPI', 'V-AMB', 'V-AMAROK', 'V-CAM-VERDE', 'V-AB', 'V-CUPRA', 'V-AB-CONT', 'V-AB-CONT2', 'V-ATB-M1', 'V-ATB-M2', 'V-AB-CHASIS'];
+const VEH_ART = ['V-SANGYONG', 'V-AB-LCIF', 'V-GUAGUA-G', 'V-GUAGUA-P', 'V-VPI', 'V-AMB', 'V-AMAROK', 'V-CAM-VERDE', 'V-AB', 'V-CUPRA', 'V-AB-CONT', 'V-AB-CONT2', 'V-ATB-M1', 'V-ATB-M2', 'V-AB-CHASIS',
+  'V-MOTO', 'V-CAM-ROJO', 'V-GRUA', 'V-MINI', 'V-IVECO-V', 'V-VITO', 'V-CADENAS', 'V-CARRETILLA', 'V-RQ-CARGA', 'V-RQ-PERROS', 'V-RQ-GE', 'V-RQ-TORRE', 'V-RQ-COMP', 'V-RQ-ARGOS', 'V-RQ-ROJO'];
 // Posición de cada hueco sobre el dibujo del lateral (img/contenedor-lateral.webp): izquierda, arriba, ancho y alto en %
 const HUECO_RECT = { 1: [5.73, 4.48, 19.56, 49.25], 2: [5.73, 56.72, 19.56, 35.82], 3: [27.75, 4.48, 45.11, 26.12], 4: [27.75, 37.01, 21.15, 26.42],
   7: [51.37, 37.01, 21.5, 26.42], 5: [27.75, 69.4, 21.15, 23.13], 8: [51.37, 69.4, 21.5, 23.13], 9: [75.33, 4.48, 18.94, 49.25], 10: [75.33, 56.72, 18.94, 35.82] };
 // Otros sitios donde se guarda material, fuera del contenedor (mismo campo «door» que los huecos)
 const PASILLO = 101, OTROS = 301;
-// Pasillo: estantería de palés (montantes azules, largueros naranjas) con PAS_MOD módulos y un nivel por larguero.
-// id = 100 + módulo × 10 + nivel (nivel 0 = suelo); PASILLO (101) es «en el pasillo, sin sitio concreto».
-const PAS_MOD = 5, PAS_NIV = ['Suelo', 'Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4'];
+// Pasillo: estantería de palés (montantes azules, largueros naranjas) con PAS_MOD módulos y dos alturas: el suelo y la
+// primera balda. id = 100 + módulo × 10 + nivel (nivel 0 = suelo); PASILLO (101) es «en el pasillo, sin sitio concreto».
+const PAS_MOD = 5, PAS_NIV = ['Suelo', 'Balda 1'];
 const PASILLO_SITIOS = Array.from({ length: PAS_MOD }, (_, m) => PAS_NIV.map((nv, n) => ({ id: 100 + (m + 1) * 10 + n, mod: m + 1, niv: n }))).flat();
 // Armarios: tres armarios de dos puertas sobre la estantería; dentro, ARM_BALDAS baldas (1 arriba).
 // id = 200 + armario × 10 + balda; ARM_SUELO es el suelo de la estantería, delante de los armarios (cascos, cajas, nevera…)
@@ -29,16 +30,15 @@ const ARMARIOS = [1, 2, 3].flatMap(n => Array.from({ length: ARM_BALDAS }, (_, b
 const enPasillo = d => d === PASILLO || PASILLO_SITIOS.some(p => p.id === d);
 const enArmarios = d => d === ARM_SUELO || ARMARIOS.some(a => a.id === d);
 const PLACES = [{ id: PASILLO, label: 'Pasillo', short: 'Pasillo', area: 'pasillo' },
-  ...PASILLO_SITIOS.map(p => ({ id: p.id, label: `Pasillo · módulo ${p.mod} · ${PAS_NIV[p.niv].toLowerCase()}`, short: `Pasillo M${p.mod} ${p.niv ? 'N' + p.niv : 'suelo'}`, area: 'pasillo' })),
+  ...PASILLO_SITIOS.map(p => ({ id: p.id, label: `Pasillo · módulo ${p.mod} · ${PAS_NIV[p.niv].toLowerCase()}`, short: `Pasillo M${p.mod} ${p.niv ? 'balda' : 'suelo'}`, area: 'pasillo' })),
   ...ARMARIOS.map(a => ({ id: a.id, label: `Armario ${a.n} · balda ${a.balda}`, short: `Armario ${a.n} b${a.balda}`, area: 'armarios' })),
   { id: ARM_SUELO, label: 'Delante de los armarios', short: 'Delante armarios', area: 'armarios' },
   { id: OTROS, label: 'Otros', area: 'otros' }];
 // Situación del material en revisión
 const REV_STATES = { taller: ['En el taller', 'warn'], espera: ['A la espera de revisión', 'warn'], inoperativo: ['Inoperativo', 'bad'], operativo: ['Operativo (con defecto)', 'ok'], baja: ['De baja', 'bad'] };
 // EPI que lleva cada persona
-const EPI_TYPES = { casco: 'Casco', auditivos: 'Protectores auditivos', mono: 'Mono', guantes: 'Guantes', gafas: 'Gafas de protección',
-  respiratoria: 'Protección respiratoria (FFP)', botas: 'Botas' };
-const EPI_SIZED = ['mono', 'guantes', 'botas'];   // EPI con talla propia
+const EPI_TYPES = { casco: 'Casco', auditivos: 'Protectores auditivos', mono: 'Mono' };
+const EPI_SIZED = ['mono'];   // EPI con talla propia
 const GEAR_FUNCS = ['Búsqueda', 'Rescate', 'Médico', 'Logística', 'Comunicaciones', 'Seguridad'];
 // Tipos de emergencia y el material que suele hacer falta (palabras que se buscan en el nombre o la función de cada equipo)
 const EMERGENCIES = {

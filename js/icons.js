@@ -292,13 +292,24 @@ const TOOL_ART = (() => {
     busqueda: `${T('M20 32 39 11', MT, 2.4)}${T('M17 35l5-5', BK, 3.4)}<rect x="36" y="3" width="10" height="8" rx="2" fill="${DK}" transform="rotate(-45 41 7)"/>
       <circle cx="43" cy="9" r="2.2" fill="${YE}"/><rect x="3" y="27" width="20" height="16" rx="2.5" fill="${BK}"/><rect x="5.5" y="29.5" width="15" height="11" rx="1" fill="#5aa0d8"/>
       <path d="M7 38l4-4 3 3 3-5 3 4" stroke="#fff" stroke-width="1.1"/>`,
-    // Casco del equipo (fotos): rojo, franjas blancas fluorescentes, tira reflectante arriba, orejeras amarillas y frontal
+    // Casco del equipo (fotos): rojo, franjas blancas fluorescentes, tira reflectante arriba, anclaje de las orejeras y frontal
     casco: `<path d="M5 32C5 17 14 8 26 8s19 9 19 22v2z" fill="{c}"/><path d="M4 31h41v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" fill="{c}"/>
       ${hi(11, 14, 9, 2)}<path d="M13 24c4-6 11-9 19-8" stroke="#eef3e8" stroke-width="3.6" stroke-linecap="round"/>
       <path d="M21 9c8 0 15 3 19 9" stroke="${MT}" stroke-width="2.6" stroke-dasharray="2.2 1.2" stroke-linecap="butt"/>
       <path d="M6 33h16" stroke="#eef3e8" stroke-width="2.4"/><path d="M28 33h12" stroke="${MT}" stroke-width="2.2"/>
-      ${T('M20 23l-5 7', MT, 1)}<ellipse cx="13" cy="33" rx="6" ry="8" fill="#d4f01e"/><path d="M17.5 27.5a6 8 0 0 1 0 11" stroke="${BK}" stroke-width="2.4"/>
+      <rect x="15" y="25" width="6" height="6" rx="1.5" fill="${BK}"/><circle cx="18" cy="28" r="1.2" fill="${MD}"/><circle cx="26" cy="29" r="1" fill="${BK}"/><circle cx="29" cy="29" r="1" fill="${BK}"/>
       <rect x="39" y="23" width="7" height="7" rx="1.5" fill="${BK}"/><circle cx="44.5" cy="26.5" r="2.4" fill="${YE}"/><circle cx="44.5" cy="26.5" r="1" fill="#fff6c2"/>`,
+    // Protectores auditivos (orejeras del casco): copas amarillo flúor con almohadilla negra y varilla metálica
+    auditivos: `${T('M11 22C11 9 37 9 37 22', MD, 1.8)}${T('M11 22v4M37 22v4', MD, 1.4)}
+      <rect x="3" y="24" width="14" height="19" rx="7" fill="{c}"/><rect x="31" y="24" width="14" height="19" rx="7" fill="{c}"/>
+      <path d="M15 26.5a6 7.5 0 0 1 0 14M33 26.5a6 7.5 0 0 0 0 14" stroke="${BK}" stroke-width="3"/>${hi(6, 27, 2.4, 9)}${hi(34, 27, 2.4, 9)}`,
+    // Mono USAR de la UME: rojo, con bandas reflectantes amarillas y gris en pecho, brazos y piernas
+    mono: `<path d="M18 4h12l5 3 7 4-2 21h-6l-1-13v27h-9l-1-14-1 14h-9V19l-1 13H8L6 11l7-4z" fill="{c}"/>
+      <path d="M20 4l4 5 4-5" stroke="${K}" stroke-width="1.4" fill="#b8231c"/><path d="M24 9v20" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
+      <path d="M13 17h22" stroke="${YE}" stroke-width="3.4"/><path d="M13 17h22" stroke="${MT}" stroke-width="1"/>
+      <path d="M7.5 25h6M34.5 25h6" stroke="${YE}" stroke-width="3"/><path d="M7.5 25h6M34.5 25h6" stroke="${MT}" stroke-width="1"/>
+      <path d="M15 39h8M25 39h8" stroke="${YE}" stroke-width="3"/><path d="M15 39h8M25 39h8" stroke="${MT}" stroke-width="1"/>
+      <rect x="27" y="10" width="4" height="4" rx="1" fill="${YE}"/>`,
     botiquin: `${T('M17 13v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3', BK, 2.6)}<rect x="4" y="13" width="40" height="30" rx="5" fill="${RD}"/>${hi(7, 15.5, 34)}
       <path d="M4 20h40" stroke="rgba(0,0,0,.3)" stroke-width="1.2"/><path d="M21 22h6v6h6v6h-6v6h-6v-6h-6v-6h6z" fill="#fff"/>`,
     radio: `<rect x="16" y="2" width="4.5" height="12" rx="2.2" fill="${DK}"/><rect x="26" y="7" width="4" height="5" rx="1" fill="${DK}"/><rect x="21.5" y="8" width="4" height="4" rx="1" fill="${OR}"/>
@@ -352,13 +363,13 @@ const TOOL_COLOR = {
   motodisco: '#f37021', martillo: '#d6332a', taladro: '#d6332a', motosierra: '#f39200', sierra_circular: '#0f8a8f', sierra_sable: '#d6332a',
   radial: '#d6332a', ventilador: '#d6332a', extractor: '#f6c400', mangote: '#f6c400', alargadera: '#f39200', puntal_hidraulico: '#f39200',
   desbrozadora: '#f37021', garrafa: '#d6332a', aceite: '#f6c400', ingletadora: '#0f8a8f', motor: '#d6332a', generador: '#d6332a',
-  carretilla: '#3f8f3f', cuerda: '#d6332a', linterna: '#262626', pistola_clavos: '#d6332a', casco: '#e2231a', polea: '#f39200',
+  carretilla: '#3f8f3f', cuerda: '#d6332a', linterna: '#262626', pistola_clavos: '#d6332a', casco: '#e2231a', auditivos: '#d4f01e', mono: '#d6332a', polea: '#f39200',
   palanca: '#d6332a', bomba: '#1f5fa8', bomba_manual: '#f39200', manguera: '#d6332a'
 };
 const TOOL_TINT = [
   [/bosch/i, '#1f5fa8'], [/makita/i, '#0f8a8f'], [/hilti|w[uü]rth/i, '#d6332a'], [/stihl|husqvarna/i, '#f37021'],
   [/gasoil|di[eé]sel/i, '#262626'], [/mezcla/i, '#3f8f3f'], [/aceite (de cadena|hidr)/i, '#d6332a'],
-  [/naranja/i, '#f39200'], [/azul/i, '#1f5fa8'], [/verde/i, '#3f8f3f'], [/amarill/i, '#f6c400'], [/roj/i, '#d6332a'], [/negr/i, '#262626']
+  [/naranja/i, '#f39200'], [/azul/i, '#1f5fa8'], [/verde/i, '#3f8f3f'], [/amarill/i, '#f6c400'], [/roj/i, '#d6332a'], [/negr/i, '#262626'], [/blanc/i, '#f2f2ee']
 ];
 const TOOL_MATCH = [
   [/cizalla/i, 'cizalla'], [/separador/i, 'separador'], [/combinad/i, 'combinada'], [/cilindro|gato|ram/i, 'cilindro'],
@@ -377,7 +388,7 @@ TOOL_MATCH.unshift(
   [/iluminaria|foco|grandes [aá]reas/i, 'foco'], [/linterna/i, 'linterna'], [/ingletadora/i, 'ingletadora'], [/caballete/i, 'caballete'],
   [/grupo (electr|rosen|takuma)/i, 'generador'], [/motor|grupo pu|grupo hidr/i, 'motor'], [/escalera/i, 'escalera'], [/bobina|alambre/i, 'bobina'],
   [/carretilla/i, 'carretilla'], [/zampeado|madera/i, 'madera'], [/botella|\bera\b/i, 'era'], [/mesa/i, 'mesa'], [/silla/i, 'silla'],
-  [/coj[ií]n/i, 'cojin'], [/clavos/i, 'pistola_clavos'], [/ge[oó]fono/i, 'geofono'], [/b[uú]squeda/i, 'busqueda'], [/casco/i, 'casco'],
+  [/coj[ií]n/i, 'cojin'], [/clavos/i, 'pistola_clavos'], [/ge[oó]fono/i, 'geofono'], [/b[uú]squeda/i, 'busqueda'], [/auditiv|orejer/i, 'auditivos'], [/\bmono\b/i, 'mono'], [/casco/i, 'casco'],
   [/botiqu[ií]n/i, 'botiquin'], [/tetra|transmisi|radio/i, 'radio'], [/cinta/i, 'cinta'], [/cial[uú]men/i, 'cialumen'], [/spray/i, 'spray'],
   [/tractel/i, 'tractel'], [/polea/i, 'polea'], [/cadena|perrillo|quitavueltas/i, 'cadena'], [/pata de cabra|maneral|palanca/i, 'palanca'],
   [/llave|destornillador|juego de herramientas|herramientas/i, 'llave'], [/bomba manual/i, 'bomba_manual'], [/bomba|electrobomba/i, 'bomba'], [/manguera/i, 'manguera'],
