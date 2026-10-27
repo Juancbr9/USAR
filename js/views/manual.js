@@ -38,7 +38,7 @@ const MANUAL = [
       { h: 'Avisos', p: 'En Inicio salen los avisos: equipos averiados o en revisión, material con novedad, mantenimientos y caducidades de los próximos 30 días, stock por debajo del mínimo, material fuera del contenedor y documentos de las personas. Toca cualquiera para ir a su ficha.' }
     ],
     example: 'Llegas al parque: entras como GRANADOS y en Inicio ves que la sierra de hormigón está en revisión y que el pasaporte de DORTA caduca en 4 meses.',
-    tips: ['Tu PIN lo cambias en Ajustes → General → «Cambiar PIN» (hace falta conexión).', 'Abajo del todo, «Enviar estado del material» manda un resumen del material y los avisos (por WhatsApp o donde elijas).'] },
+    tips: ['Tu PIN lo cambias en Ajustes → General → «Cambiar PIN» (hace falta conexión).', 'Abajo del todo, «Enviar estado» manda un resumen del material y los avisos (por WhatsApp o donde elijas).'] },
 
   { id: 'operacion', area: 'ops', icon: 'flag', title: 'Crear y llevar una intervención o ejercicio', go: 'intervenciones',
     what: 'Cada salida se prepara y se lleva desde Actividades → Activación (salidas reales) o Ejercicios (maniobras y simulacros): datos generales, equipos con su jefe, puestos, vehículos, material, seguridad, worksites, víctimas, diario e informes. Se trabaja por fases siguiendo el método de la UME.',

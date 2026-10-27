@@ -17,7 +17,12 @@
   --warn: #8a5100; --warn-soft: #fbefd9;
   --bad: #c62828; --bad-soft: #fbe3e1;
   --info: #1f5fa8; --info-soft: #e2ecf8;
-  --r: 10px; --r-sm: 8px;
+  --r: 12px; --r-sm: 10px;
+  /* Elevación (sombras suaves en vez de bordes duros) y la curva de las animaciones */
+  --sh-1: 0 1px 2px rgba(17, 26, 20, .05), 0 1px 3px rgba(17, 26, 20, .07);
+  --sh-2: 0 8px 20px rgba(17, 26, 20, .09), 0 2px 6px rgba(17, 26, 20, .05);
+  --sh-3: 0 24px 60px rgba(17, 26, 20, .25);
+  --ease: cubic-bezier(.16, 1, .3, 1);
   --sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --cond: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --num: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -42,6 +47,9 @@
   --solid: #f5b800; --on-solid: #111a14;
   --ic: #c3d0c6;
   --dock: rgba(18, 26, 21, .94);
+  --sh-1: inset 0 1px 0 rgba(255, 255, 255, .03), 0 1px 3px rgba(0, 0, 0, .4);
+  --sh-2: inset 0 1px 0 rgba(255, 255, 255, .04), 0 10px 26px rgba(0, 0, 0, .5);
+  --sh-3: 0 24px 70px rgba(0, 0, 0, .65);
   color-scheme: dark;
 }
 :root[data-theme="dark"] body { background-image: radial-gradient(circle at 50% 0%, rgba(245, 184, 0, .05), transparent 45%); background-repeat: no-repeat; }
@@ -1363,10 +1371,6 @@ body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
 .dash-actions .btn { justify-content: center; font-size: 14px; padding-left: 8px; padding-right: 8px; text-align: center; }
 @media (min-width: 900px) { .dash-actions { display: flex; } }
 .nw { white-space: nowrap; }
-/* Cambio de pantalla: fundido corto (solo opacidad: no mueve nada mientras se toca) */
-@keyframes view-in { from { opacity: 0; } to { opacity: 1; } }
-#view.enter > * { animation: view-in .22s ease-out both; }
-#view.enter > *:nth-child(2) { animation-delay: .03s; } #view.enter > *:nth-child(3) { animation-delay: .06s; } #view.enter > *:nth-child(n+4) { animation-delay: .09s; }
 /* Indicadores en cuadrícula: la cifra siempre abajo, aunque el nombre ocupe dos líneas */
 .status .kpi { align-items: stretch; }
 .status .kpi > div { display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
@@ -1377,3 +1381,73 @@ body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
 .unit-acts { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
 .vc-line { display: block; font-size: 13px; text-align: left; text-decoration: none; margin-top: 2px; }
 .vc-line.ok { color: var(--ok); } .vc-line.bad { color: var(--bad); font-weight: 600; }
+
+/* ==================== ACABADO: elevación, cabecera, foco y respuesta al tocar ==================== */
+body { background-image: radial-gradient(1100px 380px at 50% -140px, rgba(34, 56, 42, .07), transparent 70%); background-repeat: no-repeat; }
+::selection { background: rgba(245, 184, 0, .35); }
+.panel { box-shadow: var(--sh-1); }
+.item, .dash-kpi, .dash-q, .tile, .op-tile, .doc-card { transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .15s, background-color .15s; }
+.item:not(.check) { box-shadow: 0 1px 1px rgba(17, 26, 20, .03); }
+.dash-kpi, .dash-q, .tile, .op-tile { box-shadow: var(--sh-1); }
+@media (hover: hover) and (pointer: fine) {
+  button.item:hover, .dash-kpi:hover, .dash-q:hover, .tile:hover, .op-tile:hover, .doc-card:hover { transform: translateY(-2px); box-shadow: var(--sh-2); }
+  .btn-a:hover { filter: brightness(1.04); box-shadow: 0 10px 24px rgba(245, 184, 0, .32); }
+  .btn-g:hover { box-shadow: var(--sh-1); }
+}
+.dash-kpi:active, .dash-q:active, .tile:active, .op-tile:active { transform: scale(.97); }
+.btn-g { box-shadow: 0 1px 2px rgba(17, 26, 20, .05); }
+.btn { transition: transform .15s var(--ease), background-color .15s, border-color .15s, box-shadow .2s, filter .15s; }
+/* Cabecera: al bajar se eleva con una sombra */
+.topbar { transition: background-color .25s, box-shadow .25s; }
+body.scrolled .topbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .22); }
+/* Campos: foco amarillo suave y transición */
+.input { transition: border-color .15s, box-shadow .2s, background-color .15s; }
+.input:focus { border-color: var(--yellow-2); box-shadow: 0 0 0 4px rgba(245, 184, 0, .22); }
+.seg-row button, .chip, .alm-jump button, .ctab { transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s; }
+.sheet { box-shadow: var(--sh-3); }
+.bar span { transition: width .6s var(--ease); }
+.toast { transition: opacity .25s, transform .4s var(--ease) !important; }
+.tag { border-radius: 6px; }
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 8px; border: 2px solid var(--paper); }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* ==================== MOVIMIENTO (solo con html.motion: ver motion() en js/ui.js) ==================== */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(100%); } }
+@keyframes sheet-out { to { transform: translateY(100%); } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes pop-out { to { opacity: 0; transform: translateY(6px) scale(.98); } }
+@keyframes drawout { to { transform: translateX(-100%); } }
+@keyframes logo-in { from { opacity: 0; transform: scale(.82) rotate(-8deg); } }
+/* Al entrar en una pantalla, sus bloques suben uno tras otro y las listas se van llenando */
+.motion #view.enter > * { animation: rise .45s var(--ease) both; }
+.motion #view.enter > *:nth-child(2) { animation-delay: .05s; } .motion #view.enter > *:nth-child(3) { animation-delay: .1s; }
+.motion #view.enter > *:nth-child(4) { animation-delay: .15s; } .motion #view.enter > *:nth-child(5) { animation-delay: .2s; } .motion #view.enter > *:nth-child(n+6) { animation-delay: .24s; }
+.motion #view.enter .list > .item:nth-child(-n+8), .motion #view.enter .dash-kpis > *, .motion #view.enter .dash-quick > * { animation: rise .5s var(--ease) both; }
+.motion #view.enter .list > .item:nth-child(2), .motion #view.enter .dash-kpis > :nth-child(2), .motion #view.enter .dash-quick > :nth-child(2) { animation-delay: .04s; }
+.motion #view.enter .list > .item:nth-child(3), .motion #view.enter .dash-kpis > :nth-child(3), .motion #view.enter .dash-quick > :nth-child(3) { animation-delay: .08s; }
+.motion #view.enter .list > .item:nth-child(4), .motion #view.enter .dash-kpis > :nth-child(4), .motion #view.enter .dash-quick > :nth-child(4) { animation-delay: .12s; }
+.motion #view.enter .list > .item:nth-child(5), .motion #view.enter .dash-quick > :nth-child(5) { animation-delay: .16s; }
+.motion #view.enter .list > .item:nth-child(6), .motion #view.enter .dash-quick > :nth-child(6) { animation-delay: .2s; }
+.motion #view.enter .list > .item:nth-child(7), .motion #view.enter .dash-quick > :nth-child(7) { animation-delay: .24s; }
+.motion #view.enter .list > .item:nth-child(8), .motion #view.enter .dash-quick > :nth-child(8) { animation-delay: .28s; }
+/* Ventanas: el fondo se oscurece y la hoja sube desde abajo (en pantalla grande, aparece en el centro); al cerrar, baja */
+.motion .modal:not(.hidden) { animation: fade-in .22s ease-out; }
+.motion .sheet { animation: sheet-in .45s var(--ease); }
+.motion .modal.closing { animation: fade-out .18s ease-in forwards; }
+.motion .modal.closing .sheet { animation: sheet-out .18s ease-in forwards; }
+@media (min-width: 720px) { .motion .sheet { animation: pop-in .3s var(--ease); } .motion .modal.closing .sheet { animation: pop-out .18s ease-in forwards; } }
+/* Menú: se desliza al abrir y al cerrar */
+.motion .drawer:not(.hidden) { animation: fade-in .22s ease-out; }
+.motion .drawer-panel { animation: drawin .38s var(--ease); }
+.motion .drawer.closing { animation: fade-out .2s ease-in forwards; }
+.motion .drawer.closing .drawer-panel { animation: drawout .2s ease-in forwards; }
+/* Entrada: el escudo aparece girando un poco, luego la tarjeta y los nombres */
+.motion .login-logo { animation: logo-in .8s var(--ease) both; }
+.motion .login-card { animation: rise .55s .12s var(--ease) both; }
+.motion .name-grid > * { animation: rise .45s var(--ease) both; animation-delay: .25s; }
+.motion .name-grid > :nth-child(2n) { animation-delay: .29s; } .motion .name-grid > :nth-child(n+5) { animation-delay: .33s; } .motion .name-grid > :nth-child(n+9) { animation-delay: .37s; }
