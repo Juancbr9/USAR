@@ -1371,3 +1371,9 @@ body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
 .status .kpi { align-items: stretch; }
 .status .kpi > div { display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
 @media (min-width: 900px) { .alm-jump button { flex-direction: row; justify-content: center; gap: 8px; padding: 9px 6px; font-size: 14px; } }
+/* Ficha de un vehículo: dibujo, matrículas con su ITV y la última revista de salida */
+.veh-hero { display: grid; place-items: center; padding: 10px; background: var(--sunk); border-radius: var(--r); }
+.unit-row { align-items: flex-start; }
+.unit-acts { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.vc-line { display: block; font-size: 13px; text-align: left; text-decoration: none; margin-top: 2px; }
+.vc-line.ok { color: var(--ok); } .vc-line.bad { color: var(--bad); font-weight: 600; }

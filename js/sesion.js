@@ -41,12 +41,14 @@ document.addEventListener('visibilitychange', () => {
 const isAdmin = () => me()?.name === ADMIN;
 const enMantenimiento = () => (get('meta', 'mantenimiento')?.value ?? MANT_DEFECTO) !== false;
 const bloqueado = () => enMantenimiento() && !isAdmin();
-// Material, cajas, consumibles, vehículos y extras de las salidas: solo ADMIN los añade, cambia o elimina. Con usuario de
-// Supabase hace falta además que sea jefe: así ADMIN, con una segunda cuenta de miembro, ve la app como el resto.
+// Material, cajas, consumibles, vehículos y extras de las salidas: solo ADMIN (y a quien él dé el permiso de logística en su
+// ficha) los añade, cambia o elimina. Con usuario de Supabase hace falta además que sea jefe (la base de datos solo deja
+// crear o borrar material a los jefes): así ADMIN, con una segunda cuenta de miembro, ve la app como el resto.
 // El resto del equipo sigue moviendo material, sacándolo, pasándolo a revisión y ajustando el stock.
 const FLOTA_KINDS = ['gear', 'boxes', 'consumables', 'vehicles'];
-const puedeFlota = () => isAdmin() && (!Sync.user || Sync.role === 'jefe');
-const soloFlota = () => puedeFlota() || (toast(`Solo ${ADMIN} puede añadir o cambiar material, vehículos y extras`, 'bad'), false);
+const puedeFlota = () => (isAdmin() || !!me()?.logistica) && (!Sync.user || Sync.role === 'jefe');
+const soloFlota = () => puedeFlota() || (toast(me()?.logistica ? `Tienes permiso de logística, pero en Miembros y permisos tienes que ser jefe: pídeselo a ${ADMIN}`
+  : `Solo ${ADMIN} y quien tenga permiso de logística pueden añadir o cambiar material, vehículos y extras`, 'bad'), false);
 // iPhone y iPad: la app de Android (APK) no sirve; la web se instala desde Safari en la pantalla de inicio y funciona igual
 const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 // En iPhone el lector es Face ID (o Touch ID): se nombra así en los botones y avisos

@@ -139,13 +139,17 @@ function personForm(op) {
     { k: 'funcs', label: 'Otras funciones (puede tener varias)', type: 'checks', catalog: 'opFuncs', value: o.funcs || [], wide: true },
     { k: 'phone', label: 'Teléfono', type: 'tel', value: o.phone, placeholder: '600 000 000' },
     { k: 'email', label: 'Correo', type: 'email', value: o.email },
-    { k: 'photo', label: 'Foto de la persona', type: 'photo', value: '', wide: true }
+    { k: 'photo', label: 'Foto de la persona', type: 'photo', value: '', wide: true },
+    // Solo ADMIN da (o quita) el permiso de logística: añadir y cambiar material, vehículos y extras como él
+    ...(isAdmin() && o.name !== ADMIN ? [{ k: 'logi', label: 'Permisos', type: 'checks', wide: true, value: o.logistica ? ['logistica'] : [],
+      options: [['logistica', 'Logística: añade y cambia material, vehículos y extras (en Miembros y permisos tiene que ser jefe)']] }] : [])
   ], async v => {
     if (v.name !== o.name && allOperators().some(x => x.id !== o.id && x.name === v.name)) return toast('Ya hay otra persona con ese nombre', 'bad');
     if (v.photo) await Img.put(`op:${op}`, v.photo);
     if (prefs.activeOperator === o.name) { prefs.activeOperator = v.name; writeJSON(KEY.prefs, prefs); }
-    const { photo, ...rest } = v;
-    put('operators', { ...o, ...rest, photo: photo ? true : o.photo || false }, `Datos de ${v.name} actualizados`);
+    const { photo, logi, ...rest } = v, logistica = logi ? logi.includes('logistica') : !!o.logistica;
+    put('operators', { ...o, ...rest, logistica, photo: photo ? true : o.photo || false },
+      logistica !== !!o.logistica ? `${v.name}: ${logistica ? 'con' : 'sin'} permiso de logística` : `Datos de ${v.name} actualizados`);
   }, `<div class="row span2" style="gap:8px">
     ${o.active === false ? `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', true)">${ic('check')} Volver a dar de alta</button>`
       : `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', false)">${ic('out')} Dar de baja</button>`}

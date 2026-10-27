@@ -234,7 +234,10 @@ function viewContVisual() {
     <div class="panel">
       <div class="between wrap-row sec-head">
         <div><h2>${esc(sideTitle)}</h2><p class="muted">Toca un hueco para verlo; mantén pulsado para arrastrar.</p></div>
-        <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>${puedeFlota() ? `<button class="btn btn-a btn-sm" onclick="addMaterial()">${ic('plus')} Material</button>` : ''}</div>
+        <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>
+          <button class="btn btn-g btn-sm" onclick="openScanner(null, { title: 'Escanear material', hint: 'Apunta a la etiqueta QR de un equipo o de una caja' })">${ic('scan')} Escanear</button>
+          ${(n => n ? `<button class="btn btn-g btn-sm" onclick="pedidoForm()">${ic('share')} Pedido <span class="tag bad">${n}</span></button>` : '')(list('consumables').filter(consLow).length)}
+          ${puedeFlota() ? `<button class="btn btn-a btn-sm" onclick="addMaterial()">${ic('plus')} Material</button>` : ''}</div>
         <div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" data-cside="${k}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
       </div>
       <div class="cv cvi" data-side="${side}">

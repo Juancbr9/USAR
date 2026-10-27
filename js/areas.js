@@ -89,18 +89,20 @@ const areaHeader = () => '';
 
 /* ---------- Vehículos (antes dentro de Operaciones) ---------- */
 // Aviso en la tarjeta del modelo si alguna de sus matrículas tiene la ITV caducada o en los próximos 30 días
+// Aviso en la tarjeta si la última revista de salida de alguna de sus matrículas tuvo fallos
+const vehFails = v => (v.units || []).some(u => lastVcheck(u.id)?.fails.length) ? '<span class="tag bad">Fallo en revista</span>' : '';
 const itvSoon = v => { const n = Math.min(...(v.units || []).filter(u => u.itv).map(u => daysTo(u.itv))); return n < 0 ? '<span class="tag bad">ITV caducada</span>' : n <= 30 ? '<span class="tag warn">ITV pronto</span>' : ''; };
 function viewVehiculos() {
-  const active = list('missions').filter(m => m.status === 'active'), edit = puedeFlota();
+  const active = list('missions').filter(m => m.status === 'active');
   return `
     <div class="panel">
       <div class="between sec-head"><div><h2>Vehículos</h2><p class="muted">En cada actividad se añaden los que salen, con matrícula y carga.</p></div>
         ${puedeFlota() ? `<button class="btn btn-a" onclick="vehicleForm()">${ic('plus')} Modelo</button>` : ''}</div>
       <div class="grid g3">${vehicles().map(v => {
         const out = active.flatMap(m => (m.vehicles || []).filter(x => x.id === v.id)).length;
-        return `<${edit || v.id === RENAULT ? `button onclick="${edit ? `vehicleForm('${v.id}')` : 'renaultView()'}"` : 'div'} class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
+        return `<button onclick="vehicleView('${v.id}')" class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
           <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small>
-          ${out ? `<span class="tag bad">${out} en salida</span>` : itvSoon(v)}</div></${edit || v.id === RENAULT ? 'button' : 'div'}>`; }).join('')
+          ${out ? `<span class="tag bad">${out} en salida</span>` : vehFails(v)}${itvSoon(v)}</div></button>`; }).join('')
         || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
     </div>`;
 }

@@ -98,7 +98,7 @@ with sync_playwright() as p:
     assert a.locator('.veh-item').count() == 27 and a.locator('.veh-item:has-text("Autobomba Renault")').count() == 1
     assert a.evaluate("vehicles().map(v => v.name).join('|') === vehicles().map(v => v.name).sort((x, y) => x.localeCompare(y, 'es', { numeric: true })).join('|')"), 'flota por orden alfabético'
     assert 'Amarok' in a.locator('.veh-item').first.text_content() and 'VPI' in a.locator('.veh-item').last.text_content()
-    a.click('.veh-item:has-text("Amarok")'); a.fill('[name=seats]', '5'); save()
+    a.click('.veh-item:has-text("Amarok")'); a.click('#modal button:has-text("Editar modelo")'); a.fill('[name=seats]', '5'); save()
     assert a.evaluate("get('vehicles', 'V-AMAROK').seats") in (5, '5')
 
     # Migración: los 3 vehículos de ejemplo pasan a los reales y nada queda fijo en un vehículo

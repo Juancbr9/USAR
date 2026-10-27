@@ -213,10 +213,55 @@ const vehArt = (v, cls = '', mod = '') => v?.photo && !(v.id === RENAULT && mod)
 const modPreview = (mod = '', title = 'Módulo detrás') => `<div class="lbl wide veh-mods"><span class="veh-mods-t">${title}</span><img class="veh-art lg" src="${vehArtSrc(RENAULT, mod)}" alt="">
   <div class="seg-row" role="group" aria-label="Módulo detrás">${Object.entries(RENAULT_MOD).map(([k, [l]]) => `<button type="button" class="${k === mod ? 'on' : ''}" data-mod="${k}"
     onclick="const w = this.closest('.veh-mods'); w.querySelector('img').src = ${jsq(vehArtSrc(RENAULT, k))}; w.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === this)); const s = $('modalForm')?.elements.mod; if (s) s.value = '${k}'">${esc(l.replace(' (sin módulo)', ''))}</button>`).join('')}</div></div>`;
-function renaultView() {
-  const v = get('vehicles', RENAULT);
-  openModal(v?.name || 'Autobomba Renault', `<p class="muted" style="margin-bottom:10px">Viene vacía detrás. Elige un módulo para verla con él; en cada actividad se elige el que lleva.</p>
-    <div class="form">${modPreview('', 'Módulo')}</div>`);
+// Ficha de un modelo para todo el equipo: su dibujo (la Renault, con cada módulo), sus matrículas con la ITV y la última
+// revista de salida de cada una. Quien gestiona la flota, además, la edita.
+function vehicleView(id) {
+  const v = get('vehicles', id); if (!v) return;
+  const units = unitsOf_(v);
+  const unitRow = u => { const c = lastVcheck(u.id); return `
+    <div class="item unit-row"><div class="grow"><b class="nw">${esc(u.plate)}</b>${u.use || u.titular ? `<small>${esc([u.use, u.titular].filter(Boolean).join(' · '))}</small>` : ''}
+      ${c ? `<button class="link vc-line ${c.fails.length ? 'bad' : 'ok'}" onclick="vcheckHistory('${id}', '${u.id}')">${esc(checkLine(c))}</button>` : '<small class="muted">Sin revista de salida</small>'}</div>
+      <div class="unit-acts">${itvTag(u)}<button class="btn btn-g btn-sm" onclick="vcheckForm('${id}', '${u.id}')">${ic('clipboard', 'i-sm')} Revista</button></div></div>`; };
+  openModal(v.name, `
+    ${id === RENAULT ? `<p class="muted" style="margin-bottom:10px">Viene vacía detrás. Elige un módulo para verla con él; en cada actividad se elige el que lleva.</p>
+      <div class="form">${modPreview('', 'Módulo')}</div>` : `<div class="veh-hero">${vehArt(v, 'lg')}</div>`}
+    ${v.notes || v.seats ? `<p class="muted" style="margin-top:8px">${esc([v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).join(' · '))}</p>` : ''}
+    <h4 class="sec-title" style="margin-top:14px">Matrículas (${units.length})</h4>
+    ${units.length ? `<div class="list">${units.map(unitRow).join('')}</div>`
+      : `<button class="btn btn-g full" onclick="vcheckForm('${id}')">${ic('clipboard')} Revista de salida</button>`}
+    ${puedeFlota() ? `<button class="btn btn-g full" style="margin-top:12px" onclick="vehicleForm('${id}')">${ic('pencil')} Editar modelo y matrículas</button>` : ''}`);
+}
+
+/* ---------- Revista de salida de cada vehículo (cualquiera la hace; queda el historial por matrícula) ---------- */
+const VCHECK = ['Niveles (aceite, refrigerante, AdBlue)', 'Luces y rotativos', 'Neumáticos', 'Frenos', 'Limpiaparabrisas',
+  'Documentación (permiso de circulación, ITV, seguro)', 'Extintor, botiquín y triángulos', 'Emisora y transmisiones', 'Carrocería y limpieza'];
+const FUEL = ['Lleno', '3/4', '1/2', '1/4', 'Reserva'];
+const checksOf = (vid, unit) => list('vchecks').filter(c => c.vid === vid && (c.unit || '') === (unit || '')).sort((a, b) => b.date - a.date);
+const lastVcheck = unit => list('vchecks').filter(c => c.unit === unit).sort((a, b) => b.date - a.date)[0];
+const checkLine = c => `Revista ${fmtWhen(c.date)} · ${c.fails.length ? `${c.fails.length === 1 ? 'Fallo' : c.fails.length + ' fallos'}: ${c.fails.map(f => f.split(' (')[0].toLowerCase()).join(', ')}` : 'todo bien'}${c.km ? ` · ${(+c.km).toLocaleString('es-ES')} km` : ''}`;
+function vcheckForm(vid, unit = '') {
+  const v = get('vehicles', vid), u = (v.units || []).find(x => x.id === unit), prev = checksOf(vid, unit)[0];
+  openForm(`Revista de salida · ${u ? u.plate : v.name}`, [
+    { k: 'ok', label: 'Marca lo que está bien (lo que quede sin marcar es un fallo)', type: 'checks', options: VCHECK.map(x => [x, x]), value: VCHECK, wide: true },
+    { k: 'km', label: 'Kilómetros', type: 'number', value: '', placeholder: prev?.km ? `La última: ${prev.km}` : 'Ej: 45210' },
+    { k: 'fuel', label: 'Combustible', value: 'Lleno', options: FUEL.map(x => [x, x]) },
+    { k: 'notes', label: 'Observaciones', type: 'textarea', rows: 2, value: '', wide: true, placeholder: 'Ej: El rotativo trasero no funciona' }
+  ], val => {
+    const fails = VCHECK.filter(x => !val.ok.includes(x)), km = Math.round(+val.km) || '';
+    if (km && prev?.km && km < +prev.km && !confirm(`Pones ${km} km y la revista anterior tenía ${prev.km}. ¿Guardar igualmente?`)) return;
+    put('vchecks', { id: uid('VC'), vid, unit, plate: u?.plate || '', date: Date.now(), by: prefs.activeOperator, km, fuel: val.fuel, fails, notes: val.notes },
+      `Revista de salida de ${u ? u.plate : v.name}: ${fails.length ? fails.length + ' fallos' : 'todo bien'}`);
+    toast(fails.length ? `Guardada con ${fails.length} ${fails.length === 1 ? 'fallo' : 'fallos'}: sale en Inicio` : 'Revista guardada: todo bien', fails.length ? 'bad' : 'ok');
+    vehicleView(vid);
+  });
+}
+function vcheckHistory(vid, unit = '') {
+  const v = get('vehicles', vid), u = (v.units || []).find(x => x.id === unit), cs = checksOf(vid, unit);
+  openModal(`Revistas · ${u ? u.plate : v.name}`, `<div class="list">${cs.map(c => `
+    <div class="item"><div class="grow"><b>${fmtWhen(c.date)} · ${esc(c.by || '')}</b><small>${esc([c.km ? (+c.km).toLocaleString('es-ES') + ' km' : '', c.fuel ? 'Combustible: ' + c.fuel : ''].filter(Boolean).join(' · '))}</small>
+      ${c.fails.length ? `<small class="bad-text">Fallos: ${esc(c.fails.join(', '))}</small>` : ''}${c.notes ? `<small>${esc(c.notes)}</small>` : ''}</div>
+      <span class="tag ${c.fails.length ? 'bad' : 'ok'}">${c.fails.length ? c.fails.length + ' fallos' : 'Bien'}</span></div>`).join('') || '<p class="muted">Sin revistas.</p>'}</div>
+    <button class="btn btn-a full" style="margin-top:12px" onclick="vcheckForm('${vid}', '${unit}')">${ic('clipboard')} Nueva revista</button>`);
 }
 function vehicleForm(id) {
   if (!soloFlota()) return;
