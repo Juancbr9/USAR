@@ -92,8 +92,8 @@ function viewVehiculos() {
       <div class="grid g3">${vehicles().map(v => {
         const out = active.flatMap(m => (m.vehicles || []).filter(x => x.id === v.id)).length;
         return `<${edit ? `button onclick="vehicleForm('${v.id}')"` : 'div'} class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
-          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div>
-          ${out ? `<span class="tag bad">${out} en salida</span>` : itvSoon(v)}</${edit ? 'button' : 'div'}>`; }).join('')
+          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small>
+          ${out ? `<span class="tag bad">${out} en salida</span>` : itvSoon(v)}</div></${edit ? 'button' : 'div'}>`; }).join('')
         || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
     </div>`;
 }

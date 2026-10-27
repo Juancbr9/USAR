@@ -1138,7 +1138,7 @@ body.login-on .topbar, body.login-on #actbar, body.login-on .actbar, body.login-
 :root[data-theme="dark"] img.veh-art { filter: drop-shadow(0 0 1px rgba(255,255,255,.35)); }
 .veh-item > .grow { align-self: center; }
 .veh-item > .grow, .veh-row > .grow { flex: 1 1 0; min-width: 0; }
-.veh-item .tag { flex: none; }
+.veh-item .tag { flex: none; } .veh-item .grow .tag { display: inline-block; margin-top: 4px; }
 @media (max-width: 480px) { .veh-art { width: 92px; height: 46px; } }
 .item.veh-item { display: flex; align-items: center; } .veh-item > .grow { align-self: center; }
 /* Menú: Material con sus subopciones sangradas */
