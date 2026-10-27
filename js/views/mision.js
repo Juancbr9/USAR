@@ -174,8 +174,8 @@ function tabPersonal(m) {
     const seats = fleet?.seats ? ` (${1 + (v.crew || []).length}/${fleet.seats})` : '';
     const load = vehLoad(v, m);
     return `
-      <button class="item veh-row" onclick="missionVehicleForm('${m.id}', '${vkey(v)}')">${vehArt(fleet, 'sm')}<div class="grow">
-        <div class="between"><b>${esc(fleet?.name || 'Vehículo eliminado')}${v.plate ? ` <span class="plate-tag">${esc(v.plate)}</span>` : ''}</b><span class="muted">${seats}</span></div>
+      <button class="item veh-row" onclick="missionVehicleForm('${m.id}', '${vkey(v)}')">${vehArt(fleet, 'sm', v.mod)}<div class="grow">
+        <div class="between"><b>${esc(fleet ? vehLabel({ id: v.id, mod: v.mod }) : 'Vehículo eliminado')}${v.plate ? ` <span class="plate-tag">${esc(v.plate)}</span>` : ''}</b><span class="muted">${seats}</span></div>
         <small>Conductor: ${opLink(v.driver)}</small><small>${esc(names(v.crew || []).join(', ') || 'Sin ocupantes')}</small>
         ${load.length ? `<small>${ic('box', 'i-sm')} ${esc(load.join(', '))}</small>` : ''}
       </div></button>`;
@@ -215,7 +215,7 @@ function tabMaterial(m) {
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material (${gearList.length})</h3>
         <div class="row">${puedeFlota() ? `<button class="btn btn-g btn-sm" onclick="extrasForm('${m.id}')">${ic('plus')} Extra</button>` : ''}
         <button class="btn btn-a btn-sm" onclick="gearPicker('${m.id}')">${ic('check')} Elegir material</button></div></div>
-      ${(m.vehicles || []).filter(v => vehHasLoad(v, m)).map(v => `<div class="well mat-veh"><b style="font-size:15px" class="who-row">${vehArt(get('vehicles', v.id), 'xs')} En ${esc(vehLabel(v))}</b>
+      ${(m.vehicles || []).filter(v => vehHasLoad(v, m)).map(v => `<div class="well mat-veh"><b style="font-size:15px" class="who-row">${vehArt(get('vehicles', v.id), 'xs', v.mod)} En ${esc(vehLabel(v))}</b>
         <ul style="margin:6px 0 0; padding-left:18px">${vehLoad(v, m).map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}
       ${m.container ? `<p class="mat-banner">${ic('box')} <span><b>Sale el contenedor completo</b> con todos sus huecos y cajas.</span></p>` : ''}
       ${byDoor.length ? `<div class="grid g2">${byDoor.map(([d, label, gs]) => `

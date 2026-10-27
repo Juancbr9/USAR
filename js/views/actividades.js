@@ -120,7 +120,7 @@ function viewAct(x) {
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('truck')} Vehículos y carga (${(x.vehicles || []).length})</h3>
         ${edit ? `<button class="btn btn-a btn-sm" onclick="actVehicleForm('${x.id}')">${ic('plus', 'i-sm')} Vehículo</button>` : ''}</div>
       ${(x.vehicles || []).length ? `<div class="list">${x.vehicles.map(v => `
-        <${edit ? `button onclick="actVehicleForm('${x.id}', '${vkey(v)}')"` : 'div'} class="item veh-item">${vehArt(get('vehicles', v.id))}<div class="grow"><b>${esc(vehLabel(v))}</b>
+        <${edit ? `button onclick="actVehicleForm('${x.id}', '${vkey(v)}')"` : 'div'} class="item veh-item">${vehArt(get('vehicles', v.id), '', v.mod)}<div class="grow"><b>${esc(vehLabel(v))}</b>
           <small>Conductor: ${opn(v.driver)}${(v.crew || []).length ? ' · ' + esc(names(v.crew).join(', ')) : ''}</small>
           ${vehHasLoad(v) ? `<small>Carga: ${esc(vehLoad(v).join(', '))}</small>` : ''}</div></${edit ? 'button' : 'div'}>`).join('')}</div>`
         : '<p class="muted">Añade los vehículos que salen, con conductor, ocupantes y lo que carga cada uno.</p>'}

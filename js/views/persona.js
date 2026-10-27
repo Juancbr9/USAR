@@ -104,6 +104,12 @@ function viewPerson(o) {
       </div>
     </div>
 
+    ${(gs => gs.length ? `<div class="panel">
+      <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material que lleva</h3><span class="tag info">${gs.length}</span></div>
+      <div class="list">${gs.map(g => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
+        <small>${esc([boxCode(g) && 'Caja ' + boxCode(g), 'Desde ' + fmtWhen(g.out.since), g.out.note].filter(Boolean).join(' · '))}</small></div></button>
+        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : '')(gearWith(o))}
+
     <div class="grid g2">
       <div class="panel">
         <h3 class="sec-title">${ic('history')} Historial</h3>

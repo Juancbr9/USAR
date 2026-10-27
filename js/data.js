@@ -107,9 +107,6 @@ const DEFAULT_VEHICLES = [
   veh('V-GUAGUA-P', 'Guagua pequeña'),
   veh('V-GUAGUA-G', 'Guagua grande'),
   veh('V-CUPRA', 'Cupra'),
-  veh('V-AB-LCIF', 'Autobomba Renault (módulo LCIF)'),
-  veh('V-AB-CONT', 'Autobomba Renault (contenedor pequeño)'),
-  veh('V-AB-CONT2', 'Autobomba Renault (contenedor pequeño 2)'),
   veh('V-AB', 'Autobomba'),
   veh('V-ATB-M1', 'ATB Iveco M1'),
   veh('V-ATB-M2', 'ATB Iveco M2'),
@@ -117,7 +114,7 @@ const DEFAULT_VEHICLES = [
   veh('V-CAM-VERDE', 'Camión verde'),
   veh('V-GRUA', 'Grúa'),
   veh('V-MINI', 'Minimáquina'),
-  veh('V-AB-CHASIS', 'Autobomba Renault (sin módulo)', 'Elige el módulo que lleva en cada matrícula'),
+  veh('V-AB-CHASIS', 'Autobomba Renault'),
   veh('V-IVECO-V', 'Camión Iveco verde'),
   veh('V-VITO', 'Mercedes Vito'),
   veh('V-CADENAS', 'Vehículo de cadenas'),
@@ -131,7 +128,7 @@ const DEFAULT_VEHICLES = [
   veh('V-RQ-ROJO', 'Remolque rojo')
 ];
 // Matrículas de la flota (hoja «Vehículos Dto Los Rodeos (SIEN 242) feb26» y pizarra de ITV, octubre 2026).
-// Cada modelo guarda las suyas; una matrícula se pasa a otro modelo desde su ficha (ATB M1/M2, módulo del Renault…).
+// Cada modelo guarda las suyas; una matrícula se pasa a otro modelo desde su ficha (ATB M1 o M2).
 // [matrícula, caducidad ITV, destino, titular, suplente, próxima cita]
 const FLOTA_2026 = {
   'V-AMAROK': [['ET-120111', '2027-12-17', 'Eq. cinológico', 'CBO Gutiérrez', 'CBO Sevilla'], ['ET-120206', '2027-03-06', 'Eq. cinológico', 'CBO Abora', 'CBO Chinea'],
@@ -362,6 +359,20 @@ function seedDefaults(share = false) {
       stampIt('vehicles', { ...base, units: [...(base.units || []), ...add] });
     });
     stampIt('meta', { id: 'vehbase', value: 8 });
+  }
+  // v9: la autobomba Renault es un solo modelo, vacía detrás; el módulo (contenedor pequeño, el 2 o LCIF) se elige en cada
+  // actividad. Las matrículas de los modelos con módulo pasan a ella, y en las actividades se apunta el módulo que llevaban
+  if (!(get('meta', 'vehbase')?.value >= 9)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    const OLD = { 'V-AB-CONT': 'cont', 'V-AB-CONT2': 'cont2', 'V-AB-LCIF': 'lcif' };
+    const base = get('vehicles', RENAULT) || DEFAULT_VEHICLES.find(v => v.id === RENAULT), have = new Set((base.units || []).map(u => u.id));
+    const units = [...(base.units || []), ...Object.keys(OLD).flatMap(id => (get('vehicles', id)?.units || []).filter(u => !have.has(u.id)))];
+    stampIt('vehicles', { ...base, units, name: /^autobomba renault \(sin módulo\)$/i.test(base.name || '') ? 'Autobomba Renault' : base.name,
+      notes: /^elige el módulo/i.test(base.notes || '') ? '' : base.notes });
+    Object.keys(OLD).filter(id => db.vehicles[id]).forEach(id => stampIt('vehicles', { id, _del: true }));
+    ['missions', 'moves'].forEach(kind => list(kind).filter(x => (x.vehicles || []).some(v => OLD[v.id])).forEach(x =>
+      stampIt(kind, { ...x, vehicles: x.vehicles.map(v => (OLD[v.id] ? { ...v, id: RENAULT, mod: OLD[v.id] } : v)) })));
+    stampIt('meta', { id: 'vehbase', value: 9 });
   }
   // Armarios v1: antes cada armario eran dos puertas (201–206); ahora son baldas. Lo que había en un armario pasa a su
   // balda de abajo, para colocarlo luego arrastrando

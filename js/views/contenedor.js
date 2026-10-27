@@ -169,7 +169,7 @@ function checkout(id) {
   openForm('Sacar: ' + g.name, [
     { k: 'who', label: 'Quién se lo lleva', value: prefs.activeOperator, options: operators().map(o => [o.name, o.name]), wide: true },
     { k: 'note', label: 'Destino o motivo', placeholder: 'Ej: Maniobras en Arinaga', wide: true }
-  ], v => put('gear', { ...g, out: { who: v.who, since: Date.now(), note: v.note } }, `Sale "${g.name}" con ${v.who}`));
+  ], v => put('gear', { ...g, out: { who: v.who, op: operators().find(o => o.name === v.who)?.id || '', since: Date.now(), note: v.note } }, `Sale "${g.name}" con ${v.who}`));
 }
 
 function checkin(id) {
