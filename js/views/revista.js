@@ -7,6 +7,7 @@ const REV_MARKS = {
 };
 const REV_REASONS = ['Mensual', 'Antes de salir', 'Tras una intervención', 'Tras un ejercicio', 'Otra'];
 // Grupos que se pueden elegir al empezar: laterales del contenedor, sin ubicar, pasillo, armarios y otros
+// (lo que tiene una persona no está en su sitio: no entra en la revista del almacén)
 const revGroups = () => [
   ['izq', 'Contenedor · lateral izquierdo', g => g.door >= 1 && g.door <= 10],
   ['der', 'Contenedor · lateral derecho', g => g.door >= 11 && g.door <= 20],
@@ -14,7 +15,7 @@ const revGroups = () => [
   ['pasillo', 'Pasillo', g => enPasillo(g.door)],
   ['armarios', 'Armarios', g => enArmarios(g.door)],
   ['otros', 'Otros', g => g.door === OTROS]
-];
+].map(([k, l, f]) => [k, l, g => enAlmacen(g) && f(g)]);
 const markOf = r => !r ? '' : r.mark || (r.ok === true ? 'ok' : r.ok === false ? 'bad' : '');
 
 /* ==================== VISTA: REVISTA ==================== */

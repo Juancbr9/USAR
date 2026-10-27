@@ -175,6 +175,9 @@ function checkout(id) {
 function checkin(id) {
   const g = get('gear', id);
   put('gear', { ...g, out: null }, `Devuelto "${g.name}" a ${placeShort(g)}`);
+  // Si era lo último que quedaba fuera de una caja que tenía esa persona, la caja también vuelve
+  const b = boxOf(g);
+  if (conPersona(b) && !boxItems(b.id).some(x => x.out && x.out.op === b.out.op)) put('boxes', { ...b, out: null });
   gearDetail(id);
 }
 

@@ -104,11 +104,14 @@ function viewPerson(o) {
       </div>
     </div>
 
-    ${(gs => gs.length ? `<div class="panel">
-      <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material que lleva</h3><span class="tag info">${gs.length}</span></div>
-      <div class="list">${gs.map(g => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
+    ${((gs, bs) => gs.length || bs.length ? `<div class="panel">
+      <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material que lleva</h3><span class="tag info">${gs.length + bs.length}</span></div>
+      <p class="muted" style="margin:-4px 0 10px">No está en el almacén: al devolverlo vuelve a su sitio.</p>
+      <div class="list">${bs.map(b => `<div class="item"><button class="who-row grow link-row" onclick="boxDetail('${b.id}')"><span class="box-chip" style="--c:${colorOf(b)[1]}; --ink:${colorOf(b)[2]}">${esc(b.code)}</span><div><b>${esc(b.name || 'Caja')}</b>
+        <small>${esc([boxItems(b.id).length + ' equipos', 'Desde ' + fmtWhen(b.out.since)].join(' · '))}</small></div></button>
+        <button class="btn btn-g btn-sm" onclick="returnBox('${b.id}')">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}${gs.map(g => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
         <small>${esc([boxCode(g) && 'Caja ' + boxCode(g), 'Desde ' + fmtWhen(g.out.since), g.out.note].filter(Boolean).join(' · '))}</small></div></button>
-        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : '')(gearWith(o))}
+        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : '')(gearWith(o), boxesWith(o))}
 
     <div class="grid g2">
       <div class="panel">
