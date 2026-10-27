@@ -444,16 +444,16 @@ function viewArmarios() {
     ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}`;
 }
 
-/* ---------- Pasillo: estantería de palés, módulos y niveles (el suelo abajo) ---------- */
+/* ---------- Pasillo: estantería de palés, 5 módulos con suelo y balda 1 ---------- */
 function viewPasillo() {
   const cons = consIn(d => PASILLO_SITIOS.some(p => p.id === d));
   return `
     <div class="panel">
       <div class="between wrap-row sec-head"><h2>Pasillo</h2></div>
-      <p class="muted" style="margin:-4px 0 12px">La estantería del pasillo por módulos y niveles. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
+      <p class="muted" style="margin:-4px 0 12px">La estantería del pasillo: 5 módulos, con el suelo y la primera balda. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
       <div class="pas-scroll"><div class="pas" style="--mods:${PAS_MOD}">
         ${[...PAS_NIV.keys()].reverse().map(nv => `
-          <div class="pas-lvl${nv ? '' : ' floor'}">${nv ? PAS_NIV[nv].replace('Nivel ', 'N') : 'Suelo'}</div>
+          <div class="pas-lvl${nv ? '' : ' floor'}">${nv ? 'Balda' : 'Suelo'}</div>
           ${Array.from({ length: PAS_MOD }, (_, m) => hueco(100 + (m + 1) * 10 + nv, 'pas-cell' + (nv ? '' : ' pas-floor'), nv === PAS_NIV.length - 1 ? 'M' + (m + 1) : '')).join('')}`).join('')}
       </div></div>
     </div>

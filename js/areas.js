@@ -25,7 +25,7 @@ const SECTIONS = [
   ['contenedor', 'box', 'Contenedor y almacén', 'Contenedor, pasillo, armarios y otros, con su material fungible', 'log', 'mat'],
   ['revision', 'wrench', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
   // Apartados de esa página (séptimo campo: no salen sueltos en el menú; llevan a la página, a su altura)
-  ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos y niveles', 'log', 'mat', true],
+  ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos, suelo y balda', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios con sus baldas', 'log', 'mat', true],
   ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],

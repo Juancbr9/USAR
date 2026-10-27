@@ -372,6 +372,13 @@ function seedDefaults(share = false) {
       .forEach(x => stampIt(kind, { ...x, door: nueva(+x.door) })));
     stampIt('meta', { id: 'armbase', value: 1 });
   }
+  // Pasillo v1: solo dos alturas (suelo y balda 1). Lo que se hubiera puesto más arriba pasa a la balda 1 de su módulo
+  if (!(get('meta', 'pasbase')?.value >= 1)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    ['gear', 'boxes', 'consumables'].forEach(kind => list(kind).filter(x => !x.vehicle && +x.door > 110 && +x.door < 160 && +x.door % 10 > 1)
+      .forEach(x => stampIt(kind, { ...x, door: +x.door - (+x.door % 10) + 1 })));
+    stampIt('meta', { id: 'pasbase', value: 1 });
+  }
   // EPI de reserva (27/10/2026): cascos USAR con orejeras por color y monos USAR por talla (ids fijos: no se duplican)
   if (!(get('meta', 'epibase')?.value >= 1)) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };

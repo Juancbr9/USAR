@@ -1289,7 +1289,7 @@ body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
   background: #f4f1ea; border-left: 8px solid #2b5ea8; border-right: 8px solid #2b5ea8; min-width: calc(30px + var(--mods) * 56px); }
 :root[data-theme="dark"] .pas { background: #2a2c30; }
 .pas-lvl { display: grid; place-items: center; font: 800 12px var(--cond); color: var(--muted); border-bottom: 9px solid #e8742a; }
-.pas .cv-cell { min-height: 70px; padding: 15px 3px 4px; align-content: flex-end; background: transparent; border: 0; border-left: 6px solid #2b5ea8;
+.pas .cv-cell { min-height: 96px; padding: 15px 3px 4px; align-content: flex-end; background: transparent; border: 0; border-left: 6px solid #2b5ea8;
   border-bottom: 9px solid #e8742a; box-shadow: inset 0 -3px 0 #c9a36a; }
 .pas .cv-cell::after { display: none; }
 .pas .cv-tag { color: var(--muted); font: 800 11px var(--cond); }

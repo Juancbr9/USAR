@@ -172,11 +172,11 @@ const MANUAL = [
     tips: ['En la revista, lo que falla pasa solo a revisión («a la espera») con el motivo que escribas.'] },
 
   { id: 'almacen', area: 'log', icon: 'case', title: 'Pasillo, armarios y otros', go: 'contenedor',
-    what: 'No todo el material está en el contenedor. En Material → Contenedor y almacén, debajo del contenedor, están el pasillo (la estantería de palés, por módulos y niveles), los tres armarios con sus baldas (monos, botas, gafas, guantes, documentación…) y «Otros» para cualquier otro sitio.',
+    what: 'No todo el material está en el contenedor. En Material → Contenedor y almacén, debajo del contenedor, están el pasillo (la estantería de palés: 5 módulos, con el suelo y una balda), los tres armarios con sus baldas (monos, botas, gafas, guantes, documentación…) y «Otros» para cualquier otro sitio.',
     parts: [
       { h: 'Armarios', p: 'Menú → Logística → Material → Contenedor y almacén → Armarios (botón de arriba): los tres armarios abiertos, como están en la estantería, con sus cinco baldas (la 1 arriba). Debajo, «Delante de los armarios»: el suelo de la estantería (cascos, cajas de herramientas, la nevera…). Toca una balda para ver lo que tiene o añadir; mantén pulsado un equipo para arrastrarlo a otra balda. Debajo del dibujo, la lista de lo que hay en cada sitio.',
         img: ['armarios', 'Los tres armarios', [[1, 'Un armario abierto, con sus baldas.'], [2, 'Balda 1 (arriba) del armario 1, con lo que guarda.'], [3, 'Lista de lo que hay en cada balda.']]] },
-      { h: 'Pasillo', steps: ['La estantería del pasillo se ve por módulos (M1, M2…) y niveles (suelo, N1, N2, N3, N4). Toca un hueco para ver lo que tiene o añadir; arrastra el material de un hueco a otro.', 'Debajo, «En el pasillo, sin hueco concreto»: lo que está en el pasillo pero aún no tiene sitio. Desde ahí, «+ Material» para añadir.'] },
+      { h: 'Pasillo', steps: ['La estantería del pasillo se ve por módulos (M1, M2…) y dos alturas (suelo y balda 1). Toca un hueco para ver lo que tiene o añadir; arrastra el material de un hueco a otro.', 'Debajo, «En el pasillo, sin hueco concreto»: lo que está en el pasillo pero aún no tiene sitio. Desde ahí, «+ Material» para añadir.'] },
       { h: 'Otros', steps: ['Menú → Logística → Material → Contenedor y almacén → Otros → «+ Material» y elige equipo, caja o fungible.', 'En «Otros», escribe el sitio exacto (por ejemplo «Nave del parque, estantería 2»).', 'Para cambiar algo de sitio: «Mover» y elige el nuevo lugar, o arrástralo.'] }
     ],
     example: 'Los monos de repuesto van en el armario 2, puerta izquierda; el grupo electrógeno grande, en «Otros · Nave del parque».',

@@ -189,11 +189,11 @@ with sync_playwright() as p:
     assert b.evaluate("get('gear', 'B-901').door") == 235 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Armario 3 · balda 5'
     drag('.arm-shelf[data-door="235"] .tok-gear', '.arm-floor')
     assert b.evaluate("get('gear', 'B-901').door") == 290
-    # Pasillo: estantería de 5 módulos × 5 niveles; se arrastra de un hueco a otro
+    # Pasillo: estantería de 5 módulos × 2 alturas (suelo y balda 1); se arrastra de un hueco a otro
     b.evaluate("moveGear('B-901', 110)"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
-    assert b.locator('.pas .pas-cell').count() == 25 and b.locator('.pas-cell[data-door="110"] .tok-gear').count() == 1
-    drag('.pas-cell[data-door="110"] .tok-gear', '.pas-cell[data-door="143"]')
-    assert b.evaluate("get('gear', 'B-901').door") == 143 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Pasillo · módulo 4 · nivel 3'
+    assert b.locator('.pas .pas-cell').count() == 10 and b.locator('.pas-cell[data-door="110"] .tok-gear').count() == 1
+    drag('.pas-cell[data-door="110"] .tok-gear', '.pas-cell[data-door="141"]')
+    assert b.evaluate("get('gear', 'B-901').door") == 141 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Pasillo · módulo 4 · balda 1'
     b.screenshot(path=f'{OUT}/pasillo.png', full_page=True)
     b.evaluate("moveGear('B-901', 235)"); b.evaluate("go('armarios')"); b.wait_for_timeout(150)
     b.screenshot(path=f'{OUT}/armarios.png', full_page=True)
