@@ -19,11 +19,13 @@ function epiForm(id, type = 'casco', holder = RESERVA) {
     { k: 'color', label: 'Color', value: e.color, placeholder: 'Ej: Rojo' },
     { k: 'size', label: 'Talla', value: e.size, placeholder: 'S / M / L / XL o 44, 46…' },
     { k: 'qty', label: 'Cantidad (en reserva)', type: 'number', value: e.holder === RESERVA ? epiQty(e) : 1 },
+    { k: 'door', label: 'Dónde está (en reserva)', value: String(e.door ?? 231), options: placeOptions() },
     { k: 'status', label: 'Estado', value: e.status, options: [['OK', 'OK'], ['REVISAR', 'Revisar / cambiar']] },
     { k: 'expires', label: 'Caducidad', type: 'date', value: e.expires },
     { k: 'holder', label: 'Lo lleva', value: e.holder, wide: true, options: [...operators().map(o => [o.id, o.name]), [RESERVA, '— Reserva almacén —']] }
   ], v => {
     const qty = Math.max(1, Math.round(+v.qty || 1));
+    v.door = +v.door || 0;
     // Uno de la reserva (con cantidad) que se asigna a una persona: sale uno de la reserva y esa persona lleva el suyo
     if (id && e.holder === RESERVA && epiQty(e) > 1 && v.holder !== RESERVA) {
       stamp('epis', { ...e, qty: epiQty(e) - 1 });

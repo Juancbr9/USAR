@@ -214,7 +214,7 @@ with sync_playwright() as p:
     sesion.menu(a, 'Personal')
     a.click('#view button:has-text("Persona")'); a.fill('[name=name]', 'Pérez'); a.fill('[name=role]', 'Rescatador'); save()
     o = a.evaluate("operators().find(o => o.name === 'PÉREZ')"); assert o, 'no se creó la persona'
-    assert len(a.evaluate("operators()")) == 14 and a.evaluate(f"list('epis').filter(e => e.holder === '{o['id']}').length") == 7
+    assert len(a.evaluate("operators()")) == 14 and a.evaluate(f"list('epis').filter(e => e.holder === '{o['id']}').length") == 3
     a.click('button:has-text("Editar datos")'); a.fill('[name=name]', 'PÉREZ GIL'); save()
     a.click('button:has-text("Editar datos")'); a.click('#modal button:has-text("Dar de baja")'); a.wait_for_timeout(200)
     assert len(a.evaluate("operators()")) == 13

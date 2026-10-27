@@ -36,9 +36,8 @@ const PLACES = [{ id: PASILLO, label: 'Pasillo', short: 'Pasillo', area: 'pasill
 // Situación del material en revisión
 const REV_STATES = { taller: ['En el taller', 'warn'], espera: ['A la espera de revisión', 'warn'], inoperativo: ['Inoperativo', 'bad'], operativo: ['Operativo (con defecto)', 'ok'], baja: ['De baja', 'bad'] };
 // EPI que lleva cada persona
-const EPI_TYPES = { casco: 'Casco', auditivos: 'Protectores auditivos', mono: 'Mono', guantes: 'Guantes', gafas: 'Gafas de protección',
-  respiratoria: 'Protección respiratoria (FFP)', botas: 'Botas' };
-const EPI_SIZED = ['mono', 'guantes', 'botas'];   // EPI con talla propia
+const EPI_TYPES = { casco: 'Casco', auditivos: 'Protectores auditivos', mono: 'Mono' };
+const EPI_SIZED = ['mono'];   // EPI con talla propia
 const GEAR_FUNCS = ['Búsqueda', 'Rescate', 'Médico', 'Logística', 'Comunicaciones', 'Seguridad'];
 // Tipos de emergencia y el material que suele hacer falta (palabras que se buscan en el nombre o la función de cada equipo)
 const EMERGENCIES = {

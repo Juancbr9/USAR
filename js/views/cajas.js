@@ -272,6 +272,7 @@ let CV_SUPPRESS = false;
 function cvClick(e, door, veh = '') {
   if (CV_SUPPRESS) return;
   const tok = e.target.closest('.tok');
+  if (tok?.dataset.epi) return epiForm(tok.dataset.epi);
   if (tok?.dataset.box) return boxDetail(tok.dataset.box);
   if (tok?.dataset.gear) return gearDetail(tok.dataset.gear);
   cellModal(door, veh);
@@ -336,7 +337,7 @@ function endDrag() {
   document.body.classList.remove('cv-dragging'); $('dragDock')?.remove(); DRAG = null;
 }
 document.addEventListener('pointerdown', e => {
-  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok, .pas .tok, .drag-it, .cons-item'); if (!tok || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
+  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok, .pas .tok, .drag-it, .cons-item'); if (!tok || tok.dataset.epi || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
   DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, touch: e.pointerType !== 'mouse', started: false };
   if (DRAG.touch) { const d = DRAG; d.timer = setTimeout(() => DRAG === d && startDrag(d), 280); }
 });
@@ -419,11 +420,14 @@ function findGo(kind, id) {
 // Lo que hay en un sitio (sin vehículo): [equipos, cajas]
 const enSitio = d => [list('gear').filter(g => !g.vehicle && g.door === d), list('boxes').filter(b => !b.vehicle && b.door === d)];
 // Un hueco que admite soltar material: se toca para verlo y se mantiene pulsado lo de dentro para arrastrarlo
+// EPI de reserva guardado en un sitio (cascos, protectores, monos…): un icono por línea, con su cantidad
+const epiEn = d => list('epis').filter(e => e.holder === RESERVA && +e.door === d);
+const tokEpi = e => `<div class="tok tok-gear tok-epi" data-epi="${e.id}" role="button" tabindex="0" aria-label="${esc(epiLabel(e))}${e.size && e.size !== 'Universal' ? ', talla ' + esc(e.size) : ''}: ${epiQty(e)}"><span class="tok-art">${toolArt(`${EPI_TYPES[e.type] || e.name} ${e.color || ''}`)}</span><span class="tok-name">${esc(epiLabel(e))}</span>${epiQty(e) > 1 ? `<i class="tok-n">${epiQty(e)}</i>` : ''}</div>`;
 const hueco = (d, cls, label, extra = '') => { const [items, b] = enSitio(d); return `
   <div class="cv-cell ${cls}" data-door="${d}" aria-label="${esc(placeRec(d).label)}" onclick="cvClick(event, ${d})">
-    <button class="cv-tag" aria-label="${esc(placeRec(d).label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos">${label}</button>${extra}${cellContent(items, b)}</div>`; };
+    <button class="cv-tag" aria-label="${esc(placeRec(d).label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos">${label}</button>${extra}${cellContent(items, b)}${epiEn(d).map(tokEpi).join('')}</div>`; };
 function viewArmarios() {
-  const cons = consIn(enArmarios), lleno = ARMARIOS.map(a => a.id).concat(ARM_SUELO).filter(d => enSitio(d).flat().length);
+  const cons = consIn(enArmarios), lleno = ARMARIOS.map(a => a.id).concat(ARM_SUELO).filter(d => enSitio(d).flat().length || epiEn(d).length);
   return `
     <div class="panel">
       <div class="between sec-head"><h2>Armarios</h2></div>
@@ -440,7 +444,7 @@ function viewArmarios() {
       </div>
     </div>
     ${lleno.length ? `<div class="panel"><div class="list">${lleno.map(d => { const [items, b] = enSitio(d), loose = items.filter(g => !get('boxes', g.box)); return `
-      <button class="item" onclick="cellModal(${d})"><div><b>${esc(placeRec(d).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g))].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
+      <button class="item" onclick="cellModal(${d})"><div><b>${esc(placeRec(d).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g)), ...epiEn(d).map(e => `${epiLabel(e)}${e.size && e.size !== 'Universal' ? ' T' + e.size : ''} ×${epiQty(e)}`)].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
     ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}`;
 }
 

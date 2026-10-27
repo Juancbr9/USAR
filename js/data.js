@@ -80,7 +80,7 @@ function defaultData() {
     operators: ops,
     gear: BASE_GEAR.map(x => ({ ...x })),
     boxes: BASE_BOXES.map(x => ({ ...x })),
-    // Cada persona: casco, protectores auditivos, mono, guantes, gafas, protección respiratoria y botas
+    // Cada persona: casco, protectores auditivos y mono
     epis: ops.flatMap(o => Object.keys(EPI_TYPES).map(type => newEpi(type, o.id))),
     consumables: [
       { id: 'C-01', name: 'Discos de diamante (hormigón)', stock: 4, min: 2, unit: 'uds', location: 'Caja H-2' },
@@ -263,7 +263,7 @@ function gearGroups(items = list('gear')) {
 }
 // Nombre de un EPI: su modelo (si tiene) o el tipo, y el color (p. ej. «Casco USAR con orejeras · Rojo»)
 const epiLabel = e => [e.desc || EPI_TYPES[e.type] || e.name || 'EPI', e.color].filter(Boolean).join(' · ');
-const epiQty = e => +e.qty > 1 ? +e.qty : 1;
+const epiQty = e => e.qty === '' || e.qty == null ? 1 : Math.max(0, Math.round(+e.qty) || 0);
 
 function stamp(kind, rec) { rec._u = Date.now(); db[kind][rec.id] = rec; Sync.queue(kind, rec); }
 function addLog(action) { stamp('logs', { id: uid('L'), ts: Date.now(), operator: prefs.activeOperator, action }); }
@@ -386,6 +386,23 @@ function seedDefaults(share = false) {
     [['ROJO', 'Rojo', 17], ['BLANCO', 'Blanco', 7], ['VERDE', 'Verde', 1]].forEach(([k, c, n]) => res(`EPI-RES-CASCO-${k}`, 'casco', 'Casco USAR con orejeras', c, 'Universal', n));
     [['44', 7], ['46', 8], ['48', 6], ['52', 1]].forEach(([t, n]) => res(`EPI-RES-MONO-${t}`, 'mono', 'Mono USAR', '', t, n));
     stampIt('meta', { id: 'epibase', value: 1 });
+  }
+  // EPI v2 (27/10/2026): fuera guantes, gafas, FFP y botas. Cada persona lleva casco USAR (blanco GRANADOS y CABRERA, el
+  // resto rojo) y sus protectores auditivos, que salen de la reserva. Lo que sobra queda en el armario de la derecha (3).
+  if (!(get('meta', 'epibase')?.value >= 2)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    list('epis').filter(e => ['guantes', 'gafas', 'respiratoria', 'botas'].includes(e.type)).forEach(e => stampIt('epis', { id: e.id, _del: true }));
+    const ops = operators(), BLANCO = ['GRANADOS', 'CABRERA'];
+    if (!db.epis['EPI-RES-AUDITIVOS']) stampIt('epis', { id: 'EPI-RES-AUDITIVOS', type: 'auditivos', name: EPI_TYPES.auditivos, desc: 'Protectores auditivos', color: '', size: 'Universal', qty: 25, status: 'OK', expires: '', holder: RESERVA });
+    const sacar = rid => { const r = get('epis', rid); if (!r) return; epiQty(r) > 1 ? stampIt('epis', { ...r, qty: epiQty(r) - 1 }) : stampIt('epis', { id: rid, _del: true }); };
+    ops.forEach(o => {
+      const color = BLANCO.includes(o.name) ? 'Blanco' : 'Rojo', c = get('epis', `EPI-${o.id}-casco`) || newEpi('casco', o.id), a = get('epis', `EPI-${o.id}-auditivos`) || newEpi('auditivos', o.id);
+      if (!c.color) { stampIt('epis', { ...c, desc: 'Casco USAR', color }); sacar(`EPI-RES-CASCO-${color.toUpperCase()}`); }
+      if (!a.desc) { stampIt('epis', { ...a, desc: 'Protectores auditivos' }); sacar('EPI-RES-AUDITIVOS'); }
+    });
+    list('epis').filter(e => e.holder === RESERVA && e.id.startsWith('EPI-RES-')).forEach(e =>
+      stampIt('epis', { ...e, desc: e.type === 'casco' ? 'Casco USAR' : e.desc, door: e.door || (e.type === 'mono' ? 232 : 231) }));
+    stampIt('meta', { id: 'epibase', value: 2 });
   }
   // «Bulto / caja» escrito a mano en versiones anteriores → caja de verdad (id fijo por código para no duplicar entre móviles)
   list('gear').filter(g => g.box && !db.boxes[g.box]).forEach(g => {

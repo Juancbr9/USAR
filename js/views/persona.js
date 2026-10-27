@@ -41,7 +41,7 @@ function viewPersonal() {
           </button>`; }).join('')}</div>
       </div>`; }).join('')}</div>
     <details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('hardhat')} EPI de reserva en almacén (${spares.reduce((s, e) => s + epiQty(e), 0)})</summary>
-      <div class="list" style="margin-top:10px">${spares.map(e => `<button class="item" onclick="epiForm('${e.id}')"><div class="who-row"><span class="art art-sm">${toolArt(`${EPI_TYPES[e.type] || e.name} ${e.color || ''}`)}</span><div><b>${esc(epiLabel(e))}${epiQty(e) > 1 ? ` <span class="muted">×${epiQty(e)}</span>` : ''}</b><small>${esc(e.size && e.size !== 'Universal' ? 'Talla ' + e.size : 'Talla única')}</small></div></div><span class="tag ${epiState(e).cls}">${epiState(e).text}</span></button>`).join('') || '<p class="muted">No hay EPI de reserva.</p>'}</div>
+      <div class="list" style="margin-top:10px">${spares.map(e => `<button class="item" onclick="epiForm('${e.id}')"><div class="who-row"><span class="art art-sm">${toolArt(`${EPI_TYPES[e.type] || e.name} ${e.color || ''}`)}</span><div><b>${esc(epiLabel(e))}${epiQty(e) > 1 ? ` <span class="muted">×${epiQty(e)}</span>` : ''}</b><small>${esc([e.size && e.size !== 'Universal' ? 'Talla ' + e.size : 'Talla única', e.door ? placeShort({ door: +e.door }) : ''].filter(Boolean).join(' · '))}</small></div></div><span class="tag ${epiState(e).cls}">${epiState(e).text}</span></button>`).join('') || '<p class="muted">No hay EPI de reserva.</p>'}</div>
       <button class="btn btn-g btn-sm" style="margin-top:10px" onclick="epiForm(null, 'casco', '${RESERVA}')">${ic('plus')} EPI de reserva</button>
     </details>
     ${(() => { const gone = allOperators().filter(o => o.active === false); return gone.length ? `
