@@ -56,6 +56,8 @@ start_mock; run test_flota.py
 run test_actividades.py
 run test_iphone.py
 run test_matriculas.py
+run test_arrastre.py
+start_mock; run test_pin.py
 
 echo
 if [ $status -eq 0 ]; then echo "✓ Todas las pruebas pasaron"; else echo "✗ Alguna prueba falló"; fi

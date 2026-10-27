@@ -306,10 +306,20 @@ function gearFormAt(at = {}) { if (at.vehicle || at.door !== undefined) setPref(
 let DRAG = null;
 function dragTarget(x, y) {
   const el = document.elementFromPoint(x, y);
-  const box = DRAG?.gear && el?.closest('.tok-box');
+  const rev = el?.closest('[data-rev]');
+  if (rev) return { rev: true, el: rev };
+  const box = DRAG?.gear && el?.closest('.tok-box, .place-box');
   if (box && box.dataset.box !== get('gear', DRAG.gear)?.box) return { box: box.dataset.box, el: box };
-  const cell = el?.closest('.cv-cell');
+  const cell = el?.closest('.cv-cell, .drop-zone, .dock-zone');
   return cell ? { cell, el: cell } : null;
+}
+// Barra de abajo mientras se arrastra: sitios a los que soltar sin tener que bajar por la página
+function dragDock() {
+  const z = (attr, icon, label) => `<div class="dock-zone" ${attr}>${ic(icon, 'i-sm')}<span>${label}</span></div>`;
+  const dock = Object.assign(document.createElement('div'), { id: 'dragDock', className: 'drag-dock' });
+  dock.innerHTML = z('data-door="0"', 'box', 'Sin ubicar') + z(`data-door="${PASILLO}"`, 'layers', 'Pasillo') + z(`data-door="${OTROS}"`, 'dots', 'Otros')
+    + (DRAG?.gear ? z('data-rev="1"', 'wrench', 'En revisión') : '');
+  document.body.appendChild(dock);
 }
 function startDrag(d) {
   d.started = true; haptic(25);
@@ -318,15 +328,16 @@ function startDrag(d) {
   Object.assign(d.ghost.style, { width: r.width + 'px', left: r.left + 'px', top: r.top + 'px' });
   d.dx = d.x - r.left; d.dy = d.y - r.top;
   document.body.appendChild(d.ghost); d.tok.classList.add('dragging'); document.body.classList.add('cv-dragging');
+  dragDock();
 }
 function endDrag() {
   if (!DRAG) return;
   clearTimeout(DRAG.timer); clearInterval(DRAG.scroll); DRAG.ghost?.remove(); DRAG.tok.classList.remove('dragging'); DRAG.over?.classList.remove('drop-on');
-  document.body.classList.remove('cv-dragging'); DRAG = null;
+  document.body.classList.remove('cv-dragging'); $('dragDock')?.remove(); DRAG = null;
 }
 document.addEventListener('pointerdown', e => {
-  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok'); if (!tok || e.button > 0) return;
-  DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, touch: e.pointerType !== 'mouse', started: false };
+  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok, .drag-it, .cons-item'); if (!tok || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
+  DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, touch: e.pointerType !== 'mouse', started: false };
   if (DRAG.touch) { const d = DRAG; d.timer = setTimeout(() => DRAG === d && startDrag(d), 280); }
 });
 document.addEventListener('pointermove', e => {
@@ -339,7 +350,8 @@ document.addEventListener('pointermove', e => {
   d.ghost.style.left = e.clientX - d.dx + 'px'; d.ghost.style.top = e.clientY - d.dy + 'px';
   d.cx = e.clientX; d.cy = e.clientY;
   // Cerca del borde de la pantalla, la página se desplaza sola (para llegar a los vehículos o al otro extremo)
-  const edge = e.clientY < 90 ? -1 : e.clientY > innerHeight - 70 ? 1 : 0;
+  const dockTop = $('dragDock')?.getBoundingClientRect().top ?? innerHeight;
+  const edge = e.clientY < 90 ? -1 : e.clientY > dockTop - 60 && e.clientY < dockTop ? 1 : 0;
   if (edge && !d.scroll) d.scroll = setInterval(() => { scrollBy(0, edge * 14); const t = dragTarget(d.cx, d.cy); if (d.over !== t?.el) { d.over?.classList.remove('drop-on'); d.over = t?.el; d.over?.classList.add('drop-on'); } }, 30);
   if (!edge && d.scroll) { clearInterval(d.scroll); d.scroll = null; }
   const t = dragTarget(e.clientX, e.clientY);
@@ -355,8 +367,10 @@ document.addEventListener('pointerup', e => {
   endDrag();
   CV_SUPPRESS = true; setTimeout(() => { CV_SUPPRESS = false; }, 50);
   if (!t) return;
+  if (t.rev) { const g = get('gear', d.gear); return g && (g.status === 'OPERATIVO' ? revForm(g.id) : toast(`${g.name} ya está en revisión`)); }
   if (t.box) return putInBox(d.gear, t.box);
   const { door, veh } = t.cell.dataset;
+  if (d.cons) { const c = get('consumables', d.cons); if (c && !veh && consDoor(c) !== +door) put('consumables', { ...c, door: +door || 0, location: '' }, `"${c.name}" → ${placeName(+door || 0, '')}`); return; }
   const same = it => veh ? it.vehicle === veh : !it.vehicle && (it.door || 0) === +door;
   if (d.box) { const b = get('boxes', d.box); if (!same(b)) moveBox(d.box, +door || 0, veh || ''); }
   else { const g = get('gear', d.gear); if (!same(g) || g.box) moveGear(d.gear, +door || 0, veh || ''); }
@@ -429,13 +443,13 @@ function viewPlace(door) {
   const bs = list('boxes').filter(b => !b.vehicle && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
   const loose = list('gear').filter(g => !g.vehicle && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
   const cons = consIn(d => d === door);
-  const row = g => `<button class="item" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
+  const row = g => `<button class="item drag-it" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
   return `
-    <div class="panel">
+    <div class="panel drop-zone" data-door="${door}">
       <div class="between wrap-row sec-head"><h2>${esc(p.label)}</h2>
         ${puedeFlota() ? `<button class="btn btn-g" onclick="addMaterial(${at})">${ic('plus')} Material</button>` : ''}</div>
       ${bs.map(b => { const [, hex, ink] = colorOf(b), items = boxItems(b.id); return `
-        <div class="well" data-box="${b.id}">
+        <div class="well drag-it place-box" data-box="${b.id}">
           <button class="between box-head" onclick="boxDetail('${b.id}')"><span class="row"><span class="box-chip" style="--c:${hex}; --ink:${ink}">${esc(b.code)}</span><b>${esc(b.name || '')}</b>${novTag(b)}</span><span class="muted">${items.length}</span></button>
           ${items.length ? `<div class="list">${items.map(row).join('')}</div>` : ''}</div>`; }).join('')}
       ${loose.length ? `<div class="list">${loose.map(row).join('')}</div>` : ''}

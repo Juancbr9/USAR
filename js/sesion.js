@@ -1,9 +1,10 @@
 'use strict';
-// USAR 242 · Inicio de sesión: cada persona entra con su correo y su contraseña (usuario de Supabase). Solo puede entrar
-// quien un jefe haya dado de alta en Ajustes → Miembros y permisos; la primera vez crea su cuenta con ese correo.
-// Cada vez que se abre la app (y tras LOCK_MIN minutos fuera de ella) se pide de nuevo la contraseña (o la huella, si la
+// USAR 242 · Inicio de sesión: cada persona elige su nombre y pone su PIN (el que le dio un jefe en Ajustes → Miembros y
+// permisos). Sin correo: el móvil entra en Supabase como invitado y la base de datos comprueba el PIN (supabase.sql).
+// Las cuentas con correo de antes siguen valiendo («Entrar con correo»).
+// Cada vez que se abre la app (y tras LOCK_MIN minutos fuera de ella) se pide de nuevo el PIN (o la huella, si la
 // activó en este móvil); al entrar se va siempre a Inicio. Para poder abrirla sin cobertura, el móvil guarda una huella
-// de la contraseña (PBKDF2-SHA-256 con sal, en prefs.llave, no se comparte), nunca la contraseña.
+// del PIN (PBKDF2-SHA-256 con sal, en prefs.llave, no se comparte), nunca el PIN.
 
 const PIN_ITER = 150000;
 const bufB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -44,7 +45,7 @@ const bloqueado = () => enMantenimiento() && !isAdmin();
 // Supabase hace falta además que sea jefe: así ADMIN, con una segunda cuenta de miembro, ve la app como el resto.
 // El resto del equipo sigue moviendo material, sacándolo, pasándolo a revisión y ajustando el stock.
 const FLOTA_KINDS = ['gear', 'boxes', 'consumables', 'vehicles'];
-const puedeFlota = () => isAdmin() && (!Sync.email || Sync.role === 'jefe');
+const puedeFlota = () => isAdmin() && (!Sync.user || Sync.role === 'jefe');
 const soloFlota = () => puedeFlota() || (toast(`Solo ${ADMIN} puede añadir o cambiar material, vehículos y extras`, 'bad'), false);
 // iPhone y iPad: la app de Android (APK) no sirve; la web se instala desde Safari en la pantalla de inicio y funciona igual
 const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -69,7 +70,7 @@ function renderMantenimiento() {
   document.body.classList.add('login-on');
   $('view').innerHTML = `
     <div class="login">
-      <div class="login-brand"><span class="wordmark">USAR <span class="plate">242</span></span></div>
+      <div class="login-brand"><img class="login-logo" src="img/logo.webp" width="240" height="240" alt="UIEM Canarias · USAR Sección 242"></div>
       <div class="panel login-card mant-card" role="status">
         <img class="mant-img" src="img/mantenimiento.webp" width="600" height="420" alt="RODRI trabajando en el ordenador">
         <h2>${ic('wrench')} En mantenimiento</h2>
@@ -92,34 +93,59 @@ function mantenimientoPanel() {
 }
 
 // Pantalla de entrada (sustituye a toda la app hasta que alguien entra). Con la sesión recordada en este móvil solo se
-// pide la contraseña (o la huella); si no, el correo y la contraseña.
-const conCuenta = () => !SUPA.url || !!Sync.email;
+// pide el PIN (o la huella); si no, primero el nombre y luego el PIN.
+const conCuenta = () => !SUPA.url || !!Sync.user;
+let LOGIN_NAMES = null;   // nombres con PIN (los da el servidor; sin conexión, los del equipo en este móvil)
+function loadNames() {
+  if (LOGIN_NAMES) return;
+  LOGIN_NAMES = 'cargando';
+  Sync.names().then(ns => { LOGIN_NAMES = ns; }).catch(e => { LOGIN_NAMES = operators().map(o => o.name); loginMsg(e.message); })
+    .finally(() => { if (!loggedIn()) renderLogin(); });
+}
+const pinInput = (label = 'PIN') => `<label class="lbl">${label}<input class="input pin-in" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" autocomplete="current-password" required></label>`;
 function renderLogin() {
   document.body.classList.add('login-on');
-  const o = conCuenta() && me(), up = !o && prefs.loginUp;
+  const o = conCuenta() && me(), mail = !o && prefs.loginMail, up = mail && prefs.loginUp, pick = !o && !mail && prefs.loginPick;
+  if (!o && !mail && !pick) loadNames();
+  const names = Array.isArray(LOGIN_NAMES) ? [...LOGIN_NAMES].sort((a, b) => a.localeCompare(b, 'es')) : null;
   $('view').innerHTML = `
     <div class="login">
-      <div class="login-brand"><span class="wordmark">USAR <span class="plate">242</span></span></div>
+      <div class="login-brand"><img class="login-logo" src="img/logo.webp" width="240" height="240" alt="UIEM Canarias · USAR Sección 242"></div>
       ${o ? `
       <form class="panel login-card" onsubmit="event.preventDefault(); doLogin(this)">
         <h2>Hola, ${esc(o.name)}</h2>
-        <input type="email" name="email" value="${esc(Sync.email)}" autocomplete="username" hidden>
-        <label class="lbl">Contraseña<input class="input" name="pin" type="password" autocomplete="current-password" required></label>
+        <input name="email" value="${esc(Sync.user)}" autocomplete="username" hidden>
+        ${Sync.pinName || !Sync.email ? pinInput() : '<label class="lbl">Contraseña<input class="input" name="pin" type="password" autocomplete="current-password" required></label>'}
         <button class="btn btn-a full">${ic('in')} Entrar</button>
         ${bioOf(o.id) ? `<button type="button" class="btn btn-g full bio-btn" onclick="bioLogin('${o.id}')">${ic('finger')} Entrar con ${HUELLA}</button>` : ''}
         <p id="loginMsg" class="bad-text" role="alert">${esc(LOGIN_NOTE)}</p>
-        <button type="button" class="link" onclick="otraCuenta()">No soy ${esc(o.name)}: entrar con otro correo</button>
-      </form>` : `
+        <button type="button" class="link" onclick="otraCuenta()">No soy ${esc(o.name)}</button>
+      </form>` : mail ? `
       <form class="panel login-card" onsubmit="event.preventDefault(); doAccount(this)">
-        <h2>${up ? 'Crear mi cuenta' : 'Entrar'}</h2>
+        <h2>${up ? 'Crear mi cuenta' : 'Entrar con correo'}</h2>
         ${up ? `<p class="muted">Usa el correo con el que ${esc(ADMIN)} te ha dado de alta en el equipo.</p>` : ''}
         <label class="lbl">Correo<input class="input" name="email" type="email" autocomplete="username" required></label>
         <label class="lbl">Contraseña<input class="input" name="pin" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" minlength="6" required></label>
         ${up ? '<label class="lbl">Repite la contraseña<input class="input" name="pin2" type="password" autocomplete="new-password" minlength="6" required></label>' : ''}
         <button class="btn btn-a full">${ic('in')} ${up ? 'Crear cuenta y entrar' : 'Entrar'}</button>
         <p id="loginMsg" class="bad-text" role="alert">${esc(LOGIN_NOTE)}</p>
-        <button type="button" class="link" onclick="LOGIN_NOTE = ''; setPref({ loginUp: ${!up} })">${up ? 'Ya tengo cuenta: entrar' : '¿Primera vez? Crea tu cuenta'}</button>
-      </form>`}${iosInstall()}
+        <button type="button" class="link" onclick="LOGIN_NOTE = ''; setPref({ loginUp: ${!up} })">${up ? 'Ya tengo cuenta: entrar' : '¿Primera vez con correo? Crea tu cuenta'}</button>
+        <button type="button" class="link" onclick="LOGIN_NOTE = ''; setPref({ loginMail: null, loginUp: null })">Entrar con mi nombre y PIN</button>
+      </form>` : pick ? `
+      <form class="panel login-card" onsubmit="event.preventDefault(); doPin(this)">
+        <h2>Hola, ${esc(pick)}</h2>
+        ${pinInput()}
+        <button class="btn btn-a full">${ic('in')} Entrar</button>
+        <p id="loginMsg" class="bad-text" role="alert">${esc(LOGIN_NOTE)}</p>
+        <button type="button" class="link" onclick="LOGIN_NOTE = ''; setPref({ loginPick: null })">No soy ${esc(pick)}</button>
+      </form>` : `
+      <div class="panel login-card">
+        <h2>¿Quién eres?</h2>
+        ${names ? (names.length ? `<div class="name-grid">${names.map(n => `<button type="button" class="btn btn-g" onclick="LOGIN_NOTE = ''; setPref({ loginPick: ${jsq(n)} }); document.querySelector('.login [name=pin]')?.focus()">${esc(n)}</button>`).join('')}</div>`
+          : `<p class="muted">Aún no hay nadie con PIN. ${esc(ADMIN)} los pone en Ajustes → Miembros y permisos.</p>`) : '<p class="muted">Cargando…</p>'}
+        <p id="loginMsg" class="bad-text" role="alert">${esc(LOGIN_NOTE)}</p>
+        <button type="button" class="link" onclick="LOGIN_NOTE = ''; setPref({ loginMail: true })">Entrar con correo</button>
+      </div>`}${iosInstall()}
     </div>`;
   // Con la huella activada, se pide nada más abrir la app (una vez; luego queda el botón)
   if (o && bioOf(o.id) && !BIO_TRIED) { BIO_TRIED = true; bioLogin(o.id); }
@@ -127,8 +153,26 @@ function renderLogin() {
 // El aviso se guarda para que no se pierda si la pantalla se vuelve a pintar (p. ej. al llegar los datos del equipo)
 let LOGIN_NOTE = '';
 const loginMsg = t => { LOGIN_NOTE = t; const el = $('loginMsg'); if (el) el.textContent = t; };
+const opByName = n => operators().find(x => x.name.toUpperCase() === String(n || '').toUpperCase());
 
-// Correo y contraseña: entra (o crea la cuenta) en Supabase y se le asocia su nombre del equipo (el de Miembros y permisos)
+// Nombre y PIN: el servidor lo comprueba y este móvil queda con ese nombre y su permiso
+async function doPin(form) {
+  const name = prefs.loginPick, pin = form.pin.value, btn = form.querySelector('.btn-a');
+  if (!/^[0-9]{4,8}$/.test(pin)) return loginMsg('El PIN son de 4 a 8 cifras.');
+  if (!navigator.onLine) return loginMsg('La primera vez en este móvil hace falta conexión a internet.');
+  btn.disabled = true; loginMsg('');
+  try {
+    await Sync.pinSignIn(name, pin);
+    const o = opByName(name);
+    if (!o) { Sync.signOut(); return loginMsg(`${name} no está en el personal del equipo de este móvil.`); }
+    await saveLlave(Sync.user, pin);
+    prefs.loginPick = null;
+    if (!enter(o)) bioOffer(o);
+  } catch (e) { form.pin.value = ''; loginMsg(e.message); }
+  finally { btn.disabled = false; }
+}
+
+// Correo y contraseña (cuentas de antes): entra (o crea la cuenta) en Supabase y se le asocia su nombre del equipo
 async function doAccount(form) {
   const email = form.email.value.trim().toLowerCase(), pass = form.pin.value, btn = form.querySelector('.btn-a');
   if (form.pin2 && pass !== form.pin2.value) return loginMsg('Las dos contraseñas no coinciden.');
@@ -140,42 +184,43 @@ async function doAccount(form) {
       return toast('Te hemos enviado un correo: ábrelo, confirma la cuenta y vuelve aquí para entrar');
     }
     await Sync.signIn(email, pass);
-    const o = operators().find(x => x.name.toUpperCase() === Sync.name.toUpperCase());
+    const o = opByName(Sync.name);
     if (!o) { Sync.signOut(); return loginMsg(`Tu correo está dado de alta, pero sin nombre del equipo: pide a ${ADMIN} que te lo ponga en Miembros y permisos.`); }
     await saveLlave(email, pass);
-    prefs.loginUp = null;
+    prefs.loginUp = null; prefs.loginMail = null;
     if (!enter(o)) bioOffer(o);
   } catch (e) { loginMsg(e.message); }
   finally { btn.disabled = false; }
 }
 
-// Sesión recordada: la contraseña se comprueba en el móvil (vale sin cobertura). Si no coincide (p. ej. la cambió en otro
-// móvil) o este móvil aún no la conoce, se comprueba con el servidor.
+// Sesión recordada: el PIN (o la contraseña) se comprueba en el móvil (vale sin cobertura). Si no coincide (p. ej. lo
+// cambió en otro móvil) o este móvil aún no lo conoce, se comprueba con el servidor.
 let LOGIN_FAILS = 0, LOGIN_WAIT = 0;
 async function doLogin(form) {
   const o = me(); if (!o) return;
   const pin = form.pin.value;
   if (Date.now() < LOGIN_WAIT) return loginMsg(`Demasiados intentos. Espera ${Math.ceil((LOGIN_WAIT - Date.now()) / 1000)} s.`);
-  const llave = prefs.llave?.email === Sync.email ? prefs.llave : null;
-  let ok = await checkPin(llave, pin);
+  const llave = prefs.llave?.email === Sync.user ? prefs.llave : null;
+  let ok = await checkPin(llave, pin), why = '';
   if (!ok && SUPA.url && navigator.onLine) {
-    try { await Sync.verify(Sync.email, pin); await saveLlave(Sync.email, pin); ok = true; } catch {}
+    try { Sync.pinName ? await Sync.pinSignIn(Sync.pinName, pin) : await Sync.verify(Sync.email, pin); await saveLlave(Sync.user, pin); ok = true; }
+    catch (e) { why = Sync.pinName ? e.message : ''; }
   }
   if (!ok) {
     LOGIN_FAILS++; if (LOGIN_FAILS >= 5) { LOGIN_WAIT = Date.now() + 30000; LOGIN_FAILS = 0; }
     form.pin.value = '';
-    return loginMsg(llave || navigator.onLine ? 'Contraseña incorrecta.' : 'Sin conexión: este móvil aún no puede comprobar tu contraseña.');
+    return loginMsg(why || (llave || navigator.onLine ? (Sync.pinName ? 'PIN incorrecto.' : 'Contraseña incorrecta.') : 'Sin conexión: este móvil aún no puede comprobar tu PIN.'));
   }
   LOGIN_FAILS = 0;
   if (!enter(o)) bioOffer(o);
 }
-function otraCuenta() { LOGIN_NOTE = ''; Sync.signOut(); setPref({ session: null, llave: null }); }
+function otraCuenta() { LOGIN_NOTE = ''; LOGIN_NAMES = null; Sync.signOut(); setPref({ session: null, llave: null, loginPick: null, loginMail: null }); }
 // Entrar: siempre a Inicio (salvo un enlace QR abierto antes de entrar, que se abre encima)
 function enter(o) {
   document.body.classList.remove('login-on');
   const after = prefs.afterLogin; LOGIN_NOTE = '';
   ss.set(UNLOCK_KEY, '1'); ss.set(HIDDEN_KEY, null);
-  setPref({ session: o.id, activeOperator: o.name, loginUp: null, afterLogin: null, tab: 'avisos', menuOpen: null, mission: null, ws: null, person: null });
+  setPref({ session: o.id, activeOperator: o.name, loginUp: null, loginMail: null, loginPick: null, afterLogin: null, tab: 'avisos', menuOpen: null, mission: null, ws: null, person: null });
   scrollTo(0, 0); toast(`Hola, ${o.name}`);
   if (after) { location.hash = after; }
   return after;
@@ -253,8 +298,18 @@ function bioPanel() {
   return `<button class="btn btn-g" onclick="${on ? 'bioRemove()' : 'bioRegister()'}">${ic('finger')} ${on ? 'Quitar' : 'Activar'} ${HUELLA}</button>`;
 }
 
-// Cambiar la contraseña propia (Ajustes): se cambia en el servidor, para entrar con ella en cualquier móvil
+// Cambiar el PIN (o la contraseña) propio (Ajustes): se cambia en el servidor, para entrar con él en cualquier móvil
 function pinForm() {
+  if (Sync.pinName || !Sync.email) return openForm('Cambiar mi PIN', [
+    { k: 'old', label: 'PIN actual', type: 'password', required: true, wide: true },
+    { k: 'pin', label: 'PIN nuevo (4 a 8 cifras)', type: 'password', required: true },
+    { k: 'pin2', label: 'Repite el nuevo', type: 'password', required: true }
+  ], async v => {
+    if (!/^[0-9]{4,8}$/.test(v.pin)) return toast('El PIN son de 4 a 8 cifras', 'bad');
+    if (v.pin !== v.pin2) return toast('Los dos PIN nuevos no coinciden', 'bad');
+    try { await Sync.changePin(v.old, v.pin); await saveLlave(Sync.user, v.pin); toast('PIN cambiado'); }
+    catch (e) { toast(navigator.onLine ? e.message : 'Hace falta conexión para cambiar el PIN', 'bad'); }
+  });
   openForm('Cambiar mi contraseña', [
     { k: 'old', label: 'Contraseña actual', type: 'password', required: true, wide: true },
     { k: 'pin', label: 'Contraseña nueva', type: 'password', required: true },

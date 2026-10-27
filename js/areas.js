@@ -8,8 +8,8 @@
 
 const AREAS = {
   home: { name: 'Inicio', icon: 'home', desc: 'Resumen del día y avisos' },
-  ops: { name: 'Actividades', icon: 'flag', desc: 'Activación, ejercicios, maniobras y convoyes', hub: 'operaciones' },
-  log: { name: 'Logística', icon: 'box', desc: 'Material, revista, stock, EPI, vehículos y preparación del despliegue', hub: 'logistica' },
+  ops: { name: 'Actividades', icon: 'radio', desc: 'Activación, ejercicios, maniobras y convoyes', hub: 'operaciones' },
+  log: { name: 'Logística', icon: 'package', desc: 'Material, revista, stock, EPI, vehículos y preparación del despliegue', hub: 'logistica' },
   team: { name: 'Equipo', icon: 'users', desc: 'Personas, documentación, formación, guardias y caducidades', hub: 'equipo' },
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas, manual de uso y guía de campo', hub: 'mas' }
 };
@@ -23,7 +23,7 @@ const SECTIONS = [
   // Material: con subopciones (sexto campo) que el menú pinta sangradas bajo «Material»
   // Todo el material guardado en una sola página: contenedor, pasillo, armarios, otros y el fungible de cada sitio
   ['contenedor', 'box', 'Contenedor y almacén', 'Contenedor, pasillo, armarios y otros, con su material fungible', 'log', 'mat'],
-  ['revision', 'refresh', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
+  ['revision', 'wrench', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
   // Apartados de esa página (séptimo campo: no salen sueltos en el menú; llevan a la página, a su altura)
   ['pasillo', 'layers', 'Pasillo', 'Material guardado en el pasillo', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios de dos puertas', 'log', 'mat', true],
@@ -32,13 +32,13 @@ const SECTIONS = [
   ['entregas', 'out', 'Entregas', 'Material prestado a personal de fuera, con firma', 'log', 'mat'],
   ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log'],
   ['vehiculos', 'truck', 'Vehículos', 'Flota de la unidad y plazas', 'log'],
-  ['despliegue', 'package', 'Alistamiento y despliegue', 'Ficha del equipo, manifiestos y mercancías peligrosas', 'log'],
-  ['personal', 'users', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
+  ['despliegue', 'heli', 'Alistamiento y despliegue', 'Ficha del equipo, manifiestos y mercancías peligrosas', 'log'],
+  ['personal', 'hardhat', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
   ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'team'],
   ['vencimientos', 'clock', 'Vencimientos', 'Documentos, cursos, EPI y mantenimiento por fecha', 'team'],
-  ['ajustes', 'sliders', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
+  ['ajustes', 'grid', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
   ['listas', 'layers', 'Listas y opciones', 'Opciones de los desplegables: añade las vuestras', 'help'],
-  ['manual', 'clipboard', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help'],
+  ['manual', 'file', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help'],
   ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help']
 ];
 const HUBS = { logistica: 'log', equipo: 'team', mas: 'help' };
