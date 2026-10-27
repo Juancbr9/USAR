@@ -34,6 +34,7 @@ run() {
   fi
 }
 
+run test_nombres.py
 run test_qr.py
 start_mock; run test_sincronizacion.py
 run test_operaciones.py
@@ -60,6 +61,7 @@ run test_arrastre.py
 start_mock; run test_pin.py
 run test_epi_reserva.py
 run test_dibujos_veh.py
+run test_funciones.py
 
 echo
 if [ $status -eq 0 ]; then echo "✓ Todas las pruebas pasaron"; else echo "✗ Alguna prueba falló"; fi

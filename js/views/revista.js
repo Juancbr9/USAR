@@ -66,7 +66,8 @@ function viewRevista() {
       <div class="bar"><span style="width:${pct}%"></span></div>
       <div class="row between wrap-row" style="margin-top:10px">
         <label class="check-row"><input type="checkbox" ${pend ? 'checked' : ''} onchange="setPref({ revPend: this.checked })"><span>Solo lo que falta</span></label>
-        <div class="row"><button class="btn btn-g" onclick="cancelRevista()">Cancelar</button><button class="btn btn-a" onclick="finishRevista()">${ic('check')} Finalizar revista</button></div>
+        <div class="row"><button class="btn btn-g" onclick="cancelRevista()">Cancelar</button><button class="btn btn-g" onclick="revScan()">${ic('scan')} Escanear QR</button>
+          <button class="btn btn-a" onclick="finishRevista()">${ic('check')} Finalizar revista</button></div>
       </div>
     </div>
     ${groups || '<div class="panel"><p class="muted">Ya está todo marcado.</p></div>'}`;
@@ -130,6 +131,27 @@ function markNote(id, note) { prefs.draft.res[id].note = note; writeJSON(KEY.pre
 function markGroup(json, m) {
   JSON.parse(json).forEach(id => { if (!markOf(prefs.draft.res[id]) || m === 'skip') prefs.draft.res[id] = { mark: m, ok: m === 'ok', note: '' }; });
   setPref({});
+}
+// Revista con la cámara: cada etiqueta QR leída (de un equipo o de una caja, con todo lo que lleva) queda «correcto»
+function revScan() {
+  openScanner(null, { title: 'Revista con QR', hint: 'Apunta a la etiqueta QR de un equipo o de una caja', onText: revScanText,
+    note: 'Cada equipo leído queda como correcto; puedes leer varios seguidos. Lo que tenga un fallo, márcalo después en la lista.' });
+}
+function revScanText(text) {
+  const d = prefs.draft, out = $('scanResult');
+  if (!d) return;
+  const say = html => { if (out) out.innerHTML = html; };
+  const g = text.match(/#g=([^&]+)/), k = text.match(/#k=([^&]+)/), x = g && get('gear', decodeURIComponent(g[1])), b = k && get('boxes', decodeURIComponent(k[1]));
+  if (!x && !b) return say('<span class="tag bad">No es una etiqueta de material del equipo</span>');
+  const ids = new Set(d.ids || list('gear').map(z => z.id)), what = x ? x.name : 'Caja ' + b.code;
+  const mine = (x ? [x] : boxItems(b.id)).filter(z => ids.has(z.id));
+  if (!mine.length) return say(`<span class="tag warn">${esc(what)}: no entra en esta revista</span>`);
+  const fresh = mine.filter(z => !markOf(d.res[z.id]));
+  fresh.forEach(z => { d.res[z.id] = { mark: 'ok', ok: true, note: '' }; });
+  setPref({});
+  haptic(15);
+  const all = list('gear').filter(z => ids.has(z.id)), done = all.filter(z => markOf(d.res[z.id]) && markOf(d.res[z.id]) !== 'skip').length;
+  say(`<div class="scan-ok in"><b>${esc(what)}</b><span>${!fresh.length ? 'Ya estaba marcado' : fresh.length > 1 ? `${fresh.length} equipos correctos` : 'Correcto'} · llevas ${done} de ${all.length}</span></div>`);
 }
 function cancelRevista() { if (confirm('¿Descartar la revista en curso?')) setPref({ draft: null }); }
 

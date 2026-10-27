@@ -27,6 +27,24 @@ function consRow(c, showWhere) {
 }
 const consList = (cs, showWhere) => cs.length ? `<h4 class="sec-title cons-head">${ic('package')} Material fungible</h4><div class="list">${cs.map(c => consRow(c, showWhere)).join('')}</div>` : '';
 
+// Pedido del fungible: lo que está bajo mínimo, con lo que hay que pedir para volver a tener el doble del mínimo (se
+// puede cambiar antes de enviarlo por WhatsApp o correo)
+const pedirDe = c => Math.max(1, Math.ceil((+c.min || 0) * 2 - (+c.stock || 0)));
+function pedidoForm() {
+  const low = list('consumables').filter(consLow).sort(byName);
+  if (!low.length) return toast('No hay nada bajo mínimo');
+  openForm('Pedido del fungible', [
+    ...low.map(c => ({ k: 'q_' + c.id, label: `${esc(c.name)} <small class="muted">hay ${c.stock} ${esc(c.unit)} · mín. ${c.min}</small>`, type: 'number', value: pedirDe(c) })),
+    { k: 'notes', label: 'Notas', value: '', wide: true, placeholder: 'Ej: Urgente para el ejercicio del jueves' }
+  ], v => {
+    const rows = low.map(c => [c, Math.round(+v['q_' + c.id] || 0)]).filter(([, n]) => n > 0);
+    if (!rows.length) return toast('No hay nada que pedir', 'bad');
+    shareText(pedidoText(rows, v.notes), 'Pedido del fungible');
+  });
+}
+const pedidoText = (rows, notes = '') => [...waHead('🛒', `${teamCode()} · Pedido de material fungible`), `📅 ${fmtDate(todayISO())} · 👤 ${prefs.activeOperator}`, '',
+  ...rows.map(([c, n]) => `• *${c.name}*: ${n} ${c.unit} (quedan ${c.stock}, mínimo ${c.min})`), ...(notes ? ['', `📝 ${notes}`] : [])].join('\n');
+
 function adjust(id, n) {
   haptic(10);
   const c = get('consumables', id);

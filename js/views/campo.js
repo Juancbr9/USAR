@@ -174,20 +174,24 @@ function printPersonCards(ids) {
 }
 
 let scanStream = null, scanTimer = null;
-async function openScanner(mid) {
+// Escáner de códigos QR con la cámara. Sin más, lee tarjetas del personal (y en una operación, ficha) y etiquetas de material;
+// opts cambia el título, el texto y qué se hace con cada lectura (la revista, por ejemplo)
+async function openScanner(mid, opts = {}) {
   const m = mid && mget(mid);
-  openModal(m ? 'Fichar con la tarjeta' : 'Escanear tarjeta', `
+  openModal(opts.title || (m ? 'Fichar con la tarjeta' : 'Escanear tarjeta'), `
     <div class="scan-box"><video id="scanVideo" playsinline muted></video><div class="scan-frame"></div></div>
-    <div id="scanResult" class="scan-result">Apunta a la tarjeta QR de la persona</div>
-    ${m ? `<p class="muted" style="margin-top:8px">Cada lectura cambia su estado: si estaba fuera, entra; si estaba dentro, sale. Puedes escanear a varios seguidos.</p>` : ''}
+    <div id="scanResult" class="scan-result">${esc(opts.hint || 'Apunta a la tarjeta QR de la persona')}</div>
+    ${opts.note ? `<p class="muted" style="margin-top:8px">${esc(opts.note)}</p>` : m ? `<p class="muted" style="margin-top:8px">Cada lectura cambia su estado: si estaba fuera, entra; si estaba dentro, sale. Puedes escanear a varios seguidos.</p>` : ''}
     <button class="btn btn-g full" style="margin-top:10px" onclick="closeModal()">Terminar</button>`);
   const stop = () => { clearInterval(scanTimer); scanStream?.getTracks().forEach(t => t.stop()); scanStream = null; };
   const modal = $('modal'), obs = new MutationObserver(() => { if (modal.classList.contains('hidden') || !$('scanVideo')) { stop(); obs.disconnect(); } });
   obs.observe(modal, { attributes: true, childList: true, subtree: true });
   try {
     scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-  } catch { $('scanResult').textContent = 'No hay acceso a la cámara. Permítelo en el navegador.'; return; }
-  const video = $('scanVideo'); video.srcObject = scanStream; await video.play().catch(() => {});
+  } catch { if ($('scanResult')) $('scanResult').textContent = 'No hay acceso a la cámara. Permítelo en el navegador.'; return; }
+  const video = $('scanVideo');
+  if (!video) return stop();   // se cerró mientras se abría la cámara
+  video.srcObject = scanStream; await video.play().catch(() => {});
   const detector = 'BarcodeDetector' in window ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
   if (!detector && !window.jsQR) await loadScript('vendor/jsQR.js').catch(() => {});
   const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -205,7 +209,7 @@ async function openScanner(mid) {
     if (!text) return;
     if (seen[text] && Date.now() - seen[text] < 4000) return;
     seen[text] = Date.now();
-    handleScan(mid, text);
+    (opts.onText || (t => handleScan(mid, t)))(text);
   }, 300);
 }
 function loadScript(src) {
@@ -216,8 +220,9 @@ function handleScan(mid, text) {
   const out = $('scanResult');
   const op = text.startsWith('USAR242-P:') ? get('operators', text.slice(10)) : null;
   if (!op) {
-    const g = text.match(/#g=([^&]+)/);
+    const g = text.match(/#g=([^&]+)/), k = text.match(/#k=([^&]+)/);
     if (g && get('gear', decodeURIComponent(g[1]))) { closeModal(); gearDetail(decodeURIComponent(g[1])); return; }
+    if (k && get('boxes', decodeURIComponent(k[1]))) { closeModal(); boxDetail(decodeURIComponent(k[1])); return; }
     if (out) out.innerHTML = '<span class="tag bad">No es una tarjeta del equipo</span>';
     return;
   }

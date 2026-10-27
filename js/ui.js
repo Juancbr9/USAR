@@ -123,10 +123,12 @@ function alerts() {
     epi: list('epis').filter(e => e.status === 'REVISAR' && e.holder !== RESERVA),
     low: list('consumables').filter(c => c.stock <= c.min).sort(byName),
     out: gearList.filter(g => g.out && !g.out.mission).sort(byName),   // préstamos; lo que sale con una operación no es un aviso
-    ready: operators().flatMap(o => readinessIssues(o.id).map(([cls, text]) => ({ o, cls, text })))
+    ready: operators().flatMap(o => readinessIssues(o.id).map(([cls, text]) => ({ o, cls, text }))),
+    // Matrículas cuya última revista de salida tuvo fallos (hasta que otra revista salga bien)
+    veh: vehicles().flatMap(v => (v.units || []).map(u => ({ v, u, c: lastVcheck(u.id) }))).filter(x => x.c?.fails.length)
   };
 }
-const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length;
+const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length;
 
 /* ==================== VISTA: INICIO ==================== */
 // Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, accesos rápidos y lo próximo del calendario
@@ -135,9 +137,9 @@ function viewAvisos() {
   const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
   const row = (onclick, title, sub, right = '') =>
     `<button class="item" onclick="${onclick}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${right}</button>`;
-  const section = (title, cls, rows, area = 'log') => rows.length ? `
+  const section = (title, cls, rows, area = 'log', foot = '') => rows.length ? `
     <div class="panel area-panel" data-area="${area}"><div class="between sec-head"><h3><span class="area-chip">${AREAS[area].name}</span>${title}</h3><span class="tag ${cls}">${rows.length}</span></div>
-    <div class="list">${rows.join('')}</div></div>` : '';
+    <div class="list">${rows.join('')}</div>${foot}</div>` : '';
   const where = g => whereIs(g) + (boxCode(g) ? ', caja ' + boxCode(g) : '');
   const active = list('missions').filter(m => m.status === 'active');
   const next = list('missions').filter(m => m.status === 'prep').sort((x, y) => (x.date || '').localeCompare(y.date || ''))[0];
@@ -195,7 +197,9 @@ function viewAvisos() {
       ${section(`Vencen en ${SOON_DAYS} días`, 'warn', a.due.map(d => row(
         d.kind === 'gear' ? `gearDetail('${d.item.id}')` : `epiForm('${d.item.id}')`,
         d.kind === 'gear' ? d.item.name : `${epiLabel(d.item)} de ${opName(d.item.holder)}`, d.what, dueTag(d.date))))}
-      ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`findGo('cons', '${c.id}')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)))}
+      ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`findGo('cons', '${c.id}')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)), 'log',
+        `<button class="btn btn-g full" style="margin-top:10px" onclick="pedidoForm()">${ic('share')} Preparar el pedido</button>`)}
+      ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))))}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`)))}
@@ -241,6 +245,7 @@ function reportText() {
   block('🦺 EPI por revisar', a.epi.map(e => `${epiLabel(e)} de ${opName(e.holder)}`));
   block('⏰ Vencimientos', a.due.map(d => `${d.kind === 'gear' ? d.item.name : epiLabel(d.item) + ' de ' + opName(d.item.holder)}: ${due(d.date).text.toLowerCase()}`));
   block('📦 Stock bajo', a.low.map(c => `${c.name}: ${c.stock} ${c.unit} (mín. ${c.min})`));
+  block('🚒 Vehículos con fallos', a.veh.map(x => `${x.v.name} ${x.u.plate}: ${x.c.fails.join(', ')}`));
   block('↗️ Fuera del contenedor', a.out.map(g => `${g.name} → ${g.out.who}`));
   if (!alertCount(a)) lines.push('', '✅ *Sin incidencias*');
   return lines.join('\n');

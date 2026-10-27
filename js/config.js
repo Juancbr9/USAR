@@ -55,7 +55,7 @@ const EMERGENCIES = {
 const DANGEROUS = ['', 'Baterías de litio', 'Combustible', 'Gases a presión', 'Otro'];
 const SOON_DAYS = 30;          // aviso de vencimiento con esta antelación
 const RESERVA = 'RESERVA';     // EPI sin asignar
-const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans', 'moves'];
+const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans', 'moves', 'vchecks'];
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
