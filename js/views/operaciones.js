@@ -10,7 +10,7 @@ const STATUS_ORDER = { active: 0, prep: 1, done: 2 };
 // Flota por orden alfabético (también los vehículos que se añadan o renombren)
 const vehicles = () => list('vehicles').sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { numeric: true }));
 // Las matrículas de la unidad son «ET-» y números: se añade el prefijo si falta (vacío o solo «ET-» = sin matrícula)
-const etPlate = p => { const t = String(p || '').trim().toUpperCase().replace(/^ET[\s-]*/, '').trim(); return t ? 'ET-' + t : ''; };
+const etPlate = p => { const s = String(p || '').trim().toUpperCase(); if (/^RQ[\s-]/.test(s)) return 'RQ-' + s.replace(/^RQ[\s-]*/, ''); const t = s.replace(/^ET[\s-]*/, '').trim(); return t ? 'ET-' + t : ''; };
 const localNow = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
 const fmtDT = v => v ? new Date(v).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Sin fecha';
 const mapsUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
@@ -163,7 +163,7 @@ function vehicleEntryForm(cur, key, others, onSave, extra = '') {
   const free = operators().filter(o => !busy.has(o.id)).map(o => [o.id, o.name]);
   openForm(key ? 'Editar vehículo' : 'Añadir vehículo', [
     { k: 'id', label: 'Vehículo (modelo)', value: cur.id, options: vehicles().map(v => [v.id, v.name]), wide: true },
-    { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate || 'ET-', placeholder: 'Ej: ET-12345' },
+    { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate || 'ET-', placeholder: 'Ej: ET-12345', list: [] },
     { k: 'driver', label: 'Conductor', value: cur.driver, options: [['', 'Sin asignar'], ...free] },
     { k: 'crew', label: 'Ocupantes' + (busy.size ? ` <small class="muted">(no salen los ${busy.size} que ya van en otro vehículo)</small>` : ''), type: 'checks', value: cur.crew, options: free, wide: true },
     { k: 'gear', label: 'Lo que carga este vehículo (cajas o equipos; opcional)', type: 'checks', value: cur.gear,
@@ -180,6 +180,14 @@ function vehicleEntryForm(cur, key, others, onSave, extra = '') {
     c.closest('.check-row').hidden = me;
   });
   driver.addEventListener('change', hideDriver); hideDriver();
+  // Matrículas del modelo elegido como sugerencias (las que ya van en otro vehículo de la lista no salen)
+  const model = form.elements.id, dl = $('dl-plate'), taken = new Set(others.map(v => v.plate).filter(Boolean));
+  const plates = () => {
+    const ps = unitsOf_(get('vehicles', model.value)).map(u => u.plate).filter(p => !taken.has(p));
+    dl.innerHTML = ps.map(p => `<option value="${esc(p)}">`).join('');
+    if (!cur.plate && ps.length === 1) form.elements.plate.value = ps[0];
+  };
+  model.addEventListener('change', () => { if (!cur.plate) form.elements.plate.value = 'ET-'; plates(); }); plates();
 }
 // Lo que carga un vehículo de la actividad, en texto (las cajas por su código)
 const vehLoad = (v, m) => [...(v.gear || []).map(id => get('boxes', id) ? 'caja ' + get('boxes', id).code : get('gear', id) ? get('gear', id).name + (v.gearQty?.[id] ? ` ×${v.gearQty[id]}` : qtyText(get('gear', id))) : ''),
@@ -205,7 +213,48 @@ function vehicleForm(id) {
     if (val.photo) await Img.put(`veh:${rec.id}`, val.photo);
     put('vehicles', { ...rec, photo: val.photo ? true : (get('vehicles', id)?.photo || false) }, `Vehículo "${val.name}" ${id ? 'editado' : 'añadido'}`);
   },
-  id ? `<button type="button" class="btn btn-bad span2" onclick="deleteVehicle('${id}')">${ic('trash')} Eliminar de la flota</button>` : '');
+  id ? `<div class="span2 units-list"><b>Matrículas (${unitsOf_(v).length})</b>
+      ${unitsOf_(v).map(u => `<button type="button" class="item" onclick="unitForm('${id}', '${u.id}')"><div class="grow"><b>${esc(u.plate)}</b>
+        <small>${esc([u.use, u.titular].filter(Boolean).join(' · ') || ' ')}</small></div>${itvTag(u)}</button>`).join('')}
+      <button type="button" class="btn btn-g full" onclick="unitForm('${id}')">${ic('plus')} Añadir matrícula</button></div>
+    <button type="button" class="btn btn-bad span2" onclick="deleteVehicle('${id}')">${ic('trash')} Eliminar de la flota</button>` : '');
+}
+// Matrículas de un modelo (cada vehículo real), ordenadas
+const unitsOf_ = v => [...(v?.units || [])].sort((a, b) => a.plate.localeCompare(b.plate, 'es', { numeric: true }));
+const allUnits = () => vehicles().flatMap(v => (v.units || []).map(u => ({ ...u, vid: v.id })));
+const itvTag = u => { if (!u.itv) return ''; const n = daysTo(u.itv); return `<span class="tag ${n < 0 ? 'bad' : n <= 30 ? 'warn' : 'neutral'}">ITV ${n < 0 ? 'caducada' : fmtDate(u.itv)}</span>`; };
+// Una matrícula: datos de la hoja y la pizarra (ITV, cita, destino, titular y suplente). Cambiar el modelo la pasa a otro
+// (ATB M1 o M2, módulo del Renault…) y con él cambia el dibujo.
+function unitForm(vid, id) {
+  if (!soloFlota()) return;
+  const v = get('vehicles', vid), u = (v.units || []).find(x => x.id === id) || {};
+  openForm(id ? u.plate : `Nueva matrícula · ${v.name}`, [
+    { k: 'plate', label: 'Matrícula', value: u.plate || 'ET-', required: true, placeholder: 'Ej: ET-120111 o RQ-112426' },
+    { k: 'vid', label: 'Modelo (o módulo que lleva)', value: vid, options: vehicles().map(x => [x.id, x.name]), required: true },
+    { k: 'itv', label: 'Caducidad ITV', type: 'date', value: u.itv },
+    { k: 'cita', label: 'Próxima cita ITV', value: u.cita, placeholder: 'Ej: 28/10 11:00' },
+    { k: 'use', label: 'Destino u observaciones', value: u.use, wide: true, placeholder: 'Ej: 1º pelotón' },
+    { k: 'titular', label: 'Operador titular', value: u.titular },
+    { k: 'suplente', label: 'Suplente / ayudante', value: u.suplente }
+  ], val => {
+    const plate = etPlate(val.plate);
+    if (!plate) return toast('Falta la matrícula', 'bad');
+    const dup = allUnits().find(x => x.plate === plate && x.id !== id);
+    if (dup) return toast(`La matrícula ${plate} ya está en ${vehName(dup.vid)}`, 'bad');
+    const rec = { id: id || unitId(plate), plate, itv: val.itv, cita: val.cita, use: val.use, titular: val.titular, suplente: val.suplente };
+    const to = get('vehicles', val.vid) || v;
+    if (to.id !== vid) stamp('vehicles', { ...v, units: (v.units || []).filter(x => x.id !== id) });
+    put('vehicles', { ...to, units: [...(to.units || []).filter(x => x.id !== rec.id), rec] },
+      to.id !== vid ? `${plate} pasa a ${to.name}` : `Matrícula ${plate} ${id ? 'editada' : 'añadida'} (${to.name})`);
+    vehicleForm(to.id);
+  }, id ? `<button type="button" class="btn btn-bad span2" onclick="deleteUnit('${vid}', '${id}')">${ic('trash')} Quitar matrícula</button>` : '');
+}
+function deleteUnit(vid, id) {
+  if (!soloFlota()) return;
+  const v = get('vehicles', vid), u = (v.units || []).find(x => x.id === id);
+  if (!u || !confirm(`¿Quitar la matrícula ${u.plate} de ${v.name}?`)) return;
+  put('vehicles', { ...v, units: v.units.filter(x => x.id !== id) }, `Quitada la matrícula ${u.plate} de ${v.name}`);
+  vehicleForm(vid);
 }
 function deleteVehicle(id) {
   if (!soloFlota()) return;

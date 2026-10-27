@@ -81,6 +81,8 @@ function almacenGo(id, smooth) { document.getElementById('alm-' + id)?.scrollInt
 const areaHeader = () => '';
 
 /* ---------- Vehículos (antes dentro de Operaciones) ---------- */
+// Aviso en la tarjeta del modelo si alguna de sus matrículas tiene la ITV caducada o en los próximos 30 días
+const itvSoon = v => { const n = Math.min(...(v.units || []).filter(u => u.itv).map(u => daysTo(u.itv))); return n < 0 ? '<span class="tag bad">ITV caducada</span>' : n <= 30 ? '<span class="tag warn">ITV pronto</span>' : ''; };
 function viewVehiculos() {
   const active = list('missions').filter(m => m.status === 'active'), edit = puedeFlota();
   return `
@@ -90,8 +92,8 @@ function viewVehiculos() {
       <div class="grid g3">${vehicles().map(v => {
         const out = active.flatMap(m => (m.vehicles || []).filter(x => x.id === v.id)).length;
         return `<${edit ? `button onclick="vehicleForm('${v.id}')"` : 'div'} class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
-          <small>${[v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div>
-          ${out ? `<span class="tag bad">${out} en salida</span>` : ''}</${edit ? 'button' : 'div'}>`; }).join('')
+          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div>
+          ${out ? `<span class="tag bad">${out} en salida</span>` : itvSoon(v)}</${edit ? 'button' : 'div'}>`; }).join('')
         || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
     </div>`;
 }

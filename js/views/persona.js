@@ -211,13 +211,14 @@ function expiries() {
   });
   list('epis').filter(e => e.expires).forEach(e => out.push({ date: e.expires, what: `${epiLabel(e)} de ${opName(e.holder)}`, kind: 'EPI', go: `epiForm('${e.id}')` }));
   list('gear').filter(g => g.service).forEach(g => out.push({ date: g.service, what: g.name, kind: 'Mantenimiento', go: `gearDetail('${g.id}')` }));
+  list('vehicles').forEach(v => (v.units || []).filter(u => u.itv).forEach(u => out.push({ date: u.itv, what: `${v.name} ${u.plate}${u.cita ? ' · cita ' + u.cita : ''}`, kind: 'ITV', go: `vehicleForm('${v.id}'); unitForm('${v.id}', '${u.id}')` })));
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function viewVencimientos() {
   const win = prefs.vwin ?? 90;
   const all = expiries(), shown = all.filter(x => win === 0 || daysTo(x.date) <= win);
-  const kinds = ['Documento', 'Cualificación', 'EPI', 'Mantenimiento'];
+  const kinds = ['Documento', 'Cualificación', 'EPI', 'Mantenimiento', 'ITV'];
   return `
     <div class="panel"><h2>Vencimientos</h2>
       
