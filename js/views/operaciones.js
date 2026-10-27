@@ -164,13 +164,14 @@ function vehicleEntryForm(cur, key, others, onSave, extra = '') {
   openForm(key ? 'Editar vehículo' : 'Añadir vehículo', [
     { k: 'id', label: 'Vehículo (modelo)', value: cur.id, options: vehicles().map(v => [v.id, v.name]), wide: true },
     { k: 'plate', label: 'Matrícula (opcional)', value: cur.plate || 'ET-', placeholder: 'Ej: ET-12345', list: [] },
+    { k: 'mod', label: 'Módulo detrás', value: cur.mod || '', options: Object.entries(RENAULT_MOD).map(([k, [l]]) => [k, l]), wide: true },
     { k: 'driver', label: 'Conductor', value: cur.driver, options: [['', 'Sin asignar'], ...free] },
     { k: 'crew', label: 'Ocupantes' + (busy.size ? ` <small class="muted">(no salen los ${busy.size} que ya van en otro vehículo)</small>` : ''), type: 'checks', value: cur.crew, options: free, wide: true },
     { k: 'gear', label: 'Lo que carga este vehículo (cajas o equipos; opcional)', type: 'checks', value: cur.gear,
       qty: Object.fromEntries((cur.gear || []).map(id => [id, vehUnits(cur, id)])), options: loads, wide: true }
   ], v => {
     const gearQty = Object.fromEntries(Object.entries(v.gearQty || {}).filter(([id, n]) => n < unitsOf(get('gear', id))));
-    onSave({ ...cur, ...v, gearQty, key: key || uid('MV'), plate: etPlate(v.plate), crew: v.crew.filter(id => id !== v.driver) });
+    onSave({ ...cur, ...v, gearQty, key: key || uid('MV'), plate: etPlate(v.plate), mod: v.id === RENAULT ? v.mod : '', crew: v.crew.filter(id => id !== v.driver) });
   }, extra);
   // Quien conduce no aparece entre los ocupantes
   const form = $('modalForm'), driver = form.elements.driver;
@@ -187,19 +188,35 @@ function vehicleEntryForm(cur, key, others, onSave, extra = '') {
     dl.innerHTML = ps.map(p => `<option value="${esc(p)}">`).join('');
     if (!cur.plate && ps.length === 1) form.elements.plate.value = ps[0];
   };
-  model.addEventListener('change', () => { if (!cur.plate) form.elements.plate.value = 'ET-'; plates(); }); plates();
+  // La autobomba Renault: se elige el módulo que lleva (viene vacía), viéndola con él
+  const modRow = form.elements.mod.closest('label');
+  modRow.insertAdjacentHTML('afterend', modPreview(cur.mod || ''));
+  const prev = form.querySelector('.veh-mods'), showMod = () => { prev.hidden = model.value !== RENAULT; };
+  modRow.hidden = true;  // se elige con los botones del dibujo
+  form.elements.mod.addEventListener('change', () => prev.querySelector(`[data-mod="${form.elements.mod.value}"]`)?.click());
+  model.addEventListener('change', () => { if (!cur.plate) form.elements.plate.value = 'ET-'; plates(); showMod(); }); plates(); showMod();
 }
 // Lo que carga un vehículo de la actividad, en texto (las cajas por su código)
 const vehLoad = (v, m) => [...(v.gear || []).map(id => get('boxes', id) ? 'caja ' + get('boxes', id).code : get('gear', id) ? get('gear', id).name + (v.gearQty?.[id] ? ` ×${v.gearQty[id]}` : qtyText(get('gear', id))) : ''),
   ...((m?.extras || []).filter(x => x.in === vkey(v)).map(extraText))].filter(Boolean);
 const vehHasLoad = (v, m) => vehLoad(v, m).length > 0;
 const vehGearIds = m => new Set((m.vehicles || []).flatMap(v => (v.gear || []).flatMap(id => get('boxes', id) ? boxItems(id).map(g => g.id) : [id])));
-const vehLabel = v => vehName(v.id) + (v.plate ? ' · ' + v.plate : '');
+const vehLabel = v => vehName(v.id) + (v.id === RENAULT && v.mod ? ` (${RENAULT_MOD[v.mod]?.[0].replace(/^./, c => c.toLowerCase())})` : '') + (v.plate ? ' · ' + v.plate : '');
 
 // Flota: los modelos de vehículo de la unidad
-// Dibujo o foto de un modelo de vehículo
-const vehArt = (v, cls = '') => v?.photo ? `<img class="veh-art ${cls}" data-img="veh:${v.id}" alt="">`
-  : VEH_ART.includes(v?.id) ? `<img class="veh-art ${cls}" src="img/veh/${v.id.toLowerCase()}.webp" alt="" loading="lazy">` : `<span class="veh-art none ${cls}">${ic('truck', 'i-lg')}</span>`;
+// Dibujo o foto de un modelo de vehículo (la autobomba Renault, con el módulo que lleve en esa actividad)
+const vehArtSrc = (id, mod = '') => `img/veh/${id === RENAULT ? RENAULT_MOD[mod]?.[1] || RENAULT_MOD[''][1] : id.toLowerCase()}.webp`;
+const vehArt = (v, cls = '', mod = '') => v?.photo && !(v.id === RENAULT && mod) ? `<img class="veh-art ${cls}" data-img="veh:${v.id}" alt="">`
+  : VEH_ART.includes(v?.id) ? `<img class="veh-art ${cls}" src="${vehArtSrc(v.id, mod)}" alt="" loading="lazy">` : `<span class="veh-art none ${cls}">${ic('truck', 'i-lg')}</span>`;
+// La Renault con cada módulo, para verla: se toca un módulo y cambia el dibujo
+const modPreview = (mod = '', title = 'Módulo detrás') => `<div class="lbl wide veh-mods"><span class="veh-mods-t">${title}</span><img class="veh-art lg" src="${vehArtSrc(RENAULT, mod)}" alt="">
+  <div class="seg-row" role="group" aria-label="Módulo detrás">${Object.entries(RENAULT_MOD).map(([k, [l]]) => `<button type="button" class="${k === mod ? 'on' : ''}" data-mod="${k}"
+    onclick="const w = this.closest('.veh-mods'); w.querySelector('img').src = ${jsq(vehArtSrc(RENAULT, k))}; w.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === this)); const s = $('modalForm')?.elements.mod; if (s) s.value = '${k}'">${esc(l.replace(' (sin módulo)', ''))}</button>`).join('')}</div></div>`;
+function renaultView() {
+  const v = get('vehicles', RENAULT);
+  openModal(v?.name || 'Autobomba Renault', `<p class="muted" style="margin-bottom:10px">Viene vacía detrás. Elige un módulo para verla con él; en cada actividad se elige el que lleva.</p>
+    <div class="form">${modPreview('', 'Módulo')}</div>`);
+}
 function vehicleForm(id) {
   if (!soloFlota()) return;
   const v = get('vehicles', id) || {};
@@ -218,19 +235,20 @@ function vehicleForm(id) {
         <small>${esc([u.use, u.titular].filter(Boolean).join(' · ') || ' ')}</small></div>${itvTag(u)}</button>`).join('')}
       <button type="button" class="btn btn-g full" onclick="unitForm('${id}')">${ic('plus')} Añadir matrícula</button></div>
     <button type="button" class="btn btn-bad span2" onclick="deleteVehicle('${id}')">${ic('trash')} Eliminar de la flota</button>` : '');
+  if (id === RENAULT) $('modalForm').insertAdjacentHTML('afterbegin', modPreview('', 'Verla con un módulo'));
 }
 // Matrículas de un modelo (cada vehículo real), ordenadas
 const unitsOf_ = v => [...(v?.units || [])].sort((a, b) => a.plate.localeCompare(b.plate, 'es', { numeric: true }));
 const allUnits = () => vehicles().flatMap(v => (v.units || []).map(u => ({ ...u, vid: v.id })));
 const itvTag = u => { if (!u.itv) return ''; const n = daysTo(u.itv); return `<span class="tag ${n < 0 ? 'bad' : n <= 30 ? 'warn' : 'neutral'}">ITV ${n < 0 ? 'caducada' : fmtDate(u.itv)}</span>`; };
 // Una matrícula: datos de la hoja y la pizarra (ITV, cita, destino, titular y suplente). Cambiar el modelo la pasa a otro
-// (ATB M1 o M2, módulo del Renault…) y con él cambia el dibujo.
+// (ATB M1 o M2) y con él cambia el dibujo.
 function unitForm(vid, id) {
   if (!soloFlota()) return;
   const v = get('vehicles', vid), u = (v.units || []).find(x => x.id === id) || {};
   openForm(id ? u.plate : `Nueva matrícula · ${v.name}`, [
     { k: 'plate', label: 'Matrícula', value: u.plate || 'ET-', required: true, placeholder: 'Ej: ET-120111 o RQ-112426' },
-    { k: 'vid', label: 'Modelo (o módulo que lleva)', value: vid, options: vehicles().map(x => [x.id, x.name]), required: true },
+    { k: 'vid', label: 'Modelo', value: vid, options: vehicles().map(x => [x.id, x.name]), required: true },
     { k: 'itv', label: 'Caducidad ITV', type: 'date', value: u.itv },
     { k: 'cita', label: 'Próxima cita ITV', value: u.cita, placeholder: 'Ej: 28/10 11:00' },
     { k: 'use', label: 'Destino u observaciones', value: u.use, wide: true, placeholder: 'Ej: 1º pelotón' },

@@ -1,5 +1,6 @@
 """Arrastrar material entre todos los sitios: del contenedor al pasillo, de pasillo a otros, a una caja del pasillo,
-el fungible y a «En revisión» (abre la ficha de revisión). Mientras se arrastra, abajo sale una barra con los destinos.
+el fungible, el EPI de reserva, al otro lateral del contenedor, a «En revisión» (abre la ficha de revisión) y «A una
+persona» (le aparece en su ficha). Mientras se arrastra, abajo sale una barra con los destinos.
 Uso: python3 tests/test_arrastre.py  (con la app servida en APP_URL)"""
 import os
 from playwright.sync_api import sync_playwright
@@ -17,10 +18,12 @@ with sync_playwright() as p:
     a.goto(APP); a.wait_for_selector('#view > *')
     a.evaluate("setPref({ tab: 'contenedor' })"); a.wait_for_selector('.drop-zone')
 
-    def arrastra(src, dst):
+    def arrastra(src, dst, via=None):
         s = a.locator(src).first; s.scroll_into_view_if_needed(); bb = s.bounding_box()
         a.mouse.move(bb['x'] + 10, bb['y'] + 10); a.mouse.down(); a.mouse.move(bb['x'] + 30, bb['y'] + 30, steps=4)
         assert a.locator('#dragDock').count() == 1, 'sale la barra de destinos'
+        if via:   # parada encima de algo (el botón del otro lateral) antes de soltar
+            v = a.locator(via).first.bounding_box(); a.mouse.move(v['x'] + v['width'] / 2, v['y'] + v['height'] / 2, steps=6); a.wait_for_timeout(700)
         t = a.locator(dst).first.bounding_box()
         a.mouse.move(t['x'] + t['width'] / 2, t['y'] + t['height'] / 2, steps=12); a.mouse.up(); a.wait_for_timeout(300)
         assert a.locator('#dragDock').count() == 0, 'la barra se va al soltar'
@@ -52,6 +55,31 @@ with sync_playwright() as p:
     cid = a.evaluate("const c = list('consumables')[0]; put('consumables', { ...c, door: 101, location: '' }); c.id"); a.wait_for_timeout(200)
     arrastra(f'#alm-pasillo .cons-item[data-cons="{cid}"]', '#dragDock .dock-zone[data-door="301"]')
     assert a.evaluate(f"consDoor(get('consumables', '{cid}'))") == 301
+    # Al otro lateral del contenedor: se para encima del botón «Derecho», cambia de lateral y se suelta en B15
+    a.evaluate("setPref({ tab: 'contenedor', cside: 'izq' })"); a.wait_for_timeout(200)
+    g3 = a.evaluate("const g = list('gear').find(g => !g.vehicle && !get('boxes', g.box) && g.status === 'OPERATIVO' && !g.out); moveGear(g.id, 3); g.id"); a.wait_for_timeout(200)
+    arrastra(f'.cvi .tok[data-gear="{g3}"]', '.cvi .cv-cell[data-door="15"]', via='.seg-row [data-cside="der"]')
+    assert a.evaluate(f"get('gear', '{g3}').door") == 15 and a.evaluate("prefs.cside") == 'der'
+    # A una persona: se elige quién y le aparece en su ficha, en «Material que lleva»; se devuelve desde ahí
+    arrastra(f'.cvi .tok[data-gear="{g3}"]', '#dragDock .dock-zone[data-person]')
+    assert a.locator('#modal .give-list .item').count() == a.evaluate("operators().length")
+    a.click('#modal .give-list .item:has-text("DORTA")'); a.wait_for_timeout(200)
+    dorta = a.evaluate("operators().find(o => o.name === 'DORTA').id")
+    assert a.evaluate(f"[get('gear', '{g3}').out?.who, get('gear', '{g3}').out?.op]") == ['DORTA', dorta]
+    a.evaluate(f"setPref({{ tab: 'personal', person: '{dorta}' }})"); a.wait_for_timeout(300)
+    nombre = a.evaluate(f"get('gear', '{g3}').name")
+    assert a.locator(f'.panel:has-text("Material que lleva") .item:has-text("{nombre}")').count() == 1
+    a.click(f'.panel:has-text("Material que lleva") .item:has-text("{nombre}") button:has-text("Devolver")'); a.wait_for_timeout(300)
+    assert a.evaluate(f"get('gear', '{g3}').out") is None and a.locator('.panel:has-text("Material que lleva")').count() == 0
+    # El EPI de reserva también se arrastra: de una balda a otra, y a una persona (sale uno de la reserva)
+    a.evaluate("setPref({ tab: 'contenedor', person: null })"); a.wait_for_timeout(200)
+    eid = 'EPI-RES-AUDITIVOS'; q0 = a.evaluate(f"epiQty(get('epis', '{eid}'))")
+    a.evaluate("$('alm-armarios').scrollIntoView(); scrollBy(0, -300)"); a.wait_for_timeout(100); arrastra(f'.arm .tok[data-epi="{eid}"]', '.arm .cv-cell[data-door="233"]')
+    assert a.evaluate(f"get('epis', '{eid}').door") == 233
+    arrastra(f'.arm .tok[data-epi="{eid}"]', '#dragDock .dock-zone[data-person]')
+    a.click('#modal .give-list .item:has-text("DORTA")'); a.wait_for_timeout(200)
+    assert a.evaluate(f"epiQty(get('epis', '{eid}'))") == q0 - 1
+    assert a.evaluate(f"list('epis').filter(e => e.holder === '{dorta}' && e.type === 'auditivos').length") == 2
     # Armarios de antes (dos puertas por armario): lo que había en una puerta pasa a la balda de abajo de ese armario
     a.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); const g = Object.values(d.gear)[0]; g.door = 204; g.vehicle = '';
       delete d.meta.armbase; localStorage.setItem(KEY.db, JSON.stringify(d)); window.__gid = g.id; sessionStorage.setItem('gid', g.id); })()""")

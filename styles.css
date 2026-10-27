@@ -1300,3 +1300,12 @@ body.login-on .login > .muted, body.login-on .login > p { color: #cfcfcf; }
 .tok-epi { position: relative; }
 .tok-n { position: absolute; right: -4px; top: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #f5b800; color: #1d1d1d;
   font: 800 10px/16px var(--num); font-style: normal; text-align: center; box-shadow: 0 0 0 1.5px #1d1d1d; }
+/* Material que lleva una persona: la fila abre la ficha y el botón lo devuelve */
+.link-row { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.give-list .avatar { width: 34px; height: 34px; font-size: 13px; }
+/* Autobomba Renault: verla con cada módulo */
+.veh-mods { display: grid; gap: 10px; justify-items: center; }
+.veh-art.lg { width: 100%; max-width: 420px; height: auto; aspect-ratio: 640 / 290; }
+.veh-mods .seg-row { flex-wrap: wrap; justify-content: center; }
+.veh-mods[hidden] { display: none; }
+.veh-mods-t { justify-self: start; }

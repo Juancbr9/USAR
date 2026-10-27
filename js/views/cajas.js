@@ -231,7 +231,7 @@ function viewContVisual() {
       <div class="between wrap-row sec-head">
         <div><h2>${esc(sideTitle)}</h2><p class="muted">Toca un hueco para verlo; mantén pulsado para arrastrar.</p></div>
         <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>${puedeFlota() ? `<button class="btn btn-a btn-sm" onclick="addMaterial()">${ic('plus')} Material</button>` : ''}</div>
-        <div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
+        <div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" data-cside="${k}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
       </div>
       <div class="cv cvi" data-side="${side}">
         <img class="cvi-bg" src="img/contenedor-lateral.webp" alt="" aria-hidden="true" width="1200" height="708">
@@ -311,6 +311,8 @@ function dragTarget(x, y) {
   if (rev) return { rev: true, el: rev };
   const box = DRAG?.gear && el?.closest('.tok-box, .place-box');
   if (box && box.dataset.box !== get('gear', DRAG.gear)?.box) return { box: box.dataset.box, el: box };
+  const person = el?.closest('[data-person]');
+  if (person) return { person: true, el: person };
   const cell = el?.closest('.cv-cell, .drop-zone, .dock-zone');
   return cell ? { cell, el: cell } : null;
 }
@@ -319,7 +321,7 @@ function dragDock() {
   const z = (attr, icon, label) => `<div class="dock-zone" ${attr}>${ic(icon, 'i-sm')}<span>${label}</span></div>`;
   const dock = Object.assign(document.createElement('div'), { id: 'dragDock', className: 'drag-dock' });
   dock.innerHTML = z('data-door="0"', 'box', 'Sin ubicar') + z(`data-door="${PASILLO}"`, 'layers', 'Pasillo') + z(`data-door="${OTROS}"`, 'dots', 'Otros')
-    + (DRAG?.gear ? z('data-rev="1"', 'wrench', 'En revisión') : '');
+    + (DRAG?.cons ? '' : z('data-person="1"', 'hardhat', 'Persona')) + (DRAG?.gear ? z('data-rev="1"', 'wrench', 'En revisión') : '');
   document.body.appendChild(dock);
 }
 function startDrag(d) {
@@ -333,12 +335,12 @@ function startDrag(d) {
 }
 function endDrag() {
   if (!DRAG) return;
-  clearTimeout(DRAG.timer); clearInterval(DRAG.scroll); DRAG.ghost?.remove(); DRAG.tok.classList.remove('dragging'); DRAG.over?.classList.remove('drop-on');
+  clearTimeout(DRAG.timer); clearTimeout(DRAG.sideTimer); clearInterval(DRAG.scroll); DRAG.ghost?.remove(); DRAG.tok.classList.remove('dragging'); DRAG.over?.classList.remove('drop-on');
   document.body.classList.remove('cv-dragging'); $('dragDock')?.remove(); DRAG = null;
 }
 document.addEventListener('pointerdown', e => {
-  const tok = e.target.closest('.cv .tok, .cv-unplaced .tok, .arm .tok, .pas .tok, .drag-it, .cons-item'); if (!tok || tok.dataset.epi || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
-  DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, touch: e.pointerType !== 'mouse', started: false };
+  const tok = e.target.closest('#view .tok, .drag-it, .cons-item'); if (!tok || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
+  DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, epi: tok.dataset.epi, touch: e.pointerType !== 'mouse', started: false };
   if (DRAG.touch) { const d = DRAG; d.timer = setTimeout(() => DRAG === d && startDrag(d), 280); }
 });
 document.addEventListener('pointermove', e => {
@@ -357,6 +359,9 @@ document.addEventListener('pointermove', e => {
   if (!edge && d.scroll) { clearInterval(d.scroll); d.scroll = null; }
   const t = dragTarget(e.clientX, e.clientY);
   if (d.over !== t?.el) { d.over?.classList.remove('drop-on'); d.over = t?.el; d.over?.classList.add('drop-on'); }
+  // Encima del botón del otro lateral del contenedor, al poco se cambia de lateral para soltar allí
+  const side = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-cside]')?.dataset.cside;
+  if (side !== d.side) { clearTimeout(d.sideTimer); d.side = side; if (side && side !== prefs.cside) d.sideTimer = setTimeout(() => DRAG === d && setPref({ cside: side }), 450); }
 });
 document.addEventListener('touchmove', e => { if (DRAG?.started) e.preventDefault(); }, { passive: false });
 document.addEventListener('contextmenu', e => { if (e.target.closest('.tok')) e.preventDefault(); });
@@ -368,6 +373,8 @@ document.addEventListener('pointerup', e => {
   endDrag();
   CV_SUPPRESS = true; setTimeout(() => { CV_SUPPRESS = false; }, 50);
   if (!t) return;
+  if (t.person) return givePicker(d);
+  if (d.epi) { const x = get('epis', d.epi), door = +t.cell.dataset.door || 0; if (x && !t.cell.dataset.veh && +x.door !== door) put('epis', { ...x, door }, `${epiLabel(x)} → ${placeName(door, '')}`); return; }
   if (t.rev) { const g = get('gear', d.gear); return g && (g.status === 'OPERATIVO' ? revForm(g.id) : toast(`${g.name} ya está en revisión`)); }
   if (t.box) return putInBox(d.gear, t.box);
   const { door, veh } = t.cell.dataset;
@@ -376,6 +383,35 @@ document.addEventListener('pointerup', e => {
   if (d.box) { const b = get('boxes', d.box); if (!same(b)) moveBox(d.box, +door || 0, veh || ''); }
   else { const g = get('gear', d.gear); if (!same(g) || g.box) moveGear(d.gear, +door || 0, veh || ''); }
 });
+
+// Soltar en «Persona»: se elige quién y le aparece en su ficha (el EPI como suyo; el material, como que lo lleva)
+function givePicker(d) {
+  const what = d.epi ? epiLabel(get('epis', d.epi)) : d.box ? 'caja ' + get('boxes', d.box)?.code : get('gear', d.gear)?.name;
+  openModal(`¿A quién? · ${what || ''}`, `<div class="list give-list">${operators().map(o => `
+    <button class="item" onclick="closeModal(); giveTo(${jsq(JSON.stringify({ epi: d.epi, box: d.box, gear: d.gear }))}, '${o.id}')"><div class="who-row"><span class="avatar">${esc(initials(o.name))}</span><b>${esc(o.name)}</b></div>${ic('chev', 'i-sm')}</button>`).join('')}</div>`);
+}
+function giveTo(what, op) {
+  const { epi, box, gear } = JSON.parse(what), o = get('operators', op);
+  if (!o) return;
+  if (epi) {
+    const e = get('epis', epi); if (!e) return;
+    if (e.holder === op) return toast(`${o.name} ya lo tiene`);
+    // De la reserva con cantidad sale uno; si no, pasa entero a la persona
+    if (e.holder === RESERVA && epiQty(e) > 1) {
+      stamp('epis', { ...e, qty: epiQty(e) - 1 });
+      return put('epis', { ...e, id: uid('EPI'), qty: '', door: '', holder: op }, `${epiLabel(e)} de la reserva para ${o.name}${e.size && e.size !== 'Universal' ? ', talla ' + e.size : ''}`);
+    }
+    return put('epis', { ...e, qty: '', door: '', holder: op }, `${epiLabel(e)} para ${o.name}`);
+  }
+  const out = { who: o.name, op, since: Date.now(), note: '' };
+  const items = box ? boxItems(box) : [get('gear', gear)].filter(Boolean);
+  if (!items.length) return toast('La caja está vacía', 'bad');
+  const busy = items.filter(g => g.out && g.out.op !== op);
+  if (busy.length) return toast(`${busy[0].name} ya está fuera (${busy[0].out.who})`, 'bad');
+  items.forEach((g, i) => (i < items.length - 1 ? stamp : put)('gear', { ...g, out }, box ? `Caja ${get('boxes', box).code} con ${o.name}` : `"${g.name}" con ${o.name}`));
+}
+// Material que lleva una persona (lo que se le ha dado o ha sacado él; no lo de las entregas ni lo de una salida)
+const gearWith = o => list('gear').filter(g => g.out && !g.out.loan && !g.out.mission && (g.out.op ? g.out.op === o.id : g.out.who === o.name)).sort(byName);
 
 /* ---------- Dónde está cada cosa (lo usa la lupa de arriba) ---------- */
 const fold = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');

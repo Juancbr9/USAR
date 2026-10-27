@@ -95,7 +95,7 @@ with sync_playwright() as p:
 
     # Vehículos: modelos de la unidad, cada uno con sus matrículas (la carga se pone en cada salida)
     sesion.menu(a, 'Vehículos')
-    assert a.locator('.veh-item').count() == 30 and a.locator('.veh-item:has-text("Autobomba Renault (módulo LCIF)")').count() == 1
+    assert a.locator('.veh-item').count() == 27 and a.locator('.veh-item:has-text("Autobomba Renault")').count() == 1
     assert a.evaluate("vehicles().map(v => v.name).join('|') === vehicles().map(v => v.name).sort((x, y) => x.localeCompare(y, 'es', { numeric: true })).join('|')"), 'flota por orden alfabético'
     assert 'Amarok' in a.locator('.veh-item').first.text_content() and 'VPI' in a.locator('.veh-item').last.text_content()
     a.click('.veh-item:has-text("Amarok")'); a.fill('[name=seats]', '5'); save()
@@ -109,19 +109,19 @@ with sync_playwright() as p:
       d.vehicles['V-1'] = { id: 'V-1', name: 'Camión portacontenedor', plate: '', seats: 3, _u: t }; d.vehicles['V-3'] = { id: 'V-3', name: 'Vehículo de mando', plate: '', seats: 5, _u: t };
       d.gear['B-901'].vehicle = 'V-3'; d.meta.vehbase = { id: 'vehbase', value: 1, _u: t }; localStorage.setItem(KEY.db, JSON.stringify(d)); })()""")
     m.reload(); m.wait_for_selector('#view > *')
-    assert m.evaluate("[vehicles().length, get('gear', 'B-901').vehicle, !!get('vehicles', 'V-3')]") == [30, '', False]
+    assert m.evaluate("[vehicles().length, get('gear', 'B-901').vehicle, !!get('vehicles', 'V-3')]") == [27, '', False]
     # v4: lo que estaba fijo en un vehículo pasa a «sin ubicar»; se carga en cada salida
     m.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); const t = Date.now();
       d.gear['B-901'].vehicle = 'V-SANGYONG'; d.vehicles['V-SANGYONG'].notes = 'Vehículo del jefe: lleva las transmisiones (TETRA) y el botiquín';
       d.meta.vehbase = { id: 'vehbase', value: 2, _u: t }; localStorage.setItem(KEY.db, JSON.stringify(d)); })()""")
     m.reload(); m.wait_for_selector('#view > *')
     assert m.evaluate("[get('gear', 'B-901').vehicle, get('gear', 'B-901').door, get('vehicles', 'V-SANGYONG').notes]") == ['', 0, '']
-    # v5 y v6: llegan las ATB Iveco M1 y M2 y la segunda Renault de contenedor pequeño sin tocar los vehículos ya editados (ni repetir la v4)
+    # v5: llegan las ATB Iveco M1 y M2 sin tocar los vehículos ya editados (ni repetir la v4); la Renault de contenedor pequeño 2 ya no es un modelo (v9)
     m.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); const t = Date.now();
       delete d.vehicles['V-ATB-M1']; delete d.vehicles['V-ATB-M2']; delete d.vehicles['V-AB-CONT2']; d.vehicles['V-SANGYONG'] = { ...d.vehicles['V-SANGYONG'], name: 'Sangyong del jefe', _u: t }; d.vehicles['V-AMAROK'] = { ...d.vehicles['V-AMAROK'], name: 'Amarok UME', plate: '1234-ABC', _u: t };
       d.gear['B-901'].vehicle = 'V-AMAROK'; d.meta.vehbase = { id: 'vehbase', value: 4, _u: t }; localStorage.setItem(KEY.db, JSON.stringify(d)); })()""")
     m.reload(); m.wait_for_selector('#view > *')
-    assert m.evaluate("[get('vehicles', 'V-ATB-M1')?.name, get('vehicles', 'V-ATB-M2')?.name, get('vehicles', 'V-AB-CONT2')?.name, get('vehicles', 'V-AMAROK').name, get('vehicles', 'V-AMAROK').plate, get('vehicles', 'V-SANGYONG').name, get('gear', 'B-901').vehicle, get('meta', 'vehbase').value]") == ['ATB Iveco M1', 'ATB Iveco M2', 'Autobomba Renault (contenedor pequeño 2)', 'Amarok UME', '1234-ABC', 'SsangYong del jefe', 'V-AMAROK', 8]
+    assert m.evaluate("[get('vehicles', 'V-ATB-M1')?.name, get('vehicles', 'V-ATB-M2')?.name, get('vehicles', 'V-AB-CONT2')?.name, get('vehicles', 'V-AMAROK').name, get('vehicles', 'V-AMAROK').plate, get('vehicles', 'V-SANGYONG').name, get('gear', 'B-901').vehicle, get('meta', 'vehbase').value]") == ['ATB Iveco M1', 'ATB Iveco M2', None, 'Amarok UME', '1234-ABC', 'SsangYong del jefe', 'V-AMAROK', 9]
     m.evaluate("(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); d.gear['B-901'].vehicle = ''; localStorage.setItem(KEY.db, JSON.stringify(d)); })()")
     m.reload(); m.wait_for_selector('#view > *')
     # Base v3 (hojas del contenedor): lo de la base anterior repetido se borra, lo que no sale en las hojas y lo colocado
