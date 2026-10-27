@@ -11,7 +11,7 @@ problems = []
 
 with sync_playwright() as p:
     br = p.chromium.launch()
-    c = br.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, mant=True)
+    c = br.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, mant=True, bypass_csp=True)
     a = c.new_page()
     a.on('pageerror', lambda e: problems.append(f'ERROR {e}'))
     a.on('dialog', lambda d: d.accept())
