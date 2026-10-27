@@ -2,11 +2,17 @@
 // USAR 242 · Sincronización con Supabase (la del equipo va integrada: SUPA en js/config.js)
 
 /* ==================== SINCRONIZACIÓN (Supabase) ====================
-   Cada registro es una fila (kind, id, data). Gana el cambio más reciente (_u).
-   Los cambios se guardan primero en el móvil y se envían cuando hay conexión. */
+   Cada registro es una fila (kind, id, data). Los cambios se guardan primero en el móvil y se envían cuando hay conexión.
+   Para que dos móviles no se pisen, cada uno recuerda la versión del servidor sobre la que trabaja (base, con la hora del
+   servidor). Un cambio solo se guarda si el registro sigue como estaba en esa versión; si otro lo cambió entretanto, se
+   traen sus cambios y se combinan con los de este móvil (merge3) antes de volver a enviarlo. Así no depende de la hora de
+   cada móvil y no se pierde lo que hizo el otro: lo que cambió solo uno se queda, en las listas se suma lo que añadió cada
+   uno, y si los dos cambiaron el mismo dato gana el último en enviarse. */
 const Sync = (() => {
   const TABLE = 'usar_records';
   let outbox = readJSON(KEY.outbox) || {};
+  let base = readJSON(KEY.base) || {};   // 'kind|id' → { at: hora del servidor, data: el registro como está allí }
+  const saveBase = () => writeJSON(KEY.base, base);
   let status = 'local', error = '', busy = false, poller = null, debounce = null;
   const cfg = () => readJSON(KEY.sync);
   const setStatus = s => { status = s; renderSyncBadge(); };
@@ -24,7 +30,7 @@ const Sync = (() => {
     });
     if (res.status === 401 && c.session && !retried) { await refresh(); return api(path, options, true); }
     if (!res.ok) throw new Error(`Servidor ${res.status}: ${(await res.text()).slice(0, 140)}`);
-    return options.method && options.method !== 'GET' ? null : res.json();
+    return options.method && options.method !== 'GET' && !options.json ? null : res.json();
   }
 
   /* ---------- Usuarios (Supabase Auth) y permisos ---------- */
@@ -144,17 +150,67 @@ const Sync = (() => {
     debounce = setTimeout(flush, 400);
   }
 
+  /* ---------- Combinar versiones ---------- */
+  // Horas del servidor comparables como texto (siempre con 6 decimales) y comparación de datos sin mirar _u
+  const normTs = s => String(s || '').replace(/(\.\d+)?(?=(Z|[+-]\d\d:?\d\d)$)/, m => (m || '.').padEnd(7, '0'));
+  const stable = x => JSON.stringify(x ?? null, (k, v) => k === '_u' ? undefined
+    : v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map(key => [key, v[key]])) : v);
+  const same = (a, b) => stable(a) === stable(b);
+  const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+  const elKey = x => isObj(x) && (x.id != null || x.key != null) ? 'k:' + (x.id ?? x.key) : 'v:' + stable(x);
+  // Listas: se queda lo que añadió cada uno y se quita lo que quitó alguno (salvo que el otro lo cambiara entretanto)
+  function mergeList(b, mine, theirs) {
+    const B = new Map(b.map(x => [elKey(x), x])), M = new Map(mine.map(x => [elKey(x), x])), out = [];
+    for (const t of theirs) {
+      const k = elKey(t);
+      if (M.has(k)) out.push(merge3(B.get(k), M.get(k), t, B.has(k)));
+      else if (!B.has(k) || !same(B.get(k), t)) out.push(t);
+    }
+    const T = new Set(theirs.map(elKey));
+    for (const m of mine) { const k = elKey(m); if (!T.has(k) && (!B.has(k) || !same(B.get(k), m))) out.push(m); }
+    return out;
+  }
+  // Tres versiones: la base (como estaba), la de este móvil y la que llega. Lo cambiado por uno solo se queda; si los dos
+  // cambiaron lo mismo: objetos campo a campo, listas juntas y en lo demás gana este móvil (el último en enviarse).
+  // known: se sabe cómo estaba (aunque ese dato no existiera: entonces lo añadió quien lo tiene)
+  function merge3(b, mine, theirs, known = b != null) {
+    if (same(mine, theirs)) return mine;
+    if (known) { if (same(mine, b)) return theirs; if (same(theirs, b)) return mine; }
+    if (Array.isArray(mine) && Array.isArray(theirs)) return mergeList(known && Array.isArray(b) ? b : [], mine, theirs);
+    if (isObj(mine) && isObj(theirs)) {
+      const bb = known && isObj(b) ? b : {}, kb = known && isObj(b), out = {};
+      for (const k of new Set([...Object.keys(theirs), ...Object.keys(mine)])) {
+        if (k === '_u') continue;
+        const v = merge3(bb[k], mine[k], theirs[k], kb);
+        if (v !== undefined) out[k] = v;
+      }
+      if (mine._u || theirs._u) out._u = Math.max(mine._u || 0, theirs._u || 0);
+      return out;
+    }
+    return mine;
+  }
+  const rowRec = row => { const r = cleanRec({ ...(row.data || {}), id: row.id }); if (r && row.deleted) r._del = true; return r; };
+
+  // Llega una fila del servidor: si este móvil no tiene cambios pendientes en ella, se toma tal cual; si los tiene, se
+  // combinan con lo que llega y quedan pendientes de enviar sobre esta versión
   function merge(row) {
     if (row.kind === 'images') return mergeImage(row);
     if (!db[row.kind]) return false;
-    const rec = cleanRec({ ...(row.data || {}), id: row.id });
+    const k = row.kind + '|' + row.id, b = base[k];
+    if (b && row.updated_at && normTs(b.at) >= normTs(row.updated_at)) return false;   // ya la conocía
+    const rec = rowRec(row);
     if (!rec) return false;
-    if (row.deleted) rec._del = true;
-    const mine = db[row.kind][row.id];
-    const pending = outbox[row.kind + '|' + row.id];
-    if (pending && (pending.data._u || 0) > (rec._u || 0)) return false;
-    if (mine && (mine._u || 0) >= (rec._u || 0)) return false;
-    db[row.kind][row.id] = rec;
+    base[k] = { at: row.updated_at || '', data: rec };   // se guarda en el móvil al terminar el lote (saveBase)
+    const mine = db[row.kind][row.id], pending = outbox[k];
+    if (!pending) {
+      if (mine && same(mine, rec) && !!mine._del === !!rec._del) return false;
+      db[row.kind][row.id] = rec;
+      return true;
+    }
+    const merged = merge3(b ? b.data : null, mine || pending.data, rec);
+    db[row.kind][row.id] = merged;
+    outbox[k] = { ...pending, data: merged, deleted: !!merged._del };
+    writeJSON(KEY.outbox, outbox);
     return true;
   }
 
@@ -180,17 +236,20 @@ const Sync = (() => {
         // si ya tiene datos del equipo, este móvil adopta esos datos.
         const rows = await fetchRows();
         if (rows.length && c.nuevo) { outbox = {}; writeJSON(KEY.outbox, outbox); }   // móvil nuevo: manda lo del equipo
-        if (rows.length) { KINDS.forEach(k => { db[k] = {}; }); rows.forEach(merge); seedDefaults(true); }
+        if (rows.length) { KINDS.forEach(k => { db[k] = {}; }); base = {}; rows.forEach(merge); saveBase(); seedDefaults(true); }
         else { KINDS.forEach(k => Object.values(db[k]).forEach(r => queue(k, r))); Object.keys(await Img.all().catch(() => ({}))).forEach(id => queueImage(id)); }
         // Sobre lo guardado ahora (no sobre «c»): entretanto se ha podido entrar o salir con otro usuario
         const cc = { ...cfg(), joined: true, since: newest(rows) }; delete cc.nuevo;
         writeJSON(KEY.sync, cc);
         persist(); render();
       } else {
-        // Se repasan 30 s hacia atrás para no perder escrituras simultáneas
-        const since = c.since ? new Date(new Date(c.since).getTime() - 30000).toISOString() : '';
+        // Se repasan 30 s hacia atrás para no perder escrituras simultáneas. Un móvil que aún no tenía las versiones del
+        // servidor (base) las trae todas una vez
+        const since = c.since && Object.keys(base).length ? new Date(new Date(c.since).getTime() - 30000).toISOString() : '';
         const rows = await fetchRows(since);
-        if (rows.filter(merge).length) { persist(); render(); }
+        const changed = rows.filter(merge).length;
+        if (rows.length) saveBase();
+        if (changed) { persist(); render(); }
         if (rows.length) writeJSON(KEY.sync, { ...cfg(), since: newest(rows, c.since) });
       }
       error = '';
@@ -204,6 +263,57 @@ const Sync = (() => {
     }
   }
 
+  /* ---------- Envío ---------- */
+  const SEC = /42501|row-level security/;
+  const enc = encodeURIComponent;
+  // Guardado en el servidor: se apunta su versión y sale de la cola (save = false: se guarda en el móvil al final del lote)
+  const done = (k, r, row, save = true) => {
+    if (row) base[k] = { at: row.updated_at, data: rowRec(row) || r.data };
+    if (outbox[k] === r) delete outbox[k];
+    if (save) { saveBase(); writeJSON(KEY.outbox, outbox); }
+  };
+  const fetchOne = (kind, id) => api(`${TABLE}?select=kind,id,data,deleted,updated_at&kind=eq.${enc(kind)}&id=eq.${enc(id)}`).then(rows => rows[0] || null);
+  const asRow = r => ({ kind: r.kind, id: r.id, data: r.data, deleted: !!r.deleted });
+  // Registros que el servidor aún no tiene (o este móvil no sabe en qué versión están): se insertan si no existen
+  async function insertNew(entries) {
+    let rows = null;
+    try { rows = await api(`${TABLE}?on_conflict=kind,id`, { method: 'POST', json: true, headers: { Prefer: 'resolution=ignore-duplicates,return=representation' }, body: JSON.stringify(entries.map(([, r]) => asRow(r))) }); }
+    catch (e) {
+      if (!SEC.test(e.message)) throw e;
+      // Alguno no lo puede crear este usuario (p. ej. material nuevo si no es jefe): uno a uno, para que el resto sí se guarde
+      if (entries.length > 1) { for (const en of entries) await insertNew([en]); return; }
+    }
+    const got = new Map((rows || []).map(x => [x.kind + '|' + x.id, x]));
+    entries.filter(([k]) => got.has(k)).forEach(([k, r]) => done(k, r, got.get(k), false));
+    saveBase(); writeJSON(KEY.outbox, outbox);
+    for (const [k, r] of entries) {
+      if (got.has(k)) continue;
+      // Ya existía (otro móvil la creó con el mismo id) o no hay permiso para crearla: se mira cómo está en el servidor
+      const cur = await fetchOne(r.kind, r.id);
+      if (!cur) { if (outbox[k] === r) { delete outbox[k]; writeJSON(KEY.outbox, outbox); } continue; }   // rechazada: queda solo en este móvil
+      if (merge(cur)) { persist(); render(); }
+      saveBase();
+      await updateOne(k);
+    }
+  }
+  // Cambio sobre una versión conocida: solo se guarda si en el servidor sigue esa versión; si no, se combina y se reintenta
+  async function updateOne(k) {
+    for (let tries = 0; tries < 4 && outbox[k]; tries++) {
+      const r = outbox[k], b = base[k];
+      if (!b) return insertNew([[k, r]]);
+      let rows;
+      try { rows = await api(`${TABLE}?kind=eq.${enc(r.kind)}&id=eq.${enc(r.id)}&updated_at=eq.${enc(b.at)}`, { method: 'PATCH', json: true, headers: { Prefer: 'return=representation' }, body: JSON.stringify({ data: r.data, deleted: !!r.deleted }) }); }
+      catch (e) { if (!SEC.test(e.message)) throw e; if (outbox[k] === r) { delete outbox[k]; writeJSON(KEY.outbox, outbox); } return; }   // sin permiso: queda solo en este móvil
+      if (rows.length) return done(k, r, rows[0]);
+      const cur = await fetchOne(r.kind, r.id);
+      if (!cur) { delete base[k]; saveBase(); return insertNew([[k, r]]); }
+      // Si nadie lo ha cambiado y aun así no se guarda, es que este usuario no puede cambiarlo: queda solo en este móvil
+      if (normTs(cur.updated_at) === normTs(b.at)) { if (outbox[k] === r) { delete outbox[k]; writeJSON(KEY.outbox, outbox); } return; }
+      if (merge(cur)) { persist(); render(); }
+      saveBase();
+    }
+  }
+
   async function flush() {
     const items = Object.entries(outbox);
     if (!cfg() || busy || !items.length || locked()) return;
@@ -211,13 +321,13 @@ const Sync = (() => {
     busy = true; setStatus('syncing');
     try {
       const imgs = items.filter(([, r]) => r.img), rest = items.filter(([, r]) => !r.img);
+      const fresh = rest.filter(([k]) => !base[k]);
+      for (let i = 0; i < fresh.length; i += 200) await insertNew(fresh.slice(i, i + 200));
+      for (const [k] of rest) if (outbox[k] && base[k]) await updateOne(k);
       const batches = [];
-      for (let i = 0; i < rest.length; i += 200) batches.push(rest.slice(i, i + 200));
       for (let i = 0; i < imgs.length; i += 5) batches.push(imgs.slice(i, i + 5));   // las fotos, de pocas en pocas
       for (const batch of batches) {
-        const body = await Promise.all(batch.map(async ([, r]) => r.img
-          ? { kind: 'images', id: r.id, deleted: r.deleted, data: r.deleted ? null : { data: await Img.get(r.id), _u: r._u } }
-          : r));
+        const body = await Promise.all(batch.map(async ([, r]) => ({ kind: 'images', id: r.id, deleted: r.deleted, data: r.deleted ? null : { data: await Img.get(r.id), _u: r._u } })));
         const send = rows => api(`${TABLE}?on_conflict=kind,id`, {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -225,12 +335,11 @@ const Sync = (() => {
         });
         try { await send(body); }
         catch (e) {
-          // El servidor rechaza lo que este usuario no tiene permiso para guardar (p. ej. material nuevo si no es jefe):
-          // se envía de uno en uno y lo rechazado se queda solo en este móvil, para que no atasque el resto de la cola
-          if (!/42501|row-level security/.test(e.message)) throw e;
-          for (const r of body) await send([r]).catch(err => { if (!/42501|row-level security/.test(err.message)) throw err; });
+          // Lo que este usuario no puede guardar se queda solo en este móvil, para que no atasque el resto de la cola
+          if (!SEC.test(e.message)) throw e;
+          for (const r of body) await send([r]).catch(err => { if (!SEC.test(err.message)) throw err; });
         }
-        batch.filter(([, r]) => r.img).forEach(([, r]) => { imgU[r.id] = r._u; });
+        batch.forEach(([, r]) => { imgU[r.id] = r._u; });
         writeJSON('USAR_IMG_U', imgU);
         batch.forEach(([k, r]) => { if (outbox[k] === r) delete outbox[k]; });
         writeJSON(KEY.outbox, outbox);
@@ -283,7 +392,8 @@ const Sync = (() => {
     clearInterval(poller);
     localStorage.removeItem(KEY.sync);
     localStorage.removeItem(KEY.outbox);
-    outbox = {};
+    localStorage.removeItem(KEY.base);
+    outbox = {}; base = {};
     setStatus('local');
   }
 
@@ -292,7 +402,7 @@ const Sync = (() => {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && cfg()) pull(); });
 
   return {
-    start, ensure, connect, disconnect, queue, queueImage, pull, cfg, signIn, signUp, signOut, verify, setPassword, members, setMember, removeMember,
+    start, ensure, connect, disconnect, queue, queueImage, pull, flush, merge3, cfg, signIn, signUp, signOut, verify, setPassword, members, setMember, removeMember,
     names, pinSignIn, changePin, people, setPin, setRole, removePerson,
     get pinName() { return cfg()?.session?.pinName || ''; }, get user() { return cfg()?.session?.email || cfg()?.session?.pinName || ''; },
     get status() { return status; }, get locked() { return locked(); }, get error() { return error; }, get pending() { return Object.keys(outbox).length; },

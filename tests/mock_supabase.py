@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 rows = {}; users = {}; members = {}; lock = threading.Lock()
+stats = {'conflictos': 0}   # cambios condicionados (PATCH … updated_at=eq.…) que no se guardaron porque otro cambió el registro antes
 pins = {}; sesiones = {}; anon_n = [0]   # PIN por nombre y nombre de cada invitado
 SECURE = [False]   # GET /_secure lo activa: como el modo seguro de supabase.sql, sin usuario no se lee ni se escribe usar_records
 JEFE_KINDS = set()   # ahora todo el personal accede a todo
@@ -15,7 +16,7 @@ class H(BaseHTTPRequestHandler):
     def cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Headers', 'apikey, authorization, content-type, prefer')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
     def reply(self, code, data=None):
         self.send_response(code); self.cors()
         if data is not None:
@@ -69,6 +70,7 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path); q = parse_qs(u.query)
         if u.path == '/_dump': return self.reply(200, list(rows.values()))
+        if u.path == '/_stats': return self.reply(200, stats)
         if u.path == '/_secure': SECURE[0] = True; return self.reply(200, {})
         if u.path == '/_pin':   # alta directa de un PIN (para preparar las pruebas)
             pins[q['name'][0].upper()] = {'role': q.get('role', ['miembro'])[0], 'pin': q['pin'][0], 'fails': 0}; return self.reply(200, {})
@@ -83,6 +85,9 @@ class H(BaseHTTPRequestHandler):
         if role == 'miembro': data = [r for r in data if r['kind'] not in JEFE_KINDS]
         f = q.get('updated_at', [None])[0]
         if f: data = [r for r in data if r['updated_at'] >= f[4:]]
+        for col in ('kind', 'id'):   # una fila concreta: kind=eq.…&id=eq.…
+            v = q.get(col, [None])[0]
+            if v: data = [r for r in data if r[col] == v[3:]]
         off = int(q.get('offset', [0])[0]); lim = int(q.get('limit', [1000])[0])
         self.reply(200, data[off:off+lim])
     def do_POST(self):
@@ -106,17 +111,48 @@ class H(BaseHTTPRequestHandler):
         if u.path.endswith('/usar_members'):
             for m in body: members[m['email']] = m
             return self.reply(201)
+        if u.path == '/_raw':   # escribe una fila tal cual (como si la cambiara otro móvil), para las pruebas
+            with lock: body['updated_at'] = datetime.now(timezone.utc).isoformat(); rows[(body['kind'], body['id'])] = body
+            return self.reply(200, body)
         email, role = self.who()
         if self.denied(email): return
         if role == 'miembro' and any(r['kind'] in JEFE_KINDS for r in body): return self.reply(403, {'message': 'permiso denegado'})
         # Como supabase.sql: con usuario, solo un jefe da de alta o elimina material, cajas, consumibles y vehículos
         if email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS and (r.get('deleted') or (r['kind'], r['id']) not in rows) for r in body):
             return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
+        prefer = self.headers.get('Prefer', '')
+        # Como PostgREST: «ignore-duplicates» solo inserta lo que no existe y con «return=representation» devuelve lo insertado
+        if 'ignore-duplicates' in prefer:
+            if email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS for r in body):   # la regla de crear se mira antes que el duplicado
+                return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
+            out = []
+            with lock:
+                for r in body:
+                    if (r['kind'], r['id']) in rows: continue
+                    r['updated_at'] = datetime.now(timezone.utc).isoformat(); rows[(r['kind'], r['id'])] = r; out.append(r)
+            return self.reply(201, out) if 'return=representation' in prefer else self.reply(201)
         with lock:
             for r in body:
                 r['updated_at'] = datetime.now(timezone.utc).isoformat()
                 rows[(r['kind'], r['id'])] = r
         self.reply(201)
+    def do_PATCH(self):
+        # Cambio condicionado: kind=eq.…&id=eq.…&updated_at=eq.… (solo si sigue esa versión); devuelve lo cambiado
+        u = urlparse(self.path); q = parse_qs(u.query)
+        body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0) or 0)) or b'{}')
+        if self.bad_jwt(): return
+        email, role = self.who()
+        if self.denied(email): return
+        k = (q.get('kind', ['eq.'])[0][3:], q.get('id', ['eq.'])[0][3:]); at = q.get('updated_at', [None])[0]
+        if email and role != 'jefe' and k[0] in FLOTA_KINDS and body.get('deleted'):
+            return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
+        with lock:
+            r = rows.get(k)
+            if not r or (at and r['updated_at'] != at[3:]):
+                if r: stats['conflictos'] += 1
+                return self.reply(200, [])
+            r.update(body); r['updated_at'] = datetime.now(timezone.utc).isoformat()
+            return self.reply(200, [r])
     def do_PUT(self):
         # Cambiar la contraseña del usuario con sesión
         body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0) or 0)) or b'{}')

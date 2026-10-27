@@ -60,6 +60,7 @@ run test_matriculas.py
 run test_arrastre.py
 start_mock; run test_pin.py
 run test_epi_reserva.py
+start_mock; run test_conflictos.py
 run test_dibujos_veh.py
 run test_funciones.py
 
