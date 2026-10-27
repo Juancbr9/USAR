@@ -36,7 +36,7 @@ function viewRevista() {
               <span class="tag ${r.fails.length ? 'bad' : 'ok'}">${r.fails.length ? r.fails.length + ' fallos' : 'Todo OK'}</span></summary>
             ${r.fails.length ? `<ul class="fails">${r.fails.map(f => `<li><b>${esc(f.name)}</b>${f.note ? ' — ' + esc(f.note) : ''}</li>`).join('')}</ul>` : ''}
             ${(r.other || []).length ? `<ul class="fails">${r.other.map(f => `<li><b>${esc(f.name)}</b> — ${esc(REV_MARKS[f.mark]?.[0] || f.mark)}${f.note ? ': ' + esc(f.note) : ''}</li>`).join('')}</ul>` : ''}
-          </details>`).join('')}</div>` : '<p class="muted">Todavía no hay revistas registradas.</p>'}
+          </details>`).join('')}</div>` : emptyState('clipboard', 'Todavía no hay revistas', 'Pulsa «Iniciar revista» para comprobar el material por sitios.')}
       </div>`;
   }
 

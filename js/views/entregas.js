@@ -15,7 +15,7 @@ function viewEntregas() {
   return `
     <div class="panel">
       <div class="between sec-head"><h2>Entregas</h2><button class="btn btn-a" onclick="loanForm()">${ic('plus')} Entrega</button></div>
-      ${open.length ? `<div class="list">${open.map(row).join('')}</div>` : '<p class="muted">No hay material prestado.</p>'}
+      ${open.length ? `<div class="list">${open.map(row).join('')}</div>` : emptyState('out', 'No hay material prestado', 'Las entregas a personal de fuera, con su firma, salen aquí.')}
     </div>
     ${done.length ? `<details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('history')} Devueltas (${done.length})</summary><div class="list" style="margin-top:10px">${done.slice(0, 30).map(row).join('')}</div></details>` : ''}`;
 }

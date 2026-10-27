@@ -57,7 +57,7 @@ function viewCalendario() {
     </div>
     <div class="panel">
       <h3 class="sec-title">${ic('calendar')} ${sel ? fmtDate(sel) : 'Próximos'}</h3>
-      ${listEvs.length ? `<div class="list">${listEvs.map(eventRow).join('')}</div>` : `<p class="muted">${sel ? 'Nada este día.' : 'Nada programado.'} Crea un ejercicio, una formación o una guardia.</p>`}
+      ${listEvs.length ? `<div class="list">${listEvs.map(eventRow).join('')}</div>` : emptyState('calendar', sel ? 'Nada este día' : 'Nada programado', 'Crea un ejercicio, una formación o una guardia con «Evento».')}
     </div>
     <div class="panel">
       <h3 class="sec-title">${ic('users')} Asistencia y horas de formación (${now.getFullYear()})</h3>

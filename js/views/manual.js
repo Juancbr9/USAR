@@ -33,7 +33,7 @@ const MANUAL = [
         img: ['entrar', 'Entrar con tu nombre y PIN', [[1, 'Toca tu nombre y luego pon tu PIN.'], [2, 'Quien entraba con correo puede seguir haciéndolo.']]] },
       { h: 'Instalar y compartir', steps: [ 'Instálala como una app: en Android, menú del navegador (⋮) → «Instalar aplicación»; en iPhone, botón Compartir → «Añadir a pantalla de inicio».',
         'Los datos del equipo se comparten solos en cuanto entras.'] },
-      { h: 'La pantalla de Inicio', p: 'Es el resumen del día: cuántas cosas hay que revisar, la operación en curso o la próxima, y la lista de avisos. Para todo lo demás, el menú de tres rayas.',
+      { h: 'La pantalla de Inicio', p: 'Es el cuadro de mando del día: la fecha y cuántas cosas hay que revisar, la operación en curso o la próxima, cuatro indicadores (material operativo, en revisión, personal con la documentación al día y vencimientos en 30 días; en verde si está bien, en ámbar o rojo si hay algo), los avisos, accesos rápidos a lo más usado y lo próximo del calendario. Toca un indicador para ir a su pantalla. Para todo lo demás, el menú de tres rayas.',
         img: ['inicio', 'Inicio', [[1, 'Saludo y cuántas cosas hay que revisar.'], [2, 'Operación en curso: tócala para abrirla; los números llevan a su pestaña.'], [3, 'Avisos, por tipo. Toca uno para ir a su ficha.']]] },
       { h: 'Avisos', p: 'En Inicio salen los avisos: equipos averiados o en revisión, material con novedad, mantenimientos y caducidades de los próximos 30 días, stock por debajo del mínimo, material fuera del contenedor y documentos de las personas. Toca cualquiera para ir a su ficha.' }
     ],

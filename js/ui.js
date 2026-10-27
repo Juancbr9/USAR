@@ -4,6 +4,8 @@
 /* ==================== RENDER GENERAL ==================== */
 // Áreas, secciones y barra de navegación: ver js/areas.js
 
+// Al cambiar de pantalla (no en cada actualización de datos) el contenido aparece con un fundido corto
+let LAST_SCREEN = '';
 function render() {
   if (!loggedIn()) return renderLogin();
   if (bloqueado()) return renderMantenimiento();
@@ -15,6 +17,8 @@ function render() {
   renderNav();
   renderActivationBar();
   $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)();
+  const screen = [prefs.tab, prefs.mission, prefs.person, prefs.move, prefs.ws].join('|');
+  if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); }
   if (document.querySelector('.cvi')) fitCells();
   navTrack();
   if ($('search').value) renderSearch();
@@ -125,25 +129,36 @@ function alerts() {
 const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length;
 
 /* ==================== VISTA: INICIO ==================== */
+// Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, accesos rápidos y lo próximo del calendario
 function viewAvisos() {
   const a = alerts(), total = alertCount(a), gearList = list('gear');
-  const pct = Math.round(gearList.filter(g => g.status === 'OPERATIVO').length / (gearList.length || 1) * 100);
+  const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
   const row = (onclick, title, sub, right = '') =>
     `<button class="item" onclick="${onclick}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${right}</button>`;
   const section = (title, cls, rows, area = 'log') => rows.length ? `
     <div class="panel area-panel" data-area="${area}"><div class="between sec-head"><h3><span class="area-chip">${AREAS[area].name}</span>${title}</h3><span class="tag ${cls}">${rows.length}</span></div>
     <div class="list">${rows.join('')}</div></div>` : '';
   const where = g => whereIs(g) + (boxCode(g) ? ', caja ' + boxCode(g) : '');
-  const kpi = (label, value, cls, tab) => `<button class="kpi ${cls}" onclick="go('${tab}')"><div><small>${label}</small><b>${value}</b></div></button>`;
   const active = list('missions').filter(m => m.status === 'active');
   const next = list('missions').filter(m => m.status === 'prep').sort((x, y) => (x.date || '').localeCompare(y.date || ''))[0];
   const hour = new Date().getHours();
   const hello = hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  // Indicadores
+  const ops = operators(), alDia = ops.filter(o => !readinessIssues(o.id).length).length;
+  const exp = expiries(), late = exp.filter(x => daysTo(x.date) < 0).length, soon = exp.filter(x => daysTo(x.date) >= 0 && daysTo(x.date) <= 30).length;
+  const kpi = (icon, label, value, sub, cls, onclick) => `<button class="dash-kpi ${cls}" onclick="${onclick}">
+    <span class="dash-kpi-i">${ic(icon)}</span><small>${label}</small><b>${value}</b><span class="dash-kpi-sub">${sub}</span></button>`;
+  // Accesos rápidos (con el color de su parte de la app)
+  const quick = [['intervenciones', 'alert', 'Activación', 'ops'], ['ejercicios', 'flag', 'Ejercicios', 'ops'], ['contenedor', 'box', 'Material', 'log'], ['revista', 'clipboard', 'Revista', 'log'],
+    ['vehiculos', 'truck', 'Vehículos', 'log'], ['personal', 'hardhat', 'Personal', 'team'], ['calendario', 'calendar', 'Calendario', 'team'], ['guia', 'book', 'Guía de campo', 'help']];
+  const upcoming = events().filter(e => eventDays(e).at(-1) >= todayISO()).slice(0, 3);
 
   return `
     <div class="hero">
+      <p class="hero-date">${esc(today)}</p>
       <p class="hello">${hello}, ${esc(prefs.activeOperator)}</p>
-      <p style="margin:6px 0 10px">${total ? `Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : 'Todo el material está en orden.'}</p>
+      <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo el material está en orden.`}</p>
     </div>
 
     ${active.map(m => {
@@ -163,7 +178,14 @@ function viewAvisos() {
         </div>
       </div>`; }).join('')}
 
-    ${next ? `<button class="item" onclick="openMission('${next.id}')"><div><small>Próxima salida</small><b>${esc(next.title)}</b><small>${fmtDT(next.date)}${next.location ? ', ' + esc(next.location) : ''}</small></div><span class="tag warn">En preparación</span></button>` : ''}
+    ${next ? `<button class="item next-out" onclick="openMission('${next.id}')"><div><small>Próxima salida</small><b>${esc(next.title)}</b><small>${fmtDT(next.date)}${next.location ? ', ' + esc(next.location) : ''}</small></div><span class="tag warn">En preparación</span></button>` : ''}
+
+    <div class="dash-kpis">
+      ${kpi('box', 'Material operativo', `${pct}%`, `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
+      ${kpi('wrench', 'En revisión', a.review.length + a.broken.length, a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
+      ${kpi('users', 'Personal al día', `${alDia}/${ops.length}`, 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
+      ${kpi('clock', 'Vencimientos', late + soon, late ? `${late} caducados` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); go('vencimientos')")}
+    </div>
 
     ${total ? `<div class="grid g2">
       ${section('Averiados', 'bad', a.broken.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where))))}
@@ -179,11 +201,28 @@ function viewAvisos() {
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`)))}
     </div>` : ''}
 
-    <div class="row">
+    <div class="dash-cols">
+      <div>
+        <h3 class="dash-h">Accesos rápidos</h3>
+        <div class="dash-quick">${quick.map(([t, icon, label, area]) => `<button class="dash-q" data-area="${area}" onclick="go('${t}')"><span class="dash-q-i">${ic(icon)}</span><span>${label}</span></button>`).join('')}</div>
+      </div>
+      <div class="panel dash-next">
+        <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('calendar')} Próximamente</h3><button class="link" onclick="go('calendario')">Calendario</button></div>
+        ${upcoming.length ? `<div class="list">${upcoming.map(e => { const d = new Date(e.start); return `<button class="item" onclick="eventDetail('${e.id}')">
+          <span class="dash-day"><b>${d.getDate()}</b><small>${MONTHS_ES[d.getMonth()].slice(0, 3)}</small></span>
+          <div class="grow"><b>${esc(e.title || e.type)}</b><small>${esc(e.type)}${e.place ? ' · ' + esc(e.place) : ''}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div>`
+          : emptyState('calendar', 'Nada programado', 'Los ejercicios, formaciones y guardias del calendario salen aquí.')}
+      </div>
+    </div>
+
+    <div class="dash-actions">
       <button class="btn btn-g" onclick="shareText(reportText())">${ic('share')} Enviar estado del material</button>
       <button class="btn btn-g" onclick="printManifest()">${ic('printer')} Imprimir estado</button>
     </div>`;
 }
+
+// Estado vacío: icono en un círculo, una frase y, si hace falta, el botón para empezar
+const emptyState = (icon, title, text = '', action = '') => `<div class="empty"><span class="empty-i">${ic(icon)}</span><b>${esc(title)}</b>${text ? `<p>${esc(text)}</p>` : ''}${action}</div>`;
 
 // Una línea con la situación de lo que está en revisión: dónde está, desde cuándo y por qué
 const revLine = (g, where) => g.rev ? [REV_STATES[g.rev.state]?.[0], g.rev.where || where(g), g.rev.since ? 'desde ' + fmtDate(g.rev.since) : '', g.rev.reason].filter(Boolean).join(' · ') : where(g) + (g.nov?.text ? '. ' + g.nov.text : '');

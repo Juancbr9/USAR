@@ -73,9 +73,16 @@ const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', epi
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
 // Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
 const ALMACEN_TABS = ['pasillo', 'armarios', 'otros', 'consumibles', 'fuera'];
-const ALMACEN_JUMP = [['contenedor', 'Contenedor'], ['pasillo', 'Pasillo'], ['armarios', 'Armarios'], ['otros', 'Otros']];
-const almacenJump = () => `<div class="seg-row alm-jump" role="group" aria-label="Ir a" style="margin-bottom:12px">${ALMACEN_JUMP.map(([id, l]) =>
-  `<button onclick="almacenGo('${id}', true)">${l}</button>`).join('')}</div>`;
+const ALMACEN_JUMP = [['contenedor', 'Contenedor', 'box'], ['pasillo', 'Pasillo', 'layers'], ['armarios', 'Armarios', 'case'], ['otros', 'Otros', 'dots']];
+const almacenJump = () => `<div class="alm-jump" role="group" aria-label="Ir a">${ALMACEN_JUMP.map(([id, l, icon], i) =>
+  `<button class="${i ? '' : 'on'}" data-jump="${id}" onclick="almacenGo('${id}', true)">${ic(icon, 'i-sm')}<span>${l}</span></button>`).join('')}</div>`;
+// Al bajar por la página se marca en la barra la parte que se está viendo
+addEventListener('scroll', () => {
+  const bar = document.querySelector('.alm-jump'); if (!bar) return;
+  const line = bar.getBoundingClientRect().bottom + 60;
+  const cur = ALMACEN_JUMP.filter(([id]) => (document.getElementById('alm-' + id)?.getBoundingClientRect().top ?? Infinity) <= line).at(-1)?.[0] || ALMACEN_JUMP[0][0];
+  bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.jump === cur));
+}, { passive: true });
 function almacenGo(id, smooth) { document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
 const areaHeader = () => '';

@@ -227,10 +227,8 @@ function expiries() {
 function viewVencimientos() {
   const win = prefs.vwin ?? 90;
   const all = expiries(), shown = all.filter(x => win === 0 || daysTo(x.date) <= win);
-  const kinds = ['Documento', 'Cualificación', 'EPI', 'Mantenimiento', 'ITV'];
   return `
     <div class="panel"><h2>Vencimientos</h2>
-      
       <div class="row chips">${[[30, '30 días'], [90, '3 meses'], [365, '1 año'], [0, 'Todo']].map(([d, l]) => `<button class="chip ${win === d ? 'on' : ''}" onclick="setPref({ vwin: ${d} })">${l}</button>`).join('')}</div>
     </div>
     <div class="status" style="grid-template-columns:repeat(2, 1fr)">
@@ -239,7 +237,7 @@ function viewVencimientos() {
     </div>
     <div class="panel">${shown.length ? `<div class="list">${shown.map(x => {
       const n = daysTo(x.date), cls = n < 0 ? 'bad' : n <= 30 ? 'warn' : 'neutral';
-      return `<button class="item" onclick="${x.go}"><div><b>${esc(x.what)}</b><small>${x.kind} · ${fmtDate(x.date)}</small></div>
+      return `<button class="item" onclick="${x.go}"><div><b>${esc(x.what).replace(/\b([A-Z]{2}-\d{4,}(?: [A-Z]{2})?)/g, '<span class="nw">$1</span>')}</b><small>${x.kind} · ${fmtDate(x.date)}</small></div>
         <span class="tag ${cls}">${n < 0 ? `Caducado hace ${-n} d` : n === 0 ? 'Hoy' : `En ${n} d`}</span></button>`; }).join('')}</div>`
-      : `<p class="muted">Nada vence en este plazo.${kinds ? '' : ''}</p>`}</div>`;
+      : emptyState('checkc', 'Nada vence en este plazo', 'Documentos, cualificaciones, EPI, mantenimientos e ITV al día.')}</div>`;
 }
