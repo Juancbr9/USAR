@@ -46,7 +46,10 @@ with sync_playwright() as p:
     # Sacar y devolver
     a.evaluate("gearDetail(list('gear').find(g => /Radio Motorola/.test(g.name)).id)"); a.click('#modal button:has-text("Sacar")')
     a.select_option('[name=who]', 'DORTA'); a.fill('[name=note]', 'Simulacro'); a.click('#modalForm button:has-text("Guardar")')
-    a.keyboard.press('Escape'); assert a.locator('.tok-gear.is-out:has-text("Radio Motorola")').count() == 1, 'préstamo no visible'
+    a.keyboard.press('Escape')
+    # Mientras la tiene DORTA no está en el almacén (ni en su hueco), y queda apuntado con quién está
+    assert a.locator('#view .tok-gear:has-text("Radio Motorola")').count() == 0, 'lo sacado no sigue en su hueco'
+    assert a.evaluate("gearWith(operators().find(o => o.name === 'DORTA')).map(g => g.name).join()").count('Radio Motorola') == 1
 
     # Revista: puerta 1 todo OK, un fallo en puerta 2
     tab(a, 'Revista'); a.click('button:has-text("Iniciar revista")'); a.click('#modalForm button:has-text("Guardar")')
@@ -82,8 +85,10 @@ with sync_playwright() as p:
     b.wait_for_function("document.querySelector('#syncBadge').textContent.includes('conectado')", timeout=15000)
     b.wait_for_timeout(300)
     b.wait_for_function("list('gear').some(g => /Radio Motorola/.test(g.name))", timeout=15000)
-    tab(b, 'Contenedor'); b.click('.cv-cell[data-door="5"] .cv-tag')
-    assert b.locator('#modal .item:has-text("Radio Motorola")').count() == 1, 'B no recibió el material de A'; b.keyboard.press('Escape')
+    # La radio sigue con DORTA (sacada en A): B la recibe con su sitio (B5) y con quién está, sin dibujarla en el hueco
+    r = b.evaluate("(g => [g.door, g.out?.who])(list('gear').find(g => /Radio Motorola/.test(g.name)))")
+    assert r == [5, 'DORTA'], f'B no recibió el material de A: {r}'
+    tab(b, 'Contenedor'); assert b.locator('#view .tok-gear:has-text("Radio Motorola")').count() == 0
     tab(b, 'Personal'); assert b.locator('text=Jefe de Rescate en Altura').count() == 1, 'B no recibió los puestos'
     print('B recibe los datos de A: OK')
 
