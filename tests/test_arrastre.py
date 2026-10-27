@@ -66,11 +66,26 @@ with sync_playwright() as p:
     a.click('#modal .give-list .item:has-text("DORTA")'); a.wait_for_timeout(200)
     dorta = a.evaluate("operators().find(o => o.name === 'DORTA').id")
     assert a.evaluate(f"[get('gear', '{g3}').out?.who, get('gear', '{g3}').out?.op]") == ['DORTA', dorta]
+    # Lo que tiene una persona ya no está en el almacén: no sale en su hueco ni en la revista, y su ubicación dice quién lo tiene
+    assert a.locator(f'.cvi .tok[data-gear="{g3}"]').count() == 0, 'no sigue en su hueco'
+    assert a.evaluate(f"revGroups().some(([, , f]) => f(get('gear', '{g3}')))") is False
+    assert a.evaluate(f"whereIs(get('gear', '{g3}'))").startswith('Con DORTA')
     a.evaluate(f"setPref({{ tab: 'personal', person: '{dorta}' }})"); a.wait_for_timeout(300)
     nombre = a.evaluate(f"get('gear', '{g3}').name")
     assert a.locator(f'.panel:has-text("Material que lleva") .item:has-text("{nombre}")').count() == 1
     a.click(f'.panel:has-text("Material que lleva") .item:has-text("{nombre}") button:has-text("Devolver")'); a.wait_for_timeout(300)
     assert a.evaluate(f"get('gear', '{g3}').out") is None and a.locator('.panel:has-text("Material que lleva")').count() == 0
+    a.evaluate("setPref({ tab: 'contenedor', person: null, cside: 'der' })"); a.wait_for_timeout(200)
+    assert a.locator(f'.cvi .cv-cell[data-door="15"] .tok[data-gear="{g3}"]').count() == 1, 'al devolverlo vuelve a su hueco'
+    # Una caja entera a una persona: sale del almacén con lo que lleva y se devuelve de una vez desde su ficha
+    bx = a.evaluate("const b = boxes().find(b => !b.vehicle && boxItems(b.id).length && boxItems(b.id).every(g => !g.out)); b.id")
+    a.evaluate(f"giveTo(JSON.stringify({{ box: '{bx}' }}), '{dorta}')"); a.wait_for_timeout(200)
+    assert a.evaluate(f"[get('boxes', '{bx}').out?.op, boxItems('{bx}').every(g => g.out?.op === '{dorta}')]") == [dorta, True]
+    assert a.locator(f'#view .tok[data-box="{bx}"], #view .place-box[data-box="{bx}"]').count() == 0, 'la caja no sigue en el almacén'
+    a.evaluate(f"setPref({{ tab: 'personal', person: '{dorta}' }})"); a.wait_for_timeout(300)
+    code = a.evaluate(f"get('boxes', '{bx}').code")
+    a.click(f'.panel:has-text("Material que lleva") .item:has-text("{code}") button:has-text("Devolver")'); a.wait_for_timeout(300)
+    assert a.evaluate(f"[get('boxes', '{bx}').out, boxItems('{bx}').some(g => g.out)]") == [None, False]
     # El EPI de reserva también se arrastra: de una balda a otra, y a una persona (sale uno de la reserva)
     a.evaluate("setPref({ tab: 'contenedor', person: null })"); a.wait_for_timeout(200)
     eid = 'EPI-RES-AUDITIVOS'; q0 = a.evaluate(f"epiQty(get('epis', '{eid}'))")

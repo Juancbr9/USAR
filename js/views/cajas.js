@@ -13,6 +13,10 @@ function setBoxColor(id, color) { const b = get('boxes', id); put('boxes', { ...
 const SIDES = { izq: ['Lateral izquierdo', 'B1–B10', 0], der: ['Lateral derecho', 'B11–B20', 10] };
 
 /* ---------- Datos de cajas ---------- */
+// Lo que tiene una persona del equipo (dado o sacado por ella; no las entregas a gente de fuera ni lo de una salida) no
+// está en el almacén: no sale en su sitio hasta que se devuelve, y entonces vuelve a él
+const conPersona = x => !!(x?.out && !x.out.loan && !x.out.mission);
+const enAlmacen = x => !conPersona(x);
 const boxes = () => list('boxes').sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
 const boxItems = id => list('gear').filter(g => g.box === id).sort(byName);
 const boxOf = g => g.box ? get('boxes', g.box) : null;
@@ -223,7 +227,7 @@ function cellContent(items, bs, kase) {
 function viewContVisual() {
   const side = SIDES[prefs.cside] ? prefs.cside : 'izq', [sideTitle, range, off] = SIDES[side];
   const gear = list('gear'), bs = list('boxes');
-  const at = d => [gear.filter(g => !g.vehicle && (g.door || 0) === d), bs.filter(b => !b.vehicle && (b.door || 0) === d)];
+  const at = d => [gear.filter(g => !g.vehicle && enAlmacen(g) && (g.door || 0) === d), bs.filter(b => !b.vehicle && enAlmacen(b) && (b.door || 0) === d)];
   const first = off + 1;
   const [ug, ub] = at(0);
   return `
@@ -279,7 +283,7 @@ function cvClick(e, door, veh = '') {
 }
 
 function cellModal(door, veh = '') {
-  const inCell = x => veh ? x.vehicle === veh : !x.vehicle && (x.door || 0) === door;
+  const inCell = x => enAlmacen(x) && (veh ? x.vehicle === veh : !x.vehicle && (x.door || 0) === door);
   const bs = list('boxes').filter(inCell).sort((a, b) => (a.pos || 0) - (b.pos || 0));
   const loose = list('gear').filter(g => inCell(g) && (!g.box || !get('boxes', g.box))).sort(byName);
   const cons = veh ? [] : consIn(d => d === door);
@@ -408,15 +412,25 @@ function giveTo(what, op) {
   if (!items.length) return toast('La caja está vacía', 'bad');
   const busy = items.filter(g => g.out && g.out.op !== op);
   if (busy.length) return toast(`${busy[0].name} ya está fuera (${busy[0].out.who})`, 'bad');
+  if (box) stamp('boxes', { ...get('boxes', box), out });
   items.forEach((g, i) => (i < items.length - 1 ? stamp : put)('gear', { ...g, out }, box ? `Caja ${get('boxes', box).code} con ${o.name}` : `"${g.name}" con ${o.name}`));
 }
+// Devolver una caja que tenía una persona: vuelve a su sitio con lo que lleva
+function returnBox(bid) {
+  const b = get('boxes', bid); if (!b) return;
+  boxItems(bid).filter(g => g.out && g.out.op === b.out?.op).forEach(g => stamp('gear', { ...g, out: null }));
+  put('boxes', { ...b, out: null }, `Devuelta la caja ${b.code} a ${placeShort(b)}`);
+}
 // Material que lleva una persona (lo que se le ha dado o ha sacado él; no lo de las entregas ni lo de una salida)
-const gearWith = o => list('gear').filter(g => g.out && !g.out.loan && !g.out.mission && (g.out.op ? g.out.op === o.id : g.out.who === o.name)).sort(byName);
+const isWith = (x, o) => conPersona(x) && (x.out.op ? x.out.op === o.id : x.out.who === o.name);
+const boxesWith = o => boxes().filter(b => isWith(b, o));
+const gearWith = o => list('gear').filter(g => isWith(g, o) && !isWith(get('boxes', g.box), o)).sort(byName);
 
 /* ---------- Dónde está cada cosa (lo usa la lupa de arriba) ---------- */
 const fold = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 // Frase con la ubicación completa: lateral y hueco, sin ubicar o vehículo
 function whereIs(x) {
+  if (conPersona(x)) return `Con ${x.out.who} (vuelve a ${placeShort(x)})`;
   if (x.vehicle) return `En el vehículo ${vehName(x.vehicle)}`;
   if (!x.door) return 'Contenedor · sin ubicar';
   if (x.door <= 20) return `Contenedor · ${x.door <= 10 ? 'lateral izquierdo' : 'lateral derecho'} · hueco ${doorName(x.door)}`;
@@ -454,7 +468,7 @@ function findGo(kind, id) {
 
 /* ---------- Armarios: tres armarios de dos puertas sobre la estantería, abiertos, con sus baldas ---------- */
 // Lo que hay en un sitio (sin vehículo): [equipos, cajas]
-const enSitio = d => [list('gear').filter(g => !g.vehicle && g.door === d), list('boxes').filter(b => !b.vehicle && b.door === d)];
+const enSitio = d => [list('gear').filter(g => !g.vehicle && enAlmacen(g) && g.door === d), list('boxes').filter(b => !b.vehicle && enAlmacen(b) && b.door === d)];
 // Un hueco que admite soltar material: se toca para verlo y se mantiene pulsado lo de dentro para arrastrarlo
 // EPI de reserva guardado en un sitio (cascos, protectores, monos…): un icono por línea, con su cantidad
 const epiEn = d => list('epis').filter(e => e.holder === RESERVA && +e.door === d);
@@ -504,8 +518,8 @@ function viewPasillo() {
 // Pasillo 3 y Otros: lista de lo que hay, con sus cajas
 function viewPlace(door, title) {
   const p = placeRec(door), at = JSON.stringify({ door }).replace(/"/g, '&quot;');
-  const bs = list('boxes').filter(b => !b.vehicle && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
-  const loose = list('gear').filter(g => !g.vehicle && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
+  const bs = list('boxes').filter(b => !b.vehicle && enAlmacen(b) && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
+  const loose = list('gear').filter(g => !g.vehicle && enAlmacen(g) && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
   const cons = consIn(d => d === door);
   const row = g => `<button class="item drag-it" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
   return `
