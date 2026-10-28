@@ -98,7 +98,8 @@ with sync_playwright() as p:
     to_rev(b, 'Ingletadora')
     tab(a, 'Contenedor')
     t0 = time.time()
-    a.wait_for_selector('.cv-cell[data-door="10"] .tok-gear.has-bad:has-text("Ingletadora")', timeout=20000)
+    # (al pasar a revisión se deja en el escalón)
+    a.wait_for_selector('#alm-escalon [data-gear]:has-text("Ingletadora"):has-text("espera")', timeout=20000)
     print(f'A ve el cambio de B en {time.time()-t0:.1f} s')
 
     # A sin conexión: el cambio se queda pendiente y se envía al volver

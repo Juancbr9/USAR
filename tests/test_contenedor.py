@@ -197,13 +197,23 @@ with sync_playwright() as p:
     b.screenshot(path=f'{OUT}/pasillo.png', full_page=True)
     b.evaluate("moveGear('B-901', 235)"); b.evaluate("go('armarios')"); b.wait_for_timeout(150)
     b.screenshot(path=f'{OUT}/armarios.png', full_page=True)
-    # Pasillo 3 y Otros (con el sitio exacto)
-    b.evaluate("go('otros')"); b.wait_for_timeout(150); b.click('#alm-otros button:has-text("Material")'); b.click('#modal .add-mat [data-add=plus]')
-    b.fill('[name=name]', 'Grupo electrógeno'); assert b.input_value('[name=place]') == '301'; b.fill('[name=where]', 'Nave del parque'); b.click('#modalForm button:has-text("Guardar")'); b.wait_for_timeout(200)
-    assert b.locator('#view .item:has-text("Grupo electrógeno"):has-text("Nave del parque")').count() == 1
+    # Escalón (material en revisión): «+ Material» desde ahí lo deja en el escalón; ya no hay «Otros» ni «pasillo sin hueco»
+    b.evaluate("go('escalon')"); b.wait_for_timeout(150); b.click('#alm-escalon button:has-text("Material")'); b.click('#modal .add-mat [data-add=plus]')
+    b.fill('[name=name]', 'Grupo electrógeno'); assert b.input_value('[name=place]') == '302' and b.locator('[name=where]').count() == 0
+    assert b.locator('#modalForm [name=place] option[value="101"], #modalForm [name=place] option[value="301"]').count() == 0
+    b.click('#modalForm button:has-text("Guardar")'); b.wait_for_timeout(200)
+    assert b.locator('#alm-escalon .item:has-text("Grupo electrógeno")').count() == 1
     gid = b.evaluate("list('gear').find(g => g.name === 'Grupo electrógeno').id")
-    b.evaluate(f"moveGear('{gid}', {101})"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
-    assert b.locator('#view .item:has-text("Grupo electrógeno")').count() == 1
+    assert b.evaluate(f"whereIs(get('gear', '{gid}'))") == 'Escalón'
+    b.evaluate(f"moveGear('{gid}', {121})"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
+    assert b.locator('#alm-pasillo .pas-cell[data-door="121"] .tok-gear').count() == 1
+    # Lo que estaba en «Otros» o en el pasillo sin hueco pasa a «sin ubicar» (con el sitio que tenía en las notas)
+    b.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); const g = d.gear['B-901']; g.door = 301; g.where = 'Nave del parque'; g.vehicle = '';
+      const c = Object.values(d.consumables)[0]; c.door = 101; sessionStorage.setItem('cid', c.id); delete d.meta.almbase; localStorage.setItem(KEY.db, JSON.stringify(d)); })()""")
+    b.reload(); b.wait_for_selector('#view > *')
+    assert b.evaluate("[get('gear', 'B-901').door, get('gear', 'B-901').where, /Nave del parque/.test(get('gear', 'B-901').notes)]") == [0, '', True]
+    assert b.evaluate("get('consumables', sessionStorage.getItem('cid')).door") == 0 and b.evaluate("get('meta', 'almbase').value") == 1
+    assert b.evaluate("list('gear').filter(g => g.status !== 'OPERATIVO' && !g.vehicle && !g.out).every(g => g.door === ESCALON && !g.box)")
     # Fuera del contenedor no sale con «el contenedor completo»
     assert gid not in b.evaluate("missionGearIds({ container: true })")
     # Borrar una caja deja su material suelto en el mismo sitio
