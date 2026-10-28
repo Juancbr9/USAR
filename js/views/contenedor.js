@@ -30,33 +30,39 @@ function gearDetail(id) {
   const g = get('gear', id);
   if (!g) return toast('Ese material ya no existe', 'bad');
   const rows = [
-    ['Ubicación', whereIs(g)],
     ['Cantidad', g.qty || '1'],
-    ...(boxOf(g) ? [['Caja', `${boxCode(g)} · ${boxOf(g).name || ''}`]] : []),
     ...(g.weight ? [['Peso', kg(g.weight * (+g.qty > 1 ? +g.qty : 1))]] : []),
     ...(g.serial ? [['Nº serie', g.serial]] : []),
-    ['Estado', g.status === 'OPERATIVO' ? 'Operativo' : REV_STATES[g.rev?.state]?.[0] || g.status],
     ...(g.service ? [['Mantenimiento', `${fmtDate(g.service)} (${due(g.service).text})`]] : []),
     ...(g.lastCheck ? [['Última revista', fmtDate(g.lastCheck)]] : []),
     ...(g.notes ? [['Dotación', g.notes]] : [])
   ];
   if (g.out) rows.push(['Fuera', `${g.out.who} · desde ${fmtWhen(g.out.since)}${g.out.note ? ' · ' + g.out.note : ''}`]);
+  // Cabecera: el dibujo o la foto en grande, el estado y dónde está; debajo, las cuatro acciones de siempre y el resto
+  const [stTxt, stCls] = g.out && !g.out.mission ? [`Con ${g.out.who}`, 'info'] : g.status === 'OPERATIVO' ? ['Operativo', 'ok']
+    : [REV_STATES[g.rev?.state]?.[0] || g.status, g.status === 'AVERIADO' ? 'bad' : 'warn'];
   openModal(g.name, `
-    ${gearVisual(g, 'art-lg')}
+    <div class="fx-hero">
+      <div class="fx-art">${g.photo ? `<img src="${esc(g.photo)}" alt="Foto de ${esc(g.name)}">` : toolArt(g.name)}</div>
+      <div class="fx-info"><span class="tag ${stCls}">${esc(stTxt)}</span><b>${ic('pin', 'i-sm')} ${esc(whereIs(g))}</b>
+        ${boxOf(g) ? `<small>En la caja ${esc(boxCode(g))} · ${esc(boxOf(g).name || '')}</small>` : ''}</div>
+    </div>
     ${g.nov?.text ? novBox(g) : ''}
     ${g.status !== 'OPERATIVO' ? revBox(g) : ''}
+    <div class="fx-acts">
+      <button class="fx-act" onclick="moveForm('gear', '${id}')">${ic('move')}Mover</button>
+      ${g.out?.loan ? `<button class="fx-act" onclick="loanDetail('${g.out.loan}')">${ic('out')}Ver entrega</button>` : g.out ? `<button class="fx-act" onclick="checkin('${id}')">${ic('in')}Devolver</button>`
+        : `<button class="fx-act" onclick="checkout('${id}')">${ic('out')}Sacar</button>`}
+      ${g.status === 'OPERATIVO' ? `<button class="fx-act" onclick="revForm('${id}')">${ic('refresh')}A revisión</button>`
+        : `<button class="fx-act" onclick="revEnd('${id}')">${ic('check')}Fin de revisión</button>`}
+      <button class="fx-act" onclick="novForm('gear', '${id}')">${ic('pencil')}${g.nov?.text ? 'Cambiar nota' : 'Nota / novedad'}</button>
+    </div>
     <dl class="dl">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-    <div class="grid g2" style="grid-template-columns:1fr 1fr">
-      <button class="btn btn-g" onclick="novForm('gear', '${id}')">${ic('pencil')} ${g.nov?.text ? 'Cambiar nota' : 'Nota / novedad'}</button>
-      ${g.status === 'OPERATIVO' ? `<button class="btn btn-g" onclick="revForm('${id}')">${ic('refresh')} A revisión</button>`
-        : `<button class="btn btn-g" onclick="revEnd('${id}')">${ic('check')} Fin de revisión</button>`}
-      ${g.out?.loan ? `<button class="btn btn-g" onclick="loanDetail('${g.out.loan}')">${ic('out')} Ver entrega</button>` : g.out ? `<button class="btn btn-g" onclick="checkin('${id}')">${ic('in')} Devolver</button>`
-              : `<button class="btn btn-g" onclick="checkout('${id}')">${ic('out')} Sacar</button>`}
-      <button class="btn btn-g" onclick="moveForm('gear', '${id}')">${ic('move')} Mover</button>
-      ${boxOf(g) ? `<button class="btn btn-g" onclick="boxDetail('${g.box}')">${ic('case')} Caja ${esc(boxCode(g))}</button>` : `<button class="btn btn-g" onclick="gearToBox('${id}')">${ic('case')} Meter en caja</button>`}
-      ${puedeFlota() ? `<button class="btn btn-g" onclick="gearForm('${id}')">${ic('pencil')} Editar</button>` : ''}
-      <button class="btn btn-g" onclick="qrModal('${id}')">${ic('qr')} Código QR</button>
-      ${puedeFlota() ? `<button class="btn btn-bad" onclick="removeItem('gear', '${id}')">${ic('trash')} Eliminar</button>` : ''}
+    <div class="fx-more">
+      ${boxOf(g) ? `<button class="btn btn-g btn-sm" onclick="boxDetail('${g.box}')">${ic('case', 'i-sm')} Caja ${esc(boxCode(g))}</button>` : `<button class="btn btn-g btn-sm" onclick="gearToBox('${id}')">${ic('case', 'i-sm')} Meter en caja</button>`}
+      <button class="btn btn-g btn-sm" onclick="qrModal('${id}')">${ic('qr', 'i-sm')} Código QR</button>
+      ${puedeFlota() ? `<button class="btn btn-g btn-sm" onclick="gearForm('${id}')">${ic('pencil', 'i-sm')} Editar</button>
+        <button class="btn btn-bad btn-sm" onclick="removeItem('gear', '${id}')">${ic('trash', 'i-sm')} Eliminar</button>` : ''}
     </div>`);
 }
 
