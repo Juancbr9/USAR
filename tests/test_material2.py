@@ -89,6 +89,9 @@ with sync_playwright() as p:
     assert a.locator('.fuera-grp:has-text("CABRERA")').count() == 1 and a.inner_text('.fuera-kpis span >> nth=0').startswith('1')
     a.click(f'.fuera-grp .item:has([onclick="gearDetail(\'{gf}\')"]) button:has-text("Devolver")'); a.wait_for_timeout(150)
     assert a.evaluate(f"get('gear', '{gf}').out") is None
+    # Historial del equipo: se apunta quién lo llevó y cuándo volvió
+    a.evaluate(f"itemHistory('gear', '{gf}')"); a.wait_for_timeout(100)
+    assert a.locator('#modal .timeline li').count() >= 2 and 'CABRERA' in a.inner_text('#modal .timeline'); a.keyboard.press('Escape')
     a.evaluate("go('contenedor')"); a.wait_for_timeout(100)
     a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Almacén")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
 

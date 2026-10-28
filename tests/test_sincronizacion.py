@@ -63,7 +63,7 @@ with sync_playwright() as p:
 
     # EPI: mono de GRANADOS talla L para revisar
     # (todo el EPI de cada persona está en su ficha de Personal)
-    tab(a, 'Personal'); a.click('.item:has-text("GRANADOS")'); a.screenshot(path=f'{OUT}/epi.png', full_page=True)
+    tab(a, 'Personal'); a.click('.item:has-text("GRANADOS")'); a.click('.ptabs .ctab:has-text("EPI")'); a.wait_for_timeout(150); a.screenshot(path=f'{OUT}/epi.png', full_page=True)
     a.locator('.panel:has-text("EPI asignado") .item:has-text("Mono")').click()
     a.fill('[name=size]', 'L'); a.select_option('[name=status]', 'REVISAR'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     assert a.locator('.panel:has-text("EPI asignado") .item:has-text("Talla L") .tag.warn').count() == 1, 'EPI no actualizado'

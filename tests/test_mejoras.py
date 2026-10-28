@@ -30,7 +30,7 @@ with sync_playwright() as p:
 
     # EPI de cada persona: casco USAR, protectores auditivos y mono
     assert a.evaluate("list('epis').filter(e => e.holder === 'OP-01').length") == 3
-    more('Personal'); a.click('.item:has-text("GRANADOS")'); assert a.locator('.panel:has-text("EPI asignado") .item:has-text("Casco USAR · Blanco")').count() == 1
+    more('Personal'); a.click('.item:has-text("GRANADOS")'); a.click('.ptabs .ctab:has-text("EPI")'); assert a.locator('.panel:has-text("EPI asignado") .item:has-text("Casco USAR · Blanco")').count() == 1
 
     # Alistamiento: pasaporte que caduca en 3 meses → aviso; datos médicos solo locales
     more('Alistamiento')

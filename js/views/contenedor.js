@@ -144,9 +144,29 @@ function gearDetail(id) {
     <div class="fx-more">
       ${boxOf(g) ? `<button class="btn btn-g btn-sm" onclick="boxDetail('${g.box}')">${ic('case', 'i-sm')} Caja ${esc(boxCode(g))}</button>` : `<button class="btn btn-g btn-sm" onclick="gearToBox('${id}')">${ic('case', 'i-sm')} Meter en caja</button>`}
       <button class="btn btn-g btn-sm" onclick="qrModal('${id}')">${ic('qr', 'i-sm')} Código QR</button>
+      <button class="btn btn-g btn-sm" onclick="itemHistory('gear', '${id}')">${ic('history', 'i-sm')} Historial</button>
       ${puedeFlota() ? `<button class="btn btn-g btn-sm" onclick="gearForm('${id}')">${ic('pencil', 'i-sm')} Editar</button>
         <button class="btn btn-bad btn-sm" onclick="removeItem('gear', '${id}')">${ic('trash', 'i-sm')} Eliminar</button>` : ''}
     </div>`);
+}
+
+/* ---------- Historial de un equipo o una caja: dónde ha estado, quién lo llevó, revisiones y novedades ---------- */
+function itemHistory(kind, id) {
+  const x = get(kind, id); if (!x) return;
+  const name = kind === 'boxes' ? 'Caja ' + x.code : x.name, ev = [];
+  list('logs').filter(l => l.ref === kind + ':' + id).forEach(l => ev.push({ ts: l.ts, icon: 'history', text: l.action, who: l.operator }));
+  if (kind === 'gear') {
+    (x.revHistory || []).forEach(h => h.since && ev.push({ ts: Date.parse(h.since), icon: 'wrench', text: `Entró en revisión${h.reason ? ': ' + h.reason : ''}${h.where ? ' · ' + h.where : ''}`, ref: true }));
+    loans().filter(l => (l.gear || []).includes(id)).forEach(l => {
+      ev.push({ ts: Date.parse(l.date), icon: 'out', text: `Prestado con firma a ${loanWho(l)}${l.purpose ? ' · ' + l.purpose : ''}` });
+      if (l.returned) ev.push({ ts: +l.returned || Date.parse(l.returned) || Date.parse(l.date), icon: 'in', text: `Devuelto por ${loanWho(l)}` });
+    });
+    list('missions').filter(m => m.status !== 'prep' && missionGearIds(m).includes(id)).forEach(m => ev.push({ ts: m.startedAt || Date.parse(m.date), icon: 'radio', text: `Salió con «${m.title}»` }));
+    if (x.out && !x.out.mission && !x.out.loan) ev.push({ ts: x.out.since, icon: 'users', text: `Lo lleva ${x.out.who}` });
+  }
+  const seen = new Set(), rows = ev.filter(e => e.ts && !isNaN(e.ts)).sort((a, b) => b.ts - a.ts).filter(e => { const k = e.ts + e.text; if (seen.has(k)) return false; seen.add(k); return true; });
+  openModal(`Historial · ${name}`, rows.length ? `<ol class="timeline">${rows.map(e => `<li><span class="tl-dot">${ic(e.icon, 'i-sm')}</span><div><b>${esc(e.text)}</b>
+    <small>${fmtWhen(e.ts)}${e.who ? ' · ' + esc(e.who) : ''}</small></div></li>`).join('')}</ol>` : emptyState('history', 'Sin historial todavía', 'A partir de ahora se apunta cada cambio: dónde está, quién lo lleva, revisiones y notas.'));
 }
 
 /* ---------- Notas y novedades ---------- */

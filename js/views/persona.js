@@ -12,7 +12,7 @@ function docState(d) {
   return { cls: 'ok', text: `Vigente hasta ${fmtDate(d.expires)}` };
 }
 const maskNo = s => s && s.length > 4 ? '•••' + s.slice(-4) : (s || '');
-const openPerson = id => { setPref({ tab: 'personal', person: id }); scrollTo(0, 0); };
+const openPerson = id => { setPref({ tab: 'personal', person: id, ptab: 'datos' }); scrollTo(0, 0); };
 const personPhoto = (o, cls = '') => o.photo ? `<img class="avatar-img ${cls}" data-img="op:${o.id}" alt="">` : avatar(o.name, cls);
 
 function viewPersonal() {
@@ -52,13 +52,19 @@ function viewPerson(o) {
   const ms = list('missions').filter(m => missionPeople(m).includes(o.id)).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const hours = ms.reduce((s, m) => s + (presence(m).find(p => p.op === o.id) ? presenceTotal(presence(m).find(p => p.op === o.id)) : 0), 0);
   const f = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
+  // Pestañas: cada cosa en su sitio, sin una página interminable (se recuerda la última)
+  const nMat = gearWith(o).length + boxesWith(o).length;
+  const tabs = [['datos', 'shield', 'Datos'], ['docs', 'file', 'Documentos', docs.length], ['epi', 'hardhat', 'EPI', epiBad.length], ['mat', 'box', 'Material', nMat], ['act', 'history', 'Actividades', ms.length]];
+  const tab = tabs.some(t => t[0] === prefs.ptab) ? prefs.ptab : 'datos';
   return `
     <button class="link" onclick="setPref({ person: null })">${ic('back', 'i-sm')} Todo el personal</button>
-    <div class="panel">
+    <div class="panel carne">
+      <div class="carne-top"><span class="carne-unit">USAR 242 · ${esc(o.cell || 'Sin célula')}</span><span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : issues.length ? 'warn' : 'ok'}">${issues.length ? issues.length + (issues.length === 1 ? ' aviso' : ' avisos') : 'Al día'}</span></div>
       <div class="person-head">
         ${o.photo ? `<img class="person-photo" data-img="op:${o.id}" alt="">` : `<span class="avatar xl">${esc(initials(o.name))}</span>`}
-        <div class="grow"><h2>${esc(o.name)}${o.active === false ? ' <span class="tag neutral">De baja</span>' : ''}</h2><p class="muted">${esc(r.fullName || '')}</p><p class="muted">${esc([o.cell, o.role].filter(Boolean).join(' · '))}</p>
+        <div class="grow"><h2>${esc(o.name)}${o.active === false ? ' <span class="tag neutral">De baja</span>' : ''}</h2><p class="muted">${esc(r.fullName || '')}</p><p class="carne-role">${esc(o.role || 'Sin puesto')}</p>
           ${(o.funcs || []).length ? `<div class="row tags" style="margin-top:6px">${o.funcs.map(f => `<span class="tag info">${esc(f)}</span>`).join('')}</div>` : ''}</div>
+        ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}
       </div>
       ${issues.length ? `<div class="stack" style="margin-top:12px">${issues.map(([cls, t]) => `<span class="tag ${cls}">${esc(t)}</span>`).join(' ')}</div>` : ''}
       <div class="row" style="margin-top:12px">
@@ -71,8 +77,23 @@ function viewPerson(o) {
         <div class="qr" style="margin-top:10px">${QR.svg(personCode(o.id))}</div>
         <button class="btn btn-g full" onclick="printPersonCards(['${o.id}'])">${ic('printer')} Imprimir su tarjeta</button></details>
     </div>
-
-    <div class="panel">
+    <nav class="ctabs ptabs" aria-label="Apartados de la ficha">${tabs.map(([id, icon, l, n]) => `<button class="ctab ${tab === id ? 'on' : ''}" ${tab === id ? 'aria-current="page"' : ''} onclick="setPref({ ptab: '${id}' })">${ic(icon, 'i-sm')}${l}${n ? `<span class="n${id === 'epi' ? '' : ' neutral'}">${n}</span>` : ''}</button>`).join('')}</nav>
+    ${tab === 'datos' ? `<div class="grid g2">
+      <div class="panel">
+        <h3 class="sec-title">${ic('shield')} Datos personales</h3>
+        <dl class="dl">${f('Teléfono', esc(o.phone))}${f('Correo', esc(o.email))}${f('Nacimiento', r.birth ? fmtDate(r.birth) : '')}
+          ${f('Emergencias', esc([r.emergencyName, r.emergencyPhone].filter(Boolean).join(' · ')))}
+          ${f('Grupo sanguíneo', esc(md.blood))}${f('Alergias', esc(md.allergies))}</dl>
+        <p class="muted">Los datos de salud los ve todo el personal del equipo; no salen por WhatsApp.</p>
+      </div>
+      <div class="panel">
+        <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('book')} Cualificaciones</h3>
+          <button class="btn btn-g btn-sm" onclick="qualsEditor('${o.id}')">${ic('pencil')} Editar</button></div>
+        ${(r.quals || []).length ? `<div class="list">${r.quals.map(q => `<div class="item"><span>${esc(q.name)}</span>${q.expires ? dueTag(q.expires) : '<span class="tag neutral">Sin caducidad</span>'}</div>`).join('')}</div>` : '<p class="muted">Ninguna anotada.</p>'}
+        ${(s => `<p class="muted" style="margin-top:8px">${s.hours.toLocaleString('es-ES', { maximumFractionDigits: 1 })} h de formación este año en el calendario${r.hours ? ` (+${esc(r.hours)} h anotadas)` : ''} · asistencia ${s.called ? Math.round(s.attended / s.called * 100) + ' %' : '—'}</p>`)(trainingStats(o.id))}
+      </div>
+    </div>` : ''}
+    ${tab === 'docs' ? `    <div class="panel">
       <div class="between sec-head"><div><h3 class="sec-title" style="margin:0">${ic('file')} Documentación (${docs.length})</h3>
         <p class="muted">Haz foto del documento por las dos caras. Las fotos y la caducidad se comparten con el equipo.</p></div>
         <button class="btn btn-a btn-sm" onclick="docForm('${o.id}')">${ic('camera')} Documento</button></div>
@@ -81,48 +102,28 @@ function viewPerson(o) {
           ${(d.imgs || []).length ? `<img class="doc-thumb" data-img="${d.imgs[0]}" alt="">` : `<span class="doc-thumb empty">${ic('file', 'i-lg')}</span>`}
           <div class="grow"><b>${esc(d.type)}</b><small>${d.number ? 'Nº ' + esc(maskNo(d.number)) : 'Sin número'}</small><span class="tag ${st.cls}">${st.text}</span></div>
         </button>`; }).join('')}</div>` : '<p class="muted">Sin documentos.</p>'}
-    </div>
-
-    <div class="grid g2">
-      <div class="panel">
-        <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('book')} Cualificaciones</h3>
-          <button class="btn btn-g btn-sm" onclick="qualsEditor('${o.id}')">${ic('pencil')} Editar</button></div>
-        ${(r.quals || []).length ? `<div class="list">${r.quals.map(q => `<div class="item"><span>${esc(q.name)}</span>${q.expires ? dueTag(q.expires) : '<span class="tag neutral">Sin caducidad</span>'}</div>`).join('')}</div>` : '<p class="muted">Ninguna anotada.</p>'}
-        ${(s => `<p class="muted" style="margin-top:8px">${s.hours.toLocaleString('es-ES', { maximumFractionDigits: 1 })} h de formación este año en el calendario${r.hours ? ` (+${esc(r.hours)} h anotadas)` : ''} · asistencia ${s.called ? Math.round(s.attended / s.called * 100) + ' %' : '—'}</p>`)(trainingStats(o.id))}
-      </div>
-      <div class="panel">
+    </div>` : ''}
+    ${tab === 'epi' ? `    <div class="panel">
         <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('hardhat')} EPI asignado</h3>
           <span class="tag ${epiBad.length ? 'warn' : 'ok'}">${epiBad.length ? epiBad.length + ' por revisar' : 'Todo OK'}</span></div>
         <div class="list">${Object.keys(EPI_TYPES).map(t => { const e = epis.find(x => x.type === t), st = epiState(e); return `
           <button class="item" onclick="${e ? `epiForm('${e.id}')` : `epiForm(null, '${t}', '${o.id}')`}"><div class="who-row"><span class="art art-sm">${toolArt(EPI_TYPES[t])}</span><div><b>${esc(e ? epiLabel(e) : EPI_TYPES[t])}</b>
             <small>${esc(e ? [e.size && 'Talla ' + e.size, e.expires && 'Caduca ' + fmtDate(e.expires)].filter(Boolean).join(' · ') || 'Sin talla' : 'Toca para asignar')}</small></div></div><span class="tag ${st.cls}">${st.text}</span></button>`; }).join('')}
           ${epis.filter(e => !EPI_TYPES[e.type]).map(e => `<button class="item" onclick="epiForm('${e.id}')"><div><b>${esc(epiLabel(e))}</b><small>${esc(e.size ? 'Talla ' + e.size : '')}</small></div><span class="tag ${epiState(e).cls}">${epiState(e).text}</span></button>`).join('')}</div>
-      </div>
-    </div>
-
-    ${((gs, bs) => gs.length || bs.length ? `<div class="panel">
+      </div>` : ''}
+    ${tab === 'mat' ? `    ${((gs, bs) => gs.length || bs.length ? `<div class="panel">
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material que lleva</h3><span class="tag info">${gs.length + bs.length}</span></div>
       <p class="muted" style="margin:-4px 0 10px">No está en el almacén: al devolverlo vuelve a su sitio.</p>
       <div class="list">${bs.map(b => `<div class="item"><button class="who-row grow link-row" onclick="boxDetail('${b.id}')"><span class="box-chip" style="--c:${colorOf(b)[1]}; --ink:${colorOf(b)[2]}">${esc(b.code)}</span><div><b>${esc(b.name || 'Caja')}</b>
         <small>${esc([boxItems(b.id).length + ' equipos', 'Desde ' + fmtWhen(b.out.since)].join(' · '))}</small></div></button>
         <button class="btn btn-g btn-sm" onclick="returnBox('${b.id}')">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}${gs.map(g => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
         <small>${esc([boxCode(g) && 'Caja ' + boxCode(g), 'Desde ' + fmtWhen(g.out.since), g.out.note].filter(Boolean).join(' · '))}</small></div></button>
-        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : '')(gearWith(o), boxesWith(o))}
-
-    <div class="grid g2">
-      <div class="panel">
+        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : `<div class="panel">${emptyState('box', 'No lleva material', 'Lo que se le dé desde Material (soltándolo en «Persona») sale aquí.')}</div>`)(gearWith(o), boxesWith(o))}` : ''}
+    ${tab === 'act' ? `      <div class="panel">
         <h3 class="sec-title">${ic('history')} Historial</h3>
         <p>${ms.length} operaciones · ${fmtDur(hours)} en zona</p>
         ${ms.length ? `<div class="list" style="margin-top:8px">${ms.slice(0, 6).map(m => `<button class="item" onclick="openMission('${m.id}')"><div><b>${esc(m.title)}</b><small>${mtypeName(m)} · ${fmtDT(m.date)} · ${esc(missionRole(m, o.id))}</small></div>${ic('chev', 'i-sm')}</button>`).join('')}</div>` : ''}
-      </div>
-      <div class="panel">
-        <h3 class="sec-title">${ic('shield')} Datos personales</h3>
-        <dl class="dl">${f('Teléfono', esc(o.phone))}${f('Correo', esc(o.email))}${f('Nacimiento', r.birth ? fmtDate(r.birth) : '')}
-          ${f('Emergencias', esc([r.emergencyName, r.emergencyPhone].filter(Boolean).join(' · ')))}
-          ${f('Grupo sanguíneo', esc(md.blood))}${f('Alergias', esc(md.allergies))}</dl>
-        <p class="muted">Los datos de salud los ve todo el personal del equipo; no salen por WhatsApp.</p>
-      </div>
-    </div>`;
+      </div>` : ''}`;
 }
 
 // Datos de la persona en un solo formulario: nombre, célula, puesto, contacto y foto (y dar de baja o eliminar)

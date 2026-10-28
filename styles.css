@@ -1568,3 +1568,20 @@ button.arm-top { display: flex; align-items: center; justify-content: center; ga
 .epi-cell.ok { background: var(--ok-soft); border-color: transparent; } .epi-cell.ok b { color: var(--ok); }
 .epi-cell.warn { background: var(--warn-soft); border-color: transparent; } .epi-cell.warn b, .epi-cell.warn small { color: var(--warn); }
 .epi-cell.bad { background: var(--bad-soft); border-color: transparent; } .epi-cell.bad b, .epi-cell.bad small { color: var(--bad); }
+/* Ficha de persona: cabecera como un carné y pestañas */
+.carne { position: relative; overflow: hidden; padding-top: 0; }
+.carne::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: repeating-linear-gradient(-45deg, var(--yellow) 0 10px, #111a14 10px 20px); }
+.carne-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 16px 0 12px; }
+.carne-unit { font: 800 12px var(--cond); text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+.carne .person-photo, .carne .avatar.xl { width: 96px; height: 96px; border-radius: 18px; font-size: 32px; box-shadow: var(--sh-2); }
+.carne h2 { font-size: 26px; }
+.carne-role { font-weight: 700; color: var(--ink); margin-top: 2px; }
+.carne-blood { align-self: flex-start; flex: none; display: grid; place-items: center; min-width: 52px; height: 52px; padding: 0 6px; border-radius: 14px; background: var(--bad); color: #fff; font: 800 20px var(--cond); box-shadow: 0 6px 14px rgba(176,0,0,.25); }
+.ptabs { margin-top: 2px; }
+.ctab .n.neutral { background: var(--sunk); color: var(--ink); }
+/* Historial de un equipo: línea de tiempo */
+.timeline { list-style: none; margin: 0; padding: 0 0 0 4px; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 19px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+.timeline li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; position: relative; }
+.tl-dot { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--area); color: var(--area); z-index: 1; }
+.timeline b { display: block; font-weight: 600; line-height: 1.3; } .timeline small { color: var(--muted); }
