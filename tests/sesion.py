@@ -36,7 +36,7 @@ def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=Fa
 Browser.new_context = new_context
 
 # Ir a una sección por el menú de tres rayas, desplegando sus grupos (Actividades, Logística › Material…)
-LABELS = {'Operaciones': 'Activación', 'Intervenciones': 'Activación', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Contenedor y almacén', 'Material': 'Contenedor y almacén',
+LABELS = {'Operaciones': 'Activación', 'Intervenciones': 'Activación', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Almacén', 'Material': 'Almacén', 'Contenedor': 'Almacén',
           'Alistamiento': 'Alistamiento y despliegue', 'Avisos': 'Inicio'}
 def menu(pg, label, wait=150):
     label = LABELS.get(label, label)

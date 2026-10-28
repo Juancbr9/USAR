@@ -26,10 +26,10 @@ with sync_playwright() as p:
     a.click('#menuBtn'); a.click('#drawer .dr-group-head:has-text("Logística")'); a.wait_for_timeout(100)
     assert a.locator('#drawer .dr-item.sub2').count() == 0, 'Material empieza plegado'
     a.click('#drawer .dr-group-head:has-text("Material")'); a.wait_for_timeout(100)
-    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Contenedor y almacén', 'En revisión', 'Entregas']
+    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Almacén', 'Fuera', 'Revisión', 'Revista']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
     # Contenedor y almacén: arriba lo que se arrastra (contenedor, pasillo, armarios, escalón) y el fungible al final, plegado
-    a.click('#drawer .dr-item:has-text("Contenedor y almacén")'); a.wait_for_timeout(150)
+    a.click('#drawer .dr-item:has-text("Almacén")'); a.wait_for_timeout(150)
     secs = lambda: a.evaluate("[...document.querySelectorAll('#view .alm-sec')].map(s => s.dataset.sec)")
     assert [s for s in secs() if s != 'sinubicar'] == ['contenedor', 'pasillo', 'armarios', 'escalon', 'fungible'], secs()
     assert a.locator('#view .alm-jump').count() == 0, 'sin barra «Ir a»'
@@ -81,9 +81,16 @@ with sync_playwright() as p:
     assert a.evaluate("consDoor({ location: 'Caja H-2' })") == a.evaluate("boxes().find(b => b.code === 'H-2')?.door || 0")
     assert a.evaluate("consDoor({ location: 'Escalón' })") == 302 and a.evaluate("consDoor({ location: 'B11' })") == 11
     # Los nombres antiguos (pasillo, armarios, otros, fungible, fuera) llevan a esta página
-    for t in ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles', 'fuera']:
+    for t in ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles']:
         a.evaluate(f"go('avisos'); go('{t}')"); a.wait_for_timeout(100); assert a.evaluate("prefs.tab") == 'contenedor', t
-    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Contenedor y almacén")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
+    # Fuera: lo que lleva cada persona (se devuelve desde aquí), lo prestado con firma y lo de actividades, en una lista
+    gf = a.evaluate("const g = list('gear').find(g => !g.out && !g.box && g.door >= 1 && g.door <= 20); giveTo(JSON.stringify({ gear: g.id }), 'OP-02'); g.id")
+    a.evaluate("go('fuera')"); a.wait_for_timeout(150)
+    assert a.locator('.fuera-grp:has-text("CABRERA")').count() == 1 and a.inner_text('.fuera-kpis span >> nth=0').startswith('1')
+    a.click(f'.fuera-grp .item:has([onclick="gearDetail(\'{gf}\')"]) button:has-text("Devolver")'); a.wait_for_timeout(150)
+    assert a.evaluate(f"get('gear', '{gf}').out") is None
+    a.evaluate("go('contenedor')"); a.wait_for_timeout(100)
+    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Almacén")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
 
     # ---------- Entrega con firma ----------
     a.evaluate("go('entregas')"); a.wait_for_timeout(150); a.click('#view button:has-text("Entrega")')

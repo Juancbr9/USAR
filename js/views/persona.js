@@ -20,12 +20,12 @@ function viewPersonal() {
   if (o) return viewPerson(o);
   const ops = operators(), cells = [...new Set(ops.map(x => x.cell || 'Sin célula'))];
   const epiBad = op => list('epis').filter(e => e.holder === op && epiState(e).cls !== 'ok').length;
-  const spares = list('epis').filter(e => e.holder === RESERVA).sort((a, b) => epiLabel(a).localeCompare(epiLabel(b), 'es', { numeric: true }) || String(a.size).localeCompare(String(b.size), 'es', { numeric: true }));
   return `
     <div class="panel">
       <div class="between wrap-row sec-head"><div><h2>Personal</h2>
         </div>
         <div class="row"><button class="btn btn-a" onclick="newPersonForm()">${ic('plus')} Persona</button>
+          <button class="btn btn-g" onclick="go('epi')">${ic('hardhat')} EPI</button>
           <button class="btn btn-g" onclick="printPersonCards()">${ic('printer')} Tarjetas QR</button></div></div>
       <label class="lbl">Perfil de misión (reparte células y puestos de todos)
         <select class="input" onchange="applyPreset(this.value)">${Object.entries(PRESETS).map(([k, [label]]) => `<option value="${k}" ${mission() === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label>
@@ -40,10 +40,6 @@ function viewPersonal() {
             <span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : n ? 'warn' : 'ok'}">${n ? n + ' avisos' : 'Al día'}</span>
           </button>`; }).join('')}</div>
       </div>`; }).join('')}</div>
-    <details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('hardhat')} EPI de reserva en almacén (${spares.reduce((s, e) => s + epiQty(e), 0)})</summary>
-      <div class="list" style="margin-top:10px">${spares.map(e => `<button class="item" onclick="epiForm('${e.id}')"><div class="who-row"><span class="art art-sm">${toolArt(`${EPI_TYPES[e.type] || e.name} ${e.color || ''}`)}</span><div><b>${esc(epiLabel(e))}${epiQty(e) > 1 ? ` <span class="muted">×${epiQty(e)}</span>` : ''}</b><small>${esc([e.size && e.size !== 'Universal' ? 'Talla ' + e.size : 'Talla única', e.door ? placeShort({ door: +e.door }) : ''].filter(Boolean).join(' · '))}</small></div></div><span class="tag ${epiState(e).cls}">${epiState(e).text}</span></button>`).join('') || '<p class="muted">No hay EPI de reserva.</p>'}</div>
-      <button class="btn btn-g btn-sm" style="margin-top:10px" onclick="epiForm(null, 'casco', '${RESERVA}')">${ic('plus')} EPI de reserva</button>
-    </details>
     ${(() => { const gone = allOperators().filter(o => o.active === false); return gone.length ? `
     <details class="panel"><summary class="sec-title" style="cursor:pointer">De baja (${gone.length})</summary>
       <div class="list" style="margin-top:10px">${gone.map(o => `<button class="item" onclick="openPerson('${o.id}')"><div class="who-row">${avatar(o.name, 'sm')}<div><b>${esc(o.name)}</b><small>${esc(o.role || '')}</small></div></div><span class="tag neutral">Baja</span></button>`).join('')}</div>

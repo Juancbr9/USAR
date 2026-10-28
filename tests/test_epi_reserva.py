@@ -30,10 +30,11 @@ with sync_playwright() as p:
     total = a.evaluate("list('epis').filter(e => e.holder === RESERVA).reduce((s, e) => s + epiQty(e), 0)")
     a.reload(); a.wait_for_selector('#view > *')
     assert a.evaluate("list('epis').filter(e => e.holder === RESERVA).reduce((s, e) => s + epiQty(e), 0)") == total, 'no se duplica al reiniciar'
-    # En Personal, la reserva suma las cantidades y dice dónde está
-    a.evaluate("setPref({ tab: 'personal', person: null })"); a.wait_for_timeout(200)
-    a.click('summary:has-text("EPI de reserva")'); a.wait_for_timeout(150)
-    assert f'EPI de reserva en almacén ({total})' in a.text_content('#view') and 'Armario 3' in a.text_content('#view')
+    # En EPI, la reserva suma las cantidades y dice dónde está; arriba, una casilla por persona y tipo
+    a.evaluate("go('epi')"); a.wait_for_timeout(200)
+    assert a.locator('.epi-tbl .epi-who').count() == n_ops and a.locator('.epi-tbl .epi-cell').count() == n_ops * a.evaluate("Object.keys(EPI_TYPES).length")
+    assert 'Reserva en almacén' in a.text_content('#view') and a.inner_text('#view .panel:has-text("Reserva en almacén") .sec-head .tag') == str(total) and 'Armario 3' in a.text_content('#view')
+    a.click('.epi-cell >> nth=0'); a.wait_for_selector('#modalForm [name=type]'); a.keyboard.press('Escape'); a.wait_for_timeout(100)
     a.screenshot(path=f'{OUT}/epi-reserva.png', full_page=True)
     # En el armario de la derecha se ve la reserva, con su cantidad; tocarla abre su ficha
     a.evaluate("go('armarios')"); a.wait_for_timeout(250)

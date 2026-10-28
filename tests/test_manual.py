@@ -32,14 +32,14 @@ with sync_playwright() as p:
     a.keyboard.press('Escape')
 
     # Áreas: color de cabecera, menú sin repeticiones y franja de activación
-    sesion.menu(a, 'En revisión')
+    sesion.menu(a, 'Revisión')
     assert a.evaluate("document.documentElement.dataset.area") == 'log' and a.locator('.crumb').count() == 0
     # En el móvil no hay barra abajo: todo va por el menú de tres rayas
     assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
     # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Logística › Material)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
     assert a.locator('#drawer .dr-group-head').all_inner_texts()[:4] == ['Actividades', 'Logística', 'Material', 'Equipo'], a.locator('#drawer .dr-group-head').all_inner_texts()
-    assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 2 and a.locator('#drawer .dr-item.on:has-text("En revisión")').count() == 1
+    assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 2 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
     assert a.locator('#drawer .dr-item:has-text("Activación")').count() == 0, 'Actividades está plegada'
     a.click('#drawer .dr-group-head:has-text("Actividades")')
     assert a.locator('#drawer .dr-item').all_inner_texts()[1:5] == ['Activación', 'Ejercicios', 'Maniobras', 'Convoy'] and a.locator('#drawer .dr-item:has-text("Contenedor")').count() == 0, 'un grupo abierto a la vez'
