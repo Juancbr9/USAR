@@ -2,26 +2,86 @@
 // USAR 242 · Material: contenedor, revisión, pasillo 3, armarios y otros; préstamos y QR
 
 /* ==================== VISTA: MATERIAL ==================== */
-// Contenedor y almacén: arriba todo lo que se arrastra (contenedor, pasillo, armarios y escalón) y, al final, el
-// material fungible, plegado
+// Contenedor y almacén: una página con sus partes (contenedor, sin ubicar, pasillo, armarios, escalón y fungible). Cada
+// parte se pliega tocando su barra y se ordena arrastrándola por el asa (⋮⋮); el orden y lo plegado se recuerdan.
+// De serie, arriba lo que se arrastra y, al final, el fungible, plegado.
+const ALM_SECS = {
+  contenedor: ['Contenedor', 'box', () => viewContVisual()],
+  sinubicar: ['Sin ubicar', 'alert', () => viewSinUbicar()],
+  pasillo: ['Pasillo', 'layers', () => viewPasillo()],
+  armarios: ['Armarios', 'case', () => viewArmarios()],
+  escalon: ['Escalón', 'wrench', () => viewPlace(ESCALON, '', 'Material en revisión o arreglándose. Suelta aquí lo que se va a revisar.')],
+  fungible: ['Fungible', 'package', () => viewFungible()]
+};
+const almOrder = () => { const o = (prefs.almOrder || []).filter(id => ALM_SECS[id]); return [...o, ...Object.keys(ALM_SECS).filter(id => !o.includes(id))]; };
+const almFolded = id => prefs.almFold?.[id] ?? id === 'fungible';
+const almUnfold = id => almFolded(id) && setPref({ almFold: { ...prefs.almFold, [id]: false } });
+function almFold(id) { setPref({ almFold: { ...prefs.almFold, [id]: !almFolded(id) } }); }
+function almFoldAll() { const fold = !almOrder().every(almFolded); setPref({ almFold: Object.fromEntries(Object.keys(ALM_SECS).map(id => [id, fold])) }); }
+// Parte de la página donde se ve un sitio (para desplegarla al buscar)
+const almSecOf = d => !d ? 'sinubicar' : d <= 20 ? 'contenedor' : enPasillo(d) ? 'pasillo' : enArmarios(d) ? 'armarios' : d === ESCALON ? 'escalon' : '';
+// Lo que se ve en la barra de una parte plegada: cuánto hay
+function almCount(id) {
+  if (id === 'fungible') { const cs = list('consumables'), low = cs.filter(consLow).length; return `${cs.length} artículos${low ? ` · <span class="tag bad">${low} a reponer</span>` : ''}`; }
+  const inSec = x => !x.vehicle && enAlmacen(x) && almSecOf(+x.door || 0) === id;
+  const b = list('boxes').filter(inSec).length, g = list('gear').filter(x => inSec(x) && !get('boxes', x.box)).length;
+  const e = list('epis').filter(x => x.holder === RESERVA && almSecOf(+x.door || 0) === id && +x.door).reduce((s, x) => s + epiQty(x), 0);
+  return [b ? b + (b === 1 ? ' caja' : ' cajas') : '', g ? g + (g === 1 ? ' equipo' : ' equipos') : '', e ? e + ' EPI' : ''].filter(Boolean).join(' · ') || 'Vacío';
+}
 function viewContenedor() {
+  const all = almOrder().every(almFolded);
   return `${almacenJump()}
-    <section id="alm-contenedor" class="alm-sec">${viewContVisual()}</section>
-    <section id="alm-pasillo" class="alm-sec">${viewPasillo()}</section>
-    <section id="alm-armarios" class="alm-sec">${viewArmarios()}</section>
-    <section id="alm-escalon" class="alm-sec">${viewPlace(ESCALON, 'Escalón', 'Material en revisión o arreglándose. Suelta aquí lo que se va a revisar.')}</section>
-    <section id="alm-fungible" class="alm-sec">${viewFungible()}</section>`;
+    <div class="alm-tools"><span class="muted">Toca una barra para plegarla; arrástrala por ${ic('grip', 'i-sm')} para cambiar el orden.</span>
+      <button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
+    ${almOrder().map(id => {
+      if (id === 'sinubicar' && almCount(id) === 'Vacío') return '';
+      const [title, icon, view] = ALM_SECS[id], folded = almFolded(id);
+      return `<section id="alm-${id}" class="alm-sec ${folded ? 'folded' : ''}" data-sec="${id}">
+        <div class="alm-bar"><button class="alm-grip" aria-label="Arrastrar para cambiar el orden de ${title}">${ic('grip')}</button>
+          <button class="alm-tog" aria-expanded="${!folded}" onclick="almFold('${id}')">${ic(icon, 'i-sm')}<b>${title}</b><small>${almCount(id)}</small>${ic('chev', 'i-sm alm-chev')}</button></div>
+        ${folded ? '' : `<div class="alm-body">${view()}</div>`}</section>`;
+    }).join('')}`;
 }
-// Todo el fungible junto, plegado: solo se ve el título (y si hay que reponer) hasta que se despliega
-let FUNG_OPEN = false;
+// Todo el fungible junto (al final de serie, plegado)
 function viewFungible() {
-  const cs = list('consumables').sort(byName), low = cs.filter(consLow).length;
-  return `<details class="panel fung" ${FUNG_OPEN ? 'open' : ''} ontoggle="FUNG_OPEN = this.open">
-    <summary><h2>${ic('package')} Material fungible</h2><span class="row">${low ? `<span class="tag bad">${low} a reponer</span>` : ''}<span class="muted">${cs.length}</span>${ic('chev', 'i-sm fung-chev')}</span></summary>
-    ${puedeFlota() ? `<div class="row" style="margin:12px 0"><button class="btn btn-a btn-sm" onclick="consForm()">${ic('plus')} Fungible</button></div>` : '<div style="height:12px"></div>'}
+  const cs = list('consumables').sort(byName);
+  return `<div class="panel fung">
+    ${puedeFlota() ? `<div class="row" style="margin-bottom:12px"><button class="btn btn-a btn-sm" onclick="consForm()">${ic('plus')} Fungible</button></div>` : ''}
     ${cs.length ? `<div class="list">${cs.map(c => consRow(c, true)).join('')}</div>` : '<p class="muted">Aún no hay material fungible.</p>'}
-  </details>`;
+  </div>`;
 }
+
+// Ordenar las partes arrastrando su asa: la barra amarilla marca dónde quedará al soltar
+let SEC_DRAG = null;
+document.addEventListener('pointerdown', e => {
+  const grip = e.target.closest('.alm-grip'); if (!grip || e.button > 0) return;
+  e.preventDefault(); haptic(15);
+  const sec = grip.closest('.alm-sec'); SEC_DRAG = { id: sec.dataset.sec, sec };
+  sec.classList.add('sec-moving'); document.body.classList.add('sec-sorting');
+});
+document.addEventListener('pointermove', e => {
+  const d = SEC_DRAG; if (!d) return;
+  d.y = e.clientY;
+  document.querySelectorAll('.alm-sec.drop-before, .alm-sec.drop-after').forEach(s => s.classList.remove('drop-before', 'drop-after'));
+  const t = document.elementFromPoint(e.clientX, e.clientY)?.closest('.alm-sec');
+  d.to = t && t !== d.sec ? [t.dataset.sec, e.clientY < t.getBoundingClientRect().top + t.getBoundingClientRect().height / 2 ? 'before' : 'after'] : null;
+  if (d.to) t.classList.add('drop-' + d.to[1]);
+  const edge = e.clientY < 110 ? -1 : e.clientY > innerHeight - 110 ? 1 : 0;
+  if (edge && !d.scroll) d.scroll = setInterval(() => scrollBy(0, edge * 14), 30);
+  if (!edge && d.scroll) { clearInterval(d.scroll); d.scroll = null; }
+});
+const secDragEnd = () => {
+  const d = SEC_DRAG; if (!d) return; SEC_DRAG = null; clearInterval(d.scroll);
+  document.querySelectorAll('.alm-sec').forEach(s => s.classList.remove('drop-before', 'drop-after', 'sec-moving')); document.body.classList.remove('sec-sorting');
+  return d;
+};
+document.addEventListener('pointerup', () => {
+  const d = secDragEnd(); if (!d?.to) return;
+  const o = almOrder().filter(id => id !== d.id), [to, where] = d.to;
+  o.splice(o.indexOf(to) + (where === 'after' ? 1 : 0), 0, d.id);
+  setPref({ almOrder: o }); haptic(10);
+});
+document.addEventListener('pointercancel', secDragEnd);
 
 // «+ Material» elige qué se añade: equipo o herramienta, caja o material fungible (en ese sitio, si se pasa)
 function addMaterial(at = {}) {

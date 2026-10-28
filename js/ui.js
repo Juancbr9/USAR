@@ -32,7 +32,7 @@ function render() {
   if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
   if (HUB_TO[prefs.tab]) prefs.tab = HUB_TO[prefs.tab];
-  if (prefs.tab === 'consumibles') FUNG_OPEN = true;   // el fungible se abre desplegado
+  if (prefs.tab === 'consumibles') prefs.almFold = { ...prefs.almFold, fungible: false };   // el fungible se abre desplegado
   if (ALMACEN_TABS.includes(prefs.tab)) prefs.tab = 'contenedor';
   applyArea();
   renderHeader();

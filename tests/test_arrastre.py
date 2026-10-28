@@ -58,8 +58,8 @@ with sync_playwright() as p:
     assert a.evaluate(f"get('gear', '{g2}').box") == bid
     # El fungible, al final y plegado: al desplegarlo también se arrastra (los botones de + y − siguen funcionando)
     cid = a.evaluate("const c = list('consumables')[0]; put('consumables', { ...c, door: 110, location: '' }); c.id"); a.wait_for_timeout(200)
-    assert not a.locator(f'#alm-fungible .cons-item[data-cons="{cid}"]').is_visible(), 'plegado'
-    a.click('#alm-fungible summary'); a.wait_for_timeout(100)
+    assert a.locator(f'#alm-fungible .cons-item[data-cons="{cid}"]').count() == 0, 'plegado'
+    a.click('#alm-fungible .alm-tog'); a.wait_for_timeout(100)
     arrastra(f'#alm-fungible .cons-item[data-cons="{cid}"]', '#dragDock .dock-zone[data-door="0"]')
     assert a.evaluate(f"consDoor(get('consumables', '{cid}'))") == 0
     assert a.locator(f'#alm-fungible .cons-item[data-cons="{cid}"]').is_visible(), 'sigue desplegado'

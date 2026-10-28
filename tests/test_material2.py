@@ -30,9 +30,31 @@ with sync_playwright() as p:
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
     # Contenedor y almacén: arriba lo que se arrastra (contenedor, pasillo, armarios, escalón) y el fungible al final, plegado
     a.click('#drawer .dr-item:has-text("Contenedor y almacén")'); a.wait_for_timeout(150)
-    assert a.evaluate("[...document.querySelectorAll('#view .alm-sec')].map(s => s.id)") == ['alm-contenedor', 'alm-pasillo', 'alm-armarios', 'alm-escalon', 'alm-fungible']
+    secs = lambda: a.evaluate("[...document.querySelectorAll('#view .alm-sec')].map(s => s.dataset.sec)")
+    assert [s for s in secs() if s != 'sinubicar'] == ['contenedor', 'pasillo', 'armarios', 'escalon', 'fungible'], secs()
     assert a.locator('#view .alm-jump button').all_inner_texts() == ['Contenedor', 'Pasillo', 'Armarios', 'Escalón', 'Fungible']
-    assert a.locator('#alm-fungible details:not([open])').count() == 1 and a.locator('#view .cons-item:visible').count() == 0
+    assert a.locator('#alm-fungible.folded').count() == 1 and a.locator('#view .cons-item').count() == 0, 'el fungible, plegado'
+    # Cada parte se pliega tocando su barra (y se ve cuánto tiene); «Plegar todo» / «Desplegar todo»
+    a.click('#alm-contenedor .alm-tog'); a.wait_for_timeout(100)
+    assert a.locator('#alm-contenedor.folded').count() == 1 and a.locator('.cvi').count() == 0 and 'cajas' in a.inner_text('#alm-contenedor .alm-tog small')
+    a.click('.alm-tools .link:has-text("Plegar todo")'); a.wait_for_timeout(100)
+    assert a.locator('#view .alm-sec:not(.folded)').count() == 0 and a.locator('.alm-tools .link:has-text("Desplegar todo")').count() == 1
+    # Se ordenan arrastrando el asa: el escalón, encima del contenedor (se recuerda)
+    g = a.locator('#alm-escalon .alm-grip').bounding_box(); t = a.locator('#alm-contenedor').bounding_box()
+    a.mouse.move(g['x'] + 20, g['y'] + 20); a.mouse.down(); a.mouse.move(t['x'] + 100, t['y'] + 6, steps=10); a.mouse.up(); a.wait_for_timeout(200)
+    assert secs()[:2] == ['escalon', 'contenedor'] and a.locator('#view .alm-jump button').first.inner_text() == 'Escalón'
+    a.reload(); a.wait_for_selector('#view .alm-sec'); assert secs()[:2] == ['escalon', 'contenedor']
+    a.click('.alm-tools .link:has-text("Desplegar todo")'); a.wait_for_timeout(100)
+    # Armarios: la lista de las baldas se despliega tocando el nombre de cada armario
+    assert a.locator('.arm-list').count() == 0
+    a.click('.arm-top:has-text("Armario 2")'); a.wait_for_timeout(100)
+    assert a.locator('.arm-list[data-arm="2"] .item').count() == 5 and a.locator('.arm-list').count() == 1
+    a.click('.arm-top:has-text("Armario 2")'); a.wait_for_timeout(100); assert a.locator('.arm-list').count() == 0
+    # Buscar algo de una parte plegada la despliega
+    a.click('#alm-pasillo .alm-tog'); a.wait_for_timeout(100); assert a.locator('#alm-pasillo.folded').count() == 1
+    gp = a.evaluate("const g = list('gear').find(g => !g.vehicle && !g.out && !g.box && g.door >= 1 && g.door <= 20); moveGear(g.id, 131); g.id")
+    a.evaluate(f"findGo('gear', '{gp}')"); a.wait_for_timeout(100); assert a.locator('#alm-pasillo.folded').count() == 0
+    a.evaluate("setPref({ almOrder: null, almFold: null })"); a.wait_for_timeout(100)
     assert a.locator('#view .arm-cab').count() == 3 and a.locator('#view .cvi').count() == 1
     # Sin botón «Caja» suelto: «+ Material» deja elegir equipo, caja o fungible
     assert a.locator('#view button:text-is("Caja")').count() == 0

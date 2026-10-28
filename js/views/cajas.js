@@ -228,7 +228,7 @@ function viewContVisual() {
   const side = SIDES[prefs.cside] ? prefs.cside : 'izq', [sideTitle, range, off] = SIDES[side];
   const gear = list('gear'), bs = list('boxes');
   const at = d => [gear.filter(g => !g.vehicle && enAlmacen(g) && (g.door || 0) === d), bs.filter(b => !b.vehicle && enAlmacen(b) && (b.door || 0) === d)];
-  const [ug, ub] = at(0), lista = prefs.cview === 'lista';
+  const lista = prefs.cview === 'lista';
   return `
     <div class="panel">
       <div class="between wrap-row sec-head">
@@ -248,11 +248,15 @@ function viewContVisual() {
       </div>
       <div class="cv-legend"><span><i class="lg-box"></i>Caja</span><span><i class="lg-gear"></i>Suelto</span><span><i class="lg-bad"></i>En revisión</span><span><i class="lg-nov"></i>Novedad</span></div>`}
     </div>
-    ${ug.length || ub.length ? `<div class="panel">
-      <h3 class="sec-title">${ic('alert')} Sin ubicar</h3>
-      <div class="cv-cell cv-unplaced" data-door="0" onclick="cvClick(event, 0)"><button class="sr-only" aria-label="Sin ubicar: ${ub.length} cajas y ${ug.filter(g => !get('boxes', g.box)).length} equipos">Sin ubicar</button>${cellContent(ug, ub)}</div>
-    </div>` : ''}
 `;
+}
+// Lo que aún no tiene sitio (también lo de «Otros» y del pasillo sin hueco de antes): se arrastra a su sitio
+function viewSinUbicar() {
+  const inS = x => !x.vehicle && enAlmacen(x) && !(+x.door);
+  const ug = list('gear').filter(inS), ub = list('boxes').filter(inS);
+  return `<div class="panel">
+      <div class="cv-cell cv-unplaced" data-door="0" onclick="cvClick(event, 0)"><button class="sr-only" aria-label="Sin ubicar: ${ub.length} cajas y ${ug.filter(g => !get('boxes', g.box)).length} equipos">Sin ubicar</button>${cellContent(ug, ub)}</div>
+    </div>`;
 }
 
 // Vista en lista del lateral: un renglón por hueco con sus cajas (con su código y color) y el material suelto
@@ -475,7 +479,7 @@ function findGo(kind, id) {
   const x = kind === 'box' ? get('boxes', id) : kind === 'cons' ? get('consumables', id) : get('gear', id); if (!x) return;
   const box = kind === 'gear' ? boxOf(x) : kind === 'box' ? x : null, door = kind === 'cons' ? consDoor(x) : x.door;
   setPref({ tab: 'contenedor', ...(x.vehicle || !door || door > 20 ? {} : { cside: door <= 10 ? 'izq' : 'der' }) });
-  if (kind === 'cons') almacenGo('fungible');
+  const sec = kind === 'cons' ? 'fungible' : x.vehicle ? '' : almSecOf(+(box || x).door || 0); if (sec) almUnfold(sec);
   const sel = box ? `[data-box="${box.id}"]` : kind === 'cons' ? `[data-cons="${id}"]` : `[data-gear="${id}"]`;
   const el = document.querySelector(sel);
   if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('found'); setTimeout(() => el.classList.remove('found'), 3200); }
@@ -493,16 +497,20 @@ const tokEpi = e => `<div class="tok tok-gear tok-epi" data-epi="${e.id}" role="
 const hueco = (d, cls, label, extra = '') => { const [items, b] = enSitio(d); return `
   <div class="cv-cell ${cls}" data-door="${d}" aria-label="${esc(placeRec(d).label)}" onclick="cvClick(event, ${d})">
     <button class="cv-tag" aria-label="${esc(placeRec(d).label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos">${label}</button>${extra}${cellContent(items, b)}${epiEn(d).map(tokEpi).join('')}</div>`; };
+// Lo que hay en cada balda de un armario: se despliega tocando la parte de arriba de ese armario
+const armOpen = n => (prefs.armOpen || []).includes(n);
+function armToggle(n) { setPref({ armOpen: armOpen(n) ? prefs.armOpen.filter(x => x !== n) : [...(prefs.armOpen || []), n] }); }
+const armLine = d => { const [items, b] = enSitio(d), loose = items.filter(g => !get('boxes', g.box));
+  return [...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g)), ...epiEn(d).map(e => `${epiLabel(e)}${e.size && e.size !== 'Universal' ? ' T' + e.size : ''} ×${epiQty(e)}`)].join(', '); };
 function viewArmarios() {
-  const lleno = ARMARIOS.map(a => a.id).concat(ARM_SUELO).filter(d => enSitio(d).flat().length || epiEn(d).length);
+  const open = [1, 2, 3].filter(armOpen);
   return `
     <div class="panel">
-      <div class="between sec-head"><h2>Armarios</h2></div>
-      <p class="muted" style="margin:-4px 0 12px">Toca una balda para verla; mantén pulsado para arrastrar.</p>
+      <p class="muted" style="margin:0 0 12px">Toca una balda para verla; mantén pulsado para arrastrar. Toca el nombre de un armario para ver la lista de lo que hay en cada balda.</p>
       <div class="arm">
         <div class="arm-row">${[1, 2, 3].map(n => `
           <div class="arm-cab" aria-label="Armario ${n}">
-            <div class="arm-top">Armario ${n}</div>
+            <button class="arm-top ${armOpen(n) ? 'on' : ''}" aria-expanded="${armOpen(n)}" onclick="armToggle(${n})">Armario ${n} ${ic('chev', 'i-sm arm-chev')}</button>
             <div class="arm-body"><span class="arm-leaf" aria-hidden="true"><i></i></span>
               <div class="arm-in">${ARMARIOS.filter(a => a.n === n).map(a => hueco(a.id, 'arm-shelf', a.balda)).join('')}</div>
               <span class="arm-leaf r" aria-hidden="true"><i></i></span></div></div>`).join('')}</div>
@@ -510,8 +518,9 @@ function viewArmarios() {
         <div class="rack-beam" aria-hidden="true"></div>
       </div>
     </div>
-    ${lleno.length ? `<div class="panel"><div class="list">${lleno.map(d => { const [items, b] = enSitio(d), loose = items.filter(g => !get('boxes', g.box)); return `
-      <button class="item" onclick="cellModal(${d})"><div><b>${esc(placeRec(d).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g)), ...epiEn(d).map(e => `${epiLabel(e)}${e.size && e.size !== 'Universal' ? ' T' + e.size : ''} ×${epiQty(e)}`)].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
+    ${open.map(n => `<div class="panel arm-list" data-arm="${n}"><div class="between sec-head"><h3>Armario ${n}</h3><button class="link" onclick="armToggle(${n})">Plegar</button></div>
+      <div class="list">${ARMARIOS.filter(a => a.n === n).map(a => { const t = armLine(a.id); return `
+      <button class="item" onclick="cellModal(${a.id})"><div><b>Balda ${a.balda}</b><small>${t ? esc(t) : 'Vacía'}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>`).join('')}
 `;
 }
 
@@ -519,8 +528,7 @@ function viewArmarios() {
 function viewPasillo() {
   return `
     <div class="panel">
-      <div class="between wrap-row sec-head"><h2>Pasillo</h2></div>
-      <p class="muted" style="margin:-4px 0 12px">La estantería del pasillo: 5 módulos, con el suelo y la primera balda. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
+      <p class="muted" style="margin:0 0 12px">La estantería del pasillo: 5 módulos, con el suelo y la primera balda. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
       <div class="pas-scroll"><div class="pas" style="--mods:${PAS_MOD}">
         ${[...PAS_NIV.keys()].reverse().map(nv => `
           <div class="pas-lvl${nv ? '' : ' floor'}">${nv ? 'Balda' : 'Suelo'}</div>
@@ -532,15 +540,15 @@ function viewPasillo() {
 
 // Pasillo 3 y Otros: lista de lo que hay, con sus cajas
 function viewPlace(door, title, hint = '') {
-  const p = placeRec(door), at = JSON.stringify({ door }).replace(/"/g, '&quot;');
+  const at = JSON.stringify({ door }).replace(/"/g, '&quot;');
   const bs = list('boxes').filter(b => !b.vehicle && enAlmacen(b) && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
   const loose = list('gear').filter(g => !g.vehicle && enAlmacen(g) && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
   const row = g => `<button class="item drag-it" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
   return `
     <div class="panel drop-zone" data-door="${door}">
-      <div class="between wrap-row sec-head"><h2>${esc(title || p.label)}</h2>
+      <div class="between wrap-row ${title ? 'sec-head' : ''}" style="margin-bottom:12px">${title ? `<h2>${esc(title)}</h2>` : `<p class="muted grow">${esc(hint)}</p>`}
         ${puedeFlota() ? `<button class="btn btn-g" onclick="addMaterial(${at})">${ic('plus')} Material</button>` : ''}</div>
-      ${hint ? `<p class="muted" style="margin:-4px 0 12px">${esc(hint)}</p>` : ''}
+      ${hint && title ? `<p class="muted" style="margin:-4px 0 12px">${esc(hint)}</p>` : ''}
       ${bs.map(b => { const [, hex, ink] = colorOf(b), items = boxItems(b.id); return `
         <div class="well drag-it place-box" data-box="${b.id}">
           <button class="between box-head" onclick="boxDetail('${b.id}')"><span class="row"><span class="box-chip" style="--c:${hex}; --ink:${ink}">${esc(b.code)}</span><b>${esc(b.name || '')}</b>${novTag(b)}</span><span class="muted">${items.length}</span></button>
