@@ -32,7 +32,8 @@ with sync_playwright() as p:
     a.wait_for_timeout(300); assert a.evaluate("document.querySelector('.person-photo')?.src?.startsWith('data:image')"), 'la foto de la persona no se ve'
 
     # Documento: pasaporte con foto, caduca en 100 días → aviso (6 meses)
-    a.click('button:has-text("Documento")'); a.select_option('[name=type]', 'Pasaporte'); a.fill('[name=number]', 'PAB998877')
+    a.click('.ptabs .ctab:has-text("Documentos")'); a.wait_for_timeout(150)
+    a.click('.btn:has-text("Documento")'); a.select_option('[name=type]', 'Pasaporte'); a.fill('[name=number]', 'PAB998877')
     a.fill('[name=expires]', soon); a.locator('#modalForm [data-photo]').first.locator('input[type=file]').first.set_input_files(PNG); a.wait_for_timeout(500); save()
     d = a.evaluate("list('docs')[0]"); assert d['type'] == 'Pasaporte' and len(d['imgs']) == 1, d
     assert a.evaluate(f"Img.get('{d['imgs'][0]}').then(x => !!x)"), 'la foto del documento no se guardó'
@@ -44,7 +45,7 @@ with sync_playwright() as p:
     a.keyboard.press('Escape')
 
     # «➕ Otra…» en un desplegable: nuevo tipo de documento que queda en la lista
-    a.click('button:has-text("Documento")'); a.select_option('[name=type]', '__new'); a.fill('#modalForm input[name=type]', 'Licencia de piloto de dron'); save()
+    a.click('.btn:has-text("Documento")'); a.select_option('[name=type]', '__new'); a.fill('#modalForm input[name=type]', 'Licencia de piloto de dron'); save()
     assert 'Licencia de piloto de dron' in a.evaluate("catalog('docTypes')")
     a.screenshot(path=f'{OUT}/personal-ficha.png', full_page=True)
 

@@ -263,14 +263,16 @@ const epiLabel = e => [e.desc || EPI_TYPES[e.type] || e.name || 'EPI', e.color].
 const epiQty = e => e.qty === '' || e.qty == null ? 1 : Math.max(0, Math.round(+e.qty) || 0);
 
 function stamp(kind, rec) { rec._u = Date.now(); db[kind][rec.id] = rec; Sync.queue(kind, rec); }
-function addLog(action) { stamp('logs', { id: uid('L'), ts: Date.now(), operator: prefs.activeOperator, action }); }
-function put(kind, rec, msg) { stamp(kind, rec); if (msg) addLog(msg); commit(); }
+// ref: a qué registro se refiere (p. ej. «gear:G-12»), para el historial de cada equipo y caja
+function addLog(action, ref = '') { stamp('logs', { id: uid('L'), ts: Date.now(), operator: prefs.activeOperator, action, ...(ref ? { ref } : {}) }); }
+const LOG_REF = ['gear', 'boxes', 'consumables', 'epis'];
+function put(kind, rec, msg) { stamp(kind, rec); if (msg) addLog(msg, LOG_REF.includes(kind) ? kind + ':' + rec.id : ''); commit(); }
 function putMany(kind, recs, msg) { recs.forEach(r => stamp(kind, r)); if (msg) addLog(msg); commit(); }
 function remove(kind, id, msg) { stamp(kind, { id, _del: true }); if (msg) addLog(msg); commit(); }
 
 function persist() {
   const logs = Object.values(db.logs);
-  if (logs.length > 400) logs.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(300).forEach(l => delete db.logs[l.id]);
+  if (logs.length > 1500) logs.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(1200).forEach(l => delete db.logs[l.id]);
   writeJSON(KEY.db, db);
 }
 // Añade los vehículos y plantillas de serie si no hay ninguno (sus ids son fijos, así no se duplican entre móviles)

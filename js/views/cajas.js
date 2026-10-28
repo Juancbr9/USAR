@@ -136,6 +136,7 @@ function boxDetail(id) {
       <button class="fx-act" onclick="moveForm('box', '${id}')">${ic('move')}Mover</button>
       <button class="fx-act" onclick="novForm('box', '${id}')">${ic('pencil')}${b.nov?.text ? 'Cambiar nota' : 'Nota / novedad'}</button>
       <button class="fx-act" onclick="printBoxLabels(['${id}'])">${ic('qr')}Etiqueta</button>
+      <button class="fx-act" onclick="itemHistory('boxes', '${id}')">${ic('history')}Historial</button>
       ${puedeFlota() ? `<button class="fx-act" onclick="boxForm('${id}')">${ic('pencil')}Editar</button>` : ''}
     </div>`);
 }
