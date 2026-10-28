@@ -1476,3 +1476,15 @@ body.scrolled .topbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .22); }
   .nav-btn.on { box-shadow: 0 4px 12px rgba(245, 184, 0, .35); }
   .nav-btn .count.live { background: var(--bad); animation: pulse 1.4s infinite; }
 }
+/* Contenedor en lista: un renglón por hueco con sus cajas y lo suelto */
+.cl { display: grid; gap: 8px; }
+.cl-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); box-shadow: var(--sh-1); cursor: pointer; }
+.cl-row > .i-sm { flex: none; color: var(--muted); }
+.cl-label { flex: none; width: 58px; font: 800 17px var(--cond); color: var(--ink); position: relative; }
+.cl-dot { position: absolute; top: 2px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn, #f5b800); }
+.cl-body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cl-gear { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 8px; background: var(--sunk); font-size: 13px; font-weight: 600; }
+.cl-gear .tag { font-size: 10px; padding: 1px 5px; }
+.cl-it.found { outline: 3px solid #f5b800; outline-offset: 2px; animation: found .6s ease-in-out 5; }
+@media (prefers-reduced-motion: reduce) { .cl-it.found { animation: none; } }
+.cv-switch { gap: 8px; flex-wrap: wrap; align-items: stretch; }
