@@ -32,7 +32,7 @@ SEED = r"""(() => {
   mk('vehicles', { id: 'V-XSS', name: P + LONG, seats: 99999, notes: P });
   mk('boxes', { id: 'K-XSS', code: P.slice(0, 40), name: P, color: 'amarillo', door: 3, shelf: 'A', vehicle: '', heli: 'si', tare: 99999, pos: 1 });
   mk('gear', { id: 'G-XSS', name: P + LONG, door: 3, shelf: 'A', box: 'K-XSS', status: 'OPERATIVO', qty: 99999, serial: P, notes: P, cat: P, weight: 99999 });
-  mk('gear', { id: 'G-XSS3', name: P, door: 301, where: P, shelf: 'A', status: 'REVISIÓN', rev: { state: 'taller', since: todayISO(), where: P, reason: P }, nov: { text: P, ts: t, by: P } });
+  mk('gear', { id: 'G-XSS3', name: P, door: 302, where: P, shelf: 'A', status: 'REVISIÓN', rev: { state: 'taller', since: todayISO(), where: P, reason: P }, nov: { text: P, ts: t, by: P } });
   mk('gear', { id: 'G-XSS2', name: P, door: 0, shelf: 'A', status: 'OPERATIVO', out: { who: P, since: t, note: P } });
   mk('consumables', { id: 'CO-XSS', name: P + LONG, stock: 0, min: 99999, unit: P, place: P });
   mk('templates', { id: 'TPL-XSS', name: P, type: 'intervencion', objective: P, teams: [], vehicles: [] });
@@ -68,7 +68,7 @@ with sync_playwright() as p:
         for mt in a.evaluate("MTABS.map(t => t[0])"):
             at(f'{mid}/{mt}', f"openMission('{mid}', '{mt}')")
     at('persona OP-01', "openPerson('OP-01')"); at('persona OP-02', "openPerson('OP-02')")
-    calls = ["gearDetail('G-XSS')", "gearDetail('G-XSS3')", "revForm('G-XSS3')", "novForm('gear', 'G-XSS3')", "cellModal(301)", "gearDetail('G-XSS2')", "boxDetail('K-XSS')", "eventDetail('E-XSS')", "docDetail('D-XSS')",
+    calls = ["gearDetail('G-XSS')", "gearDetail('G-XSS3')", "revForm('G-XSS3')", "novForm('gear', 'G-XSS3')", "cellModal(302)", "gearDetail('G-XSS2')", "boxDetail('K-XSS')", "eventDetail('E-XSS')", "docDetail('D-XSS')",
              "victimDetail('V-XSS')", "worksiteDetail(get('worksites', 'W-XSS'))", "confinedDetail('C-XSS')", "heritageDetail('H-XSS')",
              "vehicleForm('V-XSS')", "missionVehicleForm('M-XSS', 'MV-1')", "personForm('OP-02')", "epiForm('EPI-XSS')", "eventForm('E-XSS')",
              "printMission('M-XSS')", "printBoxLabels()", "printPersonCards()", "printPersonnelManifest()",

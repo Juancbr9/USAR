@@ -2,13 +2,25 @@
 // USAR 242 · Material: contenedor, revisión, pasillo 3, armarios y otros; préstamos y QR
 
 /* ==================== VISTA: MATERIAL ==================== */
-// Contenedor y almacén: todo el material guardado en una página (contenedor, pasillo, armarios y otros, con su fungible)
+// Contenedor y almacén: arriba todo lo que se arrastra (contenedor, pasillo, armarios y escalón) y, al final, el
+// material fungible, plegado
 function viewContenedor() {
   return `${almacenJump()}
     <section id="alm-contenedor" class="alm-sec">${viewContVisual()}</section>
     <section id="alm-pasillo" class="alm-sec">${viewPasillo()}</section>
     <section id="alm-armarios" class="alm-sec">${viewArmarios()}</section>
-    <section id="alm-otros" class="alm-sec">${viewPlace(OTROS)}</section>`;
+    <section id="alm-escalon" class="alm-sec">${viewPlace(ESCALON, 'Escalón', 'Material en revisión o arreglándose. Suelta aquí lo que se va a revisar.')}</section>
+    <section id="alm-fungible" class="alm-sec">${viewFungible()}</section>`;
+}
+// Todo el fungible junto, plegado: solo se ve el título (y si hay que reponer) hasta que se despliega
+let FUNG_OPEN = false;
+function viewFungible() {
+  const cs = list('consumables').sort(byName), low = cs.filter(consLow).length;
+  return `<details class="panel fung" ${FUNG_OPEN ? 'open' : ''} ontoggle="FUNG_OPEN = this.open">
+    <summary><h2>${ic('package')} Material fungible</h2><span class="row">${low ? `<span class="tag bad">${low} a reponer</span>` : ''}<span class="muted">${cs.length}</span>${ic('chev', 'i-sm fung-chev')}</span></summary>
+    ${puedeFlota() ? `<div class="row" style="margin:12px 0"><button class="btn btn-a btn-sm" onclick="consForm()">${ic('plus')} Fungible</button></div>` : '<div style="height:12px"></div>'}
+    ${cs.length ? `<div class="list">${cs.map(c => consRow(c, true)).join('')}</div>` : '<p class="muted">Aún no hay material fungible.</p>'}
+  </details>`;
 }
 
 // «+ Material» elige qué se añade: equipo o herramienta, caja o material fungible (en ese sitio, si se pasa)
@@ -91,14 +103,18 @@ const revBox = g => { const r = g.rev || {}, st = REV_STATES[r.state]; return `<
   <button class="link" onclick="revForm('${g.id}')">Editar</button></div>`; };
 function revForm(id) {
   const g = get('gear', id), r = g.rev || {};
+  // Si está guardado en el almacén, se ofrece dejarlo en el escalón (donde va el material en revisión)
+  const toEsc = !g.vehicle && !g.out && g.door !== ESCALON;
   openForm(`Revisión · ${g.name}`, [
+    ...(toEsc ? [{ k: 'esc', label: 'Dónde se deja', value: '1', options: [['1', 'En el escalón'], ['', `Donde está ahora (${placeShort(g)}${boxCode(g) ? ', caja ' + boxCode(g) : ''})`]], wide: true }] : []),
     { k: 'state', label: 'Situación', value: r.state || 'espera', options: Object.entries(REV_STATES).map(([k, [l]]) => [k, l]), required: true },
     { k: 'since', label: 'Desde', type: 'date', value: r.since || todayISO(), required: true },
     { k: 'where', label: 'Dónde está o quién lo tiene', value: r.where, wide: true, placeholder: 'Ej: Taller Holmatro Telde / lo tiene DORTA' },
     { k: 'reason', label: 'Motivo', type: 'textarea', value: r.reason || g.nov?.text, wide: true, placeholder: 'Ej: Pierde aceite por el latiguillo' },
     { k: 'notes', label: 'Notas', value: r.notes, wide: true, placeholder: 'Ej: Presupuesto pedido; nº de orden 1234' }
   ], v => {
-    put('gear', { ...g, status: ['inoperativo', 'baja'].includes(v.state) ? 'AVERIADO' : 'REVISIÓN', rev: { ...r, ...v, by: r.by || prefs.activeOperator } },
+    const { esc: aEsc, ...rv } = v;
+    put('gear', { ...g, ...(aEsc ? { door: ESCALON, box: '', shelf: 'A' } : {}), status: ['inoperativo', 'baja'].includes(v.state) ? 'AVERIADO' : 'REVISIÓN', rev: { ...r, ...rv, by: r.by || prefs.activeOperator } },
       `"${g.name}" en revisión: ${REV_STATES[v.state][0].toLowerCase()}${v.where ? ' · ' + v.where : ''}`);
     gearDetail(id);
   });
@@ -148,7 +164,6 @@ function gearForm(id) {
   openForm(id ? 'Editar material' : 'Añadir material', [
     { k: 'name', label: 'Herramienta / equipo', value: g.name, required: true, wide: true },
     { k: 'place', label: 'Dónde va', value: String(g.door ?? 1), options: placeOptions(), wide: true },
-    { k: 'where', label: 'Sitio exacto (si es «Otros»)', value: g.where, wide: true, placeholder: 'Ej: Nave del parque, estantería 2' },
     { k: 'qty', label: 'Cantidad', type: 'number', value: g.qty || 1 },
     { k: 'serial', label: 'Nº serie', value: g.serial },
     { k: 'service', label: 'Próximo mantenimiento / calibración', type: 'date', value: g.service, wide: true },
@@ -164,7 +179,7 @@ function gearForm(id) {
     const base = get('gear', id) || { id: uid('G'), out: null, lastCheck: '', status: 'OPERATIVO' };
     const { place: pl, ...rest } = v, bx = get('boxes', v.box);
     const door = bx ? bx.door : +pl;
-    const item = { ...base, ...rest, where: door === OTROS ? (v.where || '').trim() : '', shelf: 'A', door, vehicle: '', qty: +v.qty > 1 ? +v.qty : '', weight: parseFloat(v.weight) || '', volume: parseFloat(v.volume) || '', value: parseFloat(v.value) || '' };
+    const item = { ...base, ...rest, where: '', shelf: 'A', door, vehicle: '', qty: +v.qty > 1 ? +v.qty : '', weight: parseFloat(v.weight) || '', volume: parseFloat(v.volume) || '', value: parseFloat(v.value) || '' };
     put('gear', item, `${id ? 'Editado' : 'Añadido'} "${v.name}" en ${placeShort(item)}`);
     setPref({ door });
   });

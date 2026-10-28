@@ -1,4 +1,4 @@
-"""Arrastrar material entre todos los sitios: del contenedor al pasillo, de pasillo a otros, a una caja del pasillo,
+"""Arrastrar material entre todos los sitios: del contenedor al pasillo, del pasillo al escalón, a una caja del escalón,
 el fungible, el EPI de reserva, al otro lateral del contenedor, a «En revisión» (abre la ficha de revisión) y «A una
 persona» (le aparece en su ficha). Mientras se arrastra, abajo sale una barra con los destinos.
 Uso: python3 tests/test_arrastre.py  (con la app servida en APP_URL)"""
@@ -28,33 +28,41 @@ with sync_playwright() as p:
         a.mouse.move(t['x'] + t['width'] / 2, t['y'] + t['height'] / 2, steps=12); a.mouse.up(); a.wait_for_timeout(300)
         assert a.locator('#dragDock').count() == 0, 'la barra se va al soltar'
 
-    # Un equipo suelto del contenedor (sin ubicar) → Pasillo, con la barra de abajo
-    gid = a.evaluate("list('gear').find(g => !g.vehicle && (g.door || 0) === 0 && !get('boxes', g.box)).id")
-    arrastra(f'.cv-unplaced .tok[data-gear="{gid}"]', f'#dragDock .dock-zone[data-door="101"]')
-    assert a.evaluate(f"get('gear', '{gid}').door") == 101
-    # Del pasillo a Otros (fila de la lista del pasillo)
-    arrastra(f'#alm-pasillo [data-gear="{gid}"]', '#dragDock .dock-zone[data-door="301"]')
-    assert a.evaluate(f"get('gear', '{gid}').door") == 301
-    # De Otros a un hueco del contenedor (soltando en el dibujo)
-    arrastra(f'#alm-otros [data-gear="{gid}"]', '.cvi .cv-cell[data-door="2"]')
-    assert a.evaluate(f"get('gear', '{gid}').door") == 2
-    # A «En revisión»: abre la ficha de revisión de ese equipo
-    a.evaluate("setPref({ tab: 'contenedor' })"); a.wait_for_timeout(200)
-    arrastra(f'.cvi .tok[data-gear="{gid}"]', '#dragDock .dock-zone[data-rev]')
+    # Un equipo suelto del contenedor (sin ubicar) → un hueco del pasillo
+    gid = a.evaluate("list('gear').find(g => !g.vehicle && (g.door || 0) === 0 && !get('boxes', g.box) && g.status === 'OPERATIVO').id")
+    arrastra(f'.cv-unplaced .tok[data-gear="{gid}"]', '#alm-pasillo .pas-cell[data-door="110"]')
+    assert a.evaluate(f"get('gear', '{gid}').door") == 110
+    # Del pasillo al Escalón (barra de abajo): como estaba operativo, se abre su ficha de revisión
+    assert a.locator('#dragDock').count() == 0
+    arrastra(f'#alm-pasillo .tok[data-gear="{gid}"]', '#dragDock .dock-zone[data-door="302"]')
+    assert a.evaluate(f"get('gear', '{gid}').door") == 302
     assert 'Revisión' in a.text_content('#modal') and a.locator('#modalForm [name=state]').count() == 1, 'se abre la ficha de revisión'
+    assert a.locator('#modalForm [name=esc]').count() == 0, 'ya está en el escalón'
     a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     assert a.evaluate(f"get('gear', '{gid}').status") != 'OPERATIVO'
     a.keyboard.press('Escape'); a.wait_for_timeout(100)
-    # Una caja del pasillo como destino: el equipo entra en ella
-    bid = a.evaluate("const b = list('boxes').find(b => !b.vehicle && b.door >= 1 && b.door <= 20); moveBox(b.id, 101); b.id")
+    # Del Escalón a un hueco del contenedor (soltando en el dibujo)
+    arrastra(f'#alm-escalon [data-gear="{gid}"]', '.cvi .cv-cell[data-door="2"]')
+    assert a.evaluate(f"get('gear', '{gid}').door") == 2
+    # «A revisión» desde la ficha ofrece dejarlo en el escalón
+    g4 = a.evaluate("const g = list('gear').find(g => !g.vehicle && !g.out && g.status === 'OPERATIVO' && g.door >= 1 && g.door <= 20); g.id")
+    a.evaluate(f"revForm('{g4}')"); assert a.input_value('#modalForm [name=esc]') == '1'
+    a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
+    assert a.evaluate(f"[get('gear', '{g4}').door, get('gear', '{g4}').box]") == [302, '']
+    a.keyboard.press('Escape'); a.evaluate("setPref({ tab: 'contenedor' })"); a.wait_for_timeout(200)
+    # Una caja del escalón como destino: el equipo entra en ella
+    bid = a.evaluate("const b = list('boxes').find(b => !b.vehicle && b.door >= 1 && b.door <= 20); moveBox(b.id, 302); b.id")
     a.wait_for_timeout(200)
     g2 = a.evaluate("list('gear').find(g => !g.vehicle && (g.door || 0) === 0 && !get('boxes', g.box)).id")
-    arrastra(f'.cv-unplaced .tok[data-gear="{g2}"]', f'#alm-pasillo .place-box[data-box="{bid}"]')
+    arrastra(f'.cv-unplaced .tok[data-gear="{g2}"]', f'#alm-escalon .place-box[data-box="{bid}"]')
     assert a.evaluate(f"get('gear', '{g2}').box") == bid
-    # El fungible también se arrastra (los botones de + y − siguen funcionando)
-    cid = a.evaluate("const c = list('consumables')[0]; put('consumables', { ...c, door: 101, location: '' }); c.id"); a.wait_for_timeout(200)
-    arrastra(f'#alm-pasillo .cons-item[data-cons="{cid}"]', '#dragDock .dock-zone[data-door="301"]')
-    assert a.evaluate(f"consDoor(get('consumables', '{cid}'))") == 301
+    # El fungible, al final y plegado: al desplegarlo también se arrastra (los botones de + y − siguen funcionando)
+    cid = a.evaluate("const c = list('consumables')[0]; put('consumables', { ...c, door: 110, location: '' }); c.id"); a.wait_for_timeout(200)
+    assert not a.locator(f'#alm-fungible .cons-item[data-cons="{cid}"]').is_visible(), 'plegado'
+    a.click('#alm-fungible summary'); a.wait_for_timeout(100)
+    arrastra(f'#alm-fungible .cons-item[data-cons="{cid}"]', '#dragDock .dock-zone[data-door="0"]')
+    assert a.evaluate(f"consDoor(get('consumables', '{cid}'))") == 0
+    assert a.locator(f'#alm-fungible .cons-item[data-cons="{cid}"]').is_visible(), 'sigue desplegado'
     # Al otro lateral del contenedor: se para encima del botón «Derecho», cambia de lateral y se suelta en B15
     a.evaluate("setPref({ tab: 'contenedor', cside: 'izq' })"); a.wait_for_timeout(200)
     g3 = a.evaluate("const g = list('gear').find(g => !g.vehicle && !get('boxes', g.box) && g.status === 'OPERATIVO' && !g.out); moveGear(g.id, 3); g.id"); a.wait_for_timeout(200)

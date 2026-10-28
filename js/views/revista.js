@@ -14,7 +14,7 @@ const revGroups = () => [
   ['sin', 'Contenedor · sin ubicar', g => !g.door],
   ['pasillo', 'Pasillo', g => enPasillo(g.door)],
   ['armarios', 'Armarios', g => enArmarios(g.door)],
-  ['otros', 'Otros', g => g.door === OTROS]
+  ['escalon', 'Escalón', g => g.door === ESCALON]
 ].map(([k, l, f]) => [k, l, g => enAlmacen(g) && f(g)]);
 const markOf = r => !r ? '' : r.mark || (r.ok === true ? 'ok' : r.ok === false ? 'bad' : '');
 

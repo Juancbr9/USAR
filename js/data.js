@@ -237,10 +237,10 @@ const inCont = d => !d || d <= 20;                       // hueco del contenedor
 const placeRec = id => PLACES.find(p => p.id === id);
 const doorName = id => HUECOS.find(h => h.id === id)?.label || placeRec(id)?.short || placeRec(id)?.label || (id ? 'B' + id : 'Sin ubicar');
 const sideName = id => id <= 10 ? 'lateral izquierdo' : id <= 20 ? 'lateral derecho' : '';
-// Dónde está un equipo o una caja: contenedor (hueco), pasillo 3, armarios, otros o sin ubicar
+// Dónde está un equipo o una caja: contenedor (hueco), pasillo, armarios, escalón o sin ubicar
 const placeOf = g => g.vehicle ? vehName(g.vehicle) : !g.door ? 'Sin ubicar' : g.door <= 20 ? `${doorName(g.door)} · ${sideName(g.door)}`
-  : g.door === OTROS && g.where ? `Otros · ${g.where}` : placeRec(g.door)?.label || doorName(g.door);
-const placeShort = g => g.vehicle ? vehName(g.vehicle) : g.door ? (g.door === OTROS && g.where ? g.where : doorName(g.door)) : 'Sin ubicar';
+  : placeRec(g.door)?.label || doorName(g.door);
+const placeShort = g => g.vehicle ? vehName(g.vehicle) : g.door ? doorName(g.door) : 'Sin ubicar';
 const groupKey = g => g.vehicle || g.door;
 // Material de una operación: el contenedor completo (si sale), lo elegido a mano y lo que va en sus vehículos
 function missionGearIds(m) {
@@ -382,6 +382,16 @@ function seedDefaults(share = false) {
     ['gear', 'boxes', 'consumables'].forEach(kind => list(kind).filter(x => !x.vehicle && +x.door >= 201 && +x.door <= 206)
       .forEach(x => stampIt(kind, { ...x, door: nueva(+x.door) })));
     stampIt('meta', { id: 'armbase', value: 1 });
+  }
+  // Almacén v1: ya no hay «Otros» ni «pasillo sin hueco»: lo que hubiera ahí pasa a «sin ubicar», para colocarlo arrastrando;
+  // el material en revisión va al escalón
+  if (!(get('meta', 'almbase')?.value >= 1)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    ['gear', 'boxes', 'consumables', 'epis'].forEach(kind => list(kind).filter(x => !x.vehicle && [PASILLO, OTROS].includes(+x.door))
+      .forEach(x => stampIt(kind, { ...x, door: 0, ...(x.where ? { notes: [x.notes, 'Estaba en: ' + x.where].filter(Boolean).join('. '), where: '' } : {}) })));
+    // y lo que ya está en revisión (guardado, no en un vehículo ni con nadie) pasa al escalón
+    list('gear').filter(g => g.status !== 'OPERATIVO' && !g.vehicle && !g.out).forEach(g => stampIt('gear', { ...g, door: ESCALON, box: '', shelf: 'A' }));
+    stampIt('meta', { id: 'almbase', value: 1 });
   }
   // Pasillo v1: solo dos alturas (suelo y balda 1). Lo que se hubiera puesto más arriba pasa a la balda 1 de su módulo
   if (!(get('meta', 'pasbase')?.value >= 1)) {

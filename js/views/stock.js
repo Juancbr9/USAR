@@ -1,6 +1,6 @@
 'use strict';
-// USAR 242 · Material fungible (consumibles): cada uno va en su sitio (hueco, pasillo, armario u otros) y se ve en
-// «Contenedor y almacén» junto al resto del material de ese sitio.
+// USAR 242 · Material fungible (consumibles): cada uno va en su sitio (hueco, pasillo o armario) y se ve todo junto al
+// final de «Contenedor y almacén», plegado.
 
 /* ==================== MATERIAL FUNGIBLE ==================== */
 // Sitio de un fungible: el campo «door» como el resto del material; los antiguos solo tenían el texto «Ubicación»
@@ -10,8 +10,7 @@ function consDoor(c) {
   if (box) { const b = list('boxes').find(x => fold(x.code).replace(/\W/g, '') === fold(box[1] + box[2])); if (b && !b.vehicle) return b.door || 0; }
   if (hueco && +hueco[1] >= 1 && +hueco[1] <= 20) return +hueco[1];
   if (arm && +arm[1] >= 1 && +arm[1] <= 3) return 200 + +arm[1] * 10 + ARM_BALDAS;
-  if (/pasillo/i.test(t)) return PASILLO;
-  if (/almac|nave|parque|otro/i.test(t)) return OTROS;
+  if (/escal[oó]n/i.test(t)) return ESCALON;
   return 0;
 }
 const consIn = test => list('consumables').filter(c => test(consDoor(c))).sort(byName);

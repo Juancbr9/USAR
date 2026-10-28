@@ -28,27 +28,30 @@ with sync_playwright() as p:
     a.click('#drawer .dr-group-head:has-text("Material")'); a.wait_for_timeout(100)
     assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Contenedor y almacén', 'En revisión', 'Entregas']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
-    # Contenedor y almacén: contenedor, pasillo, armarios, otros y el fungible de cada sitio en una sola página
+    # Contenedor y almacén: arriba lo que se arrastra (contenedor, pasillo, armarios, escalón) y el fungible al final, plegado
     a.click('#drawer .dr-item:has-text("Contenedor y almacén")'); a.wait_for_timeout(150)
-    for sec in ['contenedor', 'pasillo', 'armarios', 'otros']: assert a.locator(f'#view #alm-{sec}').count() == 1, sec
-    assert a.locator('#view .alm-jump button').all_inner_texts() == ['Contenedor', 'Pasillo', 'Armarios', 'Otros']
+    assert a.evaluate("[...document.querySelectorAll('#view .alm-sec')].map(s => s.id)") == ['alm-contenedor', 'alm-pasillo', 'alm-armarios', 'alm-escalon', 'alm-fungible']
+    assert a.locator('#view .alm-jump button').all_inner_texts() == ['Contenedor', 'Pasillo', 'Armarios', 'Escalón', 'Fungible']
+    assert a.locator('#alm-fungible details:not([open])').count() == 1 and a.locator('#view .cons-item:visible').count() == 0
     assert a.locator('#view .arm-cab').count() == 3 and a.locator('#view .cvi').count() == 1
     # Sin botón «Caja» suelto: «+ Material» deja elegir equipo, caja o fungible
     assert a.locator('#view button:text-is("Caja")').count() == 0
     a.click('#view button.btn-a:has-text("Material")'); a.wait_for_timeout(100)
     assert [t.split('\n')[0] for t in a.locator('#modal .add-mat button').all_inner_texts()] == ['Equipo o herramienta', 'Caja', 'Material fungible']
-    # Fungible nuevo en el pasillo: sale en el apartado del pasillo y en su lista al tocar el sitio
-    a.click('#modal .add-mat [data-add=package]'); a.fill('#modalForm [name=name]', 'Bridas grandes'); a.select_option('#modalForm [name=place]', '101')
+    # Fungible nuevo en el pasillo: sale en la lista del fungible (con su sitio) y al ir a «Fungible» se despliega
+    a.click('#modal .add-mat [data-add=package]'); a.fill('#modalForm [name=name]', 'Bridas grandes'); a.select_option('#modalForm [name=place]', '110')
     a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     cid = a.evaluate("list('consumables').find(c => c.name === 'Bridas grandes').id")
-    assert a.locator(f'#alm-pasillo [data-cons="{cid}"]').count() == 1
-    a.click(f'#alm-pasillo [data-cons="{cid}"] button:has-text("+5")'); a.wait_for_timeout(100)
+    a.click('#view .alm-jump button:has-text("Fungible")'); a.wait_for_timeout(300)
+    assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible() and 'Pasillo M1 suelo' in a.inner_text(f'#alm-fungible [data-cons="{cid}"]')
+    a.click(f'#alm-fungible [data-cons="{cid}"] button:has-text("+5")'); a.wait_for_timeout(100)
+    assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible(), 'sigue desplegado al cambiar el stock'
     assert a.evaluate(f"get('consumables', '{cid}').stock") == 15
     # Los antiguos (solo con el texto «Ubicación») salen en su sitio: «Caja H-2» → el hueco de esa caja
     assert a.evaluate("consDoor({ location: 'Caja H-2' })") == a.evaluate("boxes().find(b => b.code === 'H-2')?.door || 0")
-    assert a.evaluate("consDoor({ location: 'Almacén' })") == 301 and a.evaluate("consDoor({ location: 'B11' })") == 11
+    assert a.evaluate("consDoor({ location: 'Escalón' })") == 302 and a.evaluate("consDoor({ location: 'B11' })") == 11
     # Los nombres antiguos (pasillo, armarios, otros, fungible, fuera) llevan a esta página
-    for t in ['pasillo', 'armarios', 'otros', 'consumibles', 'fuera']:
+    for t in ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles', 'fuera']:
         a.evaluate(f"go('avisos'); go('{t}')"); a.wait_for_timeout(100); assert a.evaluate("prefs.tab") == 'contenedor', t
     a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Contenedor y almacén")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
 
@@ -88,7 +91,7 @@ with sync_playwright() as p:
     g1, g2, g3, g4 = ids[0], ids[1], ids[2], ids[3]
     a.evaluate(f"mark('{g1}', 'bad')"); a.fill(f'.check:has([onclick="mark(\'{g1}\', \'bad\')"]) input.input', 'No arranca')
     a.evaluate(f"markMore('{g2}')"); a.click('#modal .item:has-text("Está en el taller")')
-    a.evaluate(f"markMore('{g3}')"); a.click('#modal .item:has-text("Está en otro sitio")'); a.select_option('[name=place]', '101'); save()
+    a.evaluate(f"markMore('{g3}')"); a.click('#modal .item:has-text("Está en otro sitio")'); a.select_option('[name=place]', '121'); save()
     a.evaluate(f"markMore('{g4}')"); a.click('#modal .item:has-text("De baja")')
     a.click('.check-row:has-text("Solo lo que falta")'); a.wait_for_timeout(150)
     assert a.locator(f'[onclick="mark(\'{g1}\', \'ok\')"]').count() == 0, '«Solo lo que falta» esconde lo marcado'
@@ -96,7 +99,7 @@ with sync_playwright() as p:
     a.locator('.panel:not(.progress) button:has-text("Todo OK")').first.click(); a.wait_for_timeout(150)
     a.click('button:has-text("Finalizar revista")'); a.wait_for_timeout(400)
     st = a.evaluate(f"['{g1}', '{g2}', '{g3}', '{g4}'].map(id => {{ const g = get('gear', id); return [g.status, g.rev?.state || '', g.door]; }})")
-    assert st[0][:2] == ['REVISIÓN', 'espera'] and st[1][:2] == ['REVISIÓN', 'taller'] and st[2][2] == 101 and st[3][:2] == ['AVERIADO', 'baja'], st
+    assert st[0][:2] == ['REVISIÓN', 'espera'] and st[1][:2] == ['REVISIÓN', 'taller'] and st[2][2] == 121 and st[3][:2] == ['AVERIADO', 'baja'], st
     r = a.evaluate("list('inspections').sort((a, b) => b.date - a.date)[0]")
     assert r['reason'] == 'Mensual' and len(r['fails']) == 1 and len(r['other']) == 3 and 'izquierdo' in r['scope'], r
 

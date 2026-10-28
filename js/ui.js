@@ -32,6 +32,7 @@ function render() {
   if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
   if (HUB_TO[prefs.tab]) prefs.tab = HUB_TO[prefs.tab];
+  if (prefs.tab === 'consumibles') FUNG_OPEN = true;   // el fungible se abre desplegado
   if (ALMACEN_TABS.includes(prefs.tab)) prefs.tab = 'contenedor';
   applyArea();
   renderHeader();
@@ -119,7 +120,7 @@ function toggleDrawer(open) {
   if (open) { renderDrawer(); d.querySelector('.dr-item.on, .dr-item')?.focus({ preventScroll: true }); history.pushState({ nav: navSnap(), drawer: 1 }, ''); }
 }
 
-function go(tab) { const sub = ALMACEN_TABS.includes(tab) && tab; tab = sub ? 'contenedor' : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(ACT_TABS.includes(tab) ? { move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'fuera' ? 'pasillo' : sub); }
+function go(tab) { const sub = ALMACEN_TABS.includes(tab) && tab; tab = sub ? 'contenedor' : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(ACT_TABS.includes(tab) ? { move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'fuera' ? 'pasillo' : sub === 'otros' ? 'escalon' : sub); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
 function toggleSearch() {

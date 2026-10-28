@@ -1230,9 +1230,9 @@ img.doc-full, .gal img, img.art-lg, .person-photo { cursor: zoom-in; }
 
 /* Contenedor y almacén: una página con saltos a cada apartado */
 .alm-sec, #alm-fungible { scroll-margin-top: calc(var(--top-h, 67px) + 60px); }
-.alm-jump { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; width: 100%; position: sticky; top: calc(var(--top-h, 67px) + 6px); z-index: 5;
+.alm-jump { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 4px; width: 100%; position: sticky; top: calc(var(--top-h, 67px) + 6px); z-index: 5;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, .1); }
-.alm-jump button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 9px; font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap; transition: background-color .15s, color .15s; }
+.alm-jump button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 9px; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; transition: background-color .15s, color .15s; }
 .alm-jump button.on { background: var(--area-soft); color: var(--area); }
 @media (hover: hover) and (pointer: fine) { .alm-jump button:hover { color: var(--ink); } }
 /* «Sin ubicar»: zona rayada de pendiente de colocar, clara como el resto de la página */
@@ -1525,3 +1525,9 @@ body.mision #view > .link { color: #c9d4cb; }
 :root[data-sun] .dash-kpi, :root[data-sun] .fx-act, :root[data-sun] .cl-row, :root[data-sun] .fx-hero, :root[data-sun] .dash-q, :root[data-sun] .empty { border: 2px solid #000; }
 :root[data-sun] .nav-btn:not(.on) { color: #000; } :root[data-sun] .nav-btn { font-weight: 800; }
 :root[data-sun] .cl-gear, :root[data-sun] .art, :root[data-sun] .fx-art { background: #fff; border: 1.5px solid #000; }
+/* Material fungible al final de Material: plegado, solo con el título */
+.fung > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; list-style: none; }
+.fung > summary::-webkit-details-marker { display: none; }
+.fung > summary h2 { display: flex; align-items: center; gap: 8px; }
+.fung .fung-chev { transition: transform .2s var(--ease); transform: rotate(90deg); color: var(--muted); }
+.fung[open] .fung-chev { transform: rotate(-90deg); }

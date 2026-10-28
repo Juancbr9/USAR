@@ -252,7 +252,6 @@ function viewContVisual() {
       <h3 class="sec-title">${ic('alert')} Sin ubicar</h3>
       <div class="cv-cell cv-unplaced" data-door="0" onclick="cvClick(event, 0)"><button class="sr-only" aria-label="Sin ubicar: ${ub.length} cajas y ${ug.filter(g => !get('boxes', g.box)).length} equipos">Sin ubicar</button>${cellContent(ug, ub)}</div>
     </div>` : ''}
-    ${consIn(d => d <= 20).length ? `<div class="panel" id="alm-fungible">${consList(consIn(d => d <= 20), true)}</div>` : ''}
 `;
 }
 
@@ -327,8 +326,6 @@ function gearFormAt(at = {}) { if (at.vehicle || at.door !== undefined) setPref(
 let DRAG = null;
 function dragTarget(x, y) {
   const el = document.elementFromPoint(x, y);
-  const rev = el?.closest('[data-rev]');
-  if (rev) return { rev: true, el: rev };
   const box = DRAG?.gear && el?.closest('.tok-box, .place-box');
   if (box && box.dataset.box !== get('gear', DRAG.gear)?.box) return { box: box.dataset.box, el: box };
   const person = el?.closest('[data-person]');
@@ -340,8 +337,8 @@ function dragTarget(x, y) {
 function dragDock() {
   const z = (attr, icon, label) => `<div class="dock-zone" ${attr}>${ic(icon, 'i-sm')}<span>${label}</span></div>`;
   const dock = Object.assign(document.createElement('div'), { id: 'dragDock', className: 'drag-dock' });
-  dock.innerHTML = z('data-door="0"', 'box', 'Sin ubicar') + z(`data-door="${PASILLO}"`, 'layers', 'Pasillo') + z(`data-door="${OTROS}"`, 'dots', 'Otros')
-    + (DRAG?.cons ? '' : z('data-person="1"', 'hardhat', 'Persona')) + (DRAG?.gear ? z('data-rev="1"', 'wrench', 'En revisión') : '');
+  dock.innerHTML = z('data-door="0"', 'box', 'Sin ubicar') + (DRAG?.cons || DRAG?.epi ? '' : z(`data-door="${ESCALON}"`, 'wrench', 'Escalón'))
+    + (DRAG?.cons ? '' : z('data-person="1"', 'hardhat', 'Persona'));
   document.body.appendChild(dock);
 }
 function startDrag(d) {
@@ -395,13 +392,16 @@ document.addEventListener('pointerup', e => {
   if (!t) return;
   if (t.person) return givePicker(d);
   if (d.epi) { const x = get('epis', d.epi), door = +t.cell.dataset.door || 0; if (x && !t.cell.dataset.veh && +x.door !== door) put('epis', { ...x, door }, `${epiLabel(x)} → ${placeName(door, '')}`); return; }
-  if (t.rev) { const g = get('gear', d.gear); return g && (g.status === 'OPERATIVO' ? revForm(g.id) : toast(`${g.name} ya está en revisión`)); }
   if (t.box) return putInBox(d.gear, t.box);
   const { door, veh } = t.cell.dataset;
   if (d.cons) { const c = get('consumables', d.cons); if (c && !veh && consDoor(c) !== +door) put('consumables', { ...c, door: +door || 0, location: '' }, `"${c.name}" → ${placeName(+door || 0, '')}`); return; }
   const same = it => veh ? it.vehicle === veh : !it.vehicle && (it.door || 0) === +door;
   if (d.box) { const b = get('boxes', d.box); if (!same(b)) moveBox(d.box, +door || 0, veh || ''); }
-  else { const g = get('gear', d.gear); if (!same(g) || g.box) moveGear(d.gear, +door || 0, veh || ''); }
+  else {
+    const g = get('gear', d.gear); if (!same(g) || g.box) moveGear(d.gear, +door || 0, veh || '');
+    // Al escalón va lo que se revisa: si estaba operativo, se apunta qué le pasa
+    if (+door === ESCALON && !veh && g.status === 'OPERATIVO') revForm(g.id);
+  }
 });
 
 // Soltar en «Persona»: se elige quién y le aparece en su ficha (el EPI como suyo; el material, como que lo lleva)
@@ -475,6 +475,7 @@ function findGo(kind, id) {
   const x = kind === 'box' ? get('boxes', id) : kind === 'cons' ? get('consumables', id) : get('gear', id); if (!x) return;
   const box = kind === 'gear' ? boxOf(x) : kind === 'box' ? x : null, door = kind === 'cons' ? consDoor(x) : x.door;
   setPref({ tab: 'contenedor', ...(x.vehicle || !door || door > 20 ? {} : { cside: door <= 10 ? 'izq' : 'der' }) });
+  if (kind === 'cons') almacenGo('fungible');
   const sel = box ? `[data-box="${box.id}"]` : kind === 'cons' ? `[data-cons="${id}"]` : `[data-gear="${id}"]`;
   const el = document.querySelector(sel);
   if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('found'); setTimeout(() => el.classList.remove('found'), 3200); }
@@ -493,7 +494,7 @@ const hueco = (d, cls, label, extra = '') => { const [items, b] = enSitio(d); re
   <div class="cv-cell ${cls}" data-door="${d}" aria-label="${esc(placeRec(d).label)}" onclick="cvClick(event, ${d})">
     <button class="cv-tag" aria-label="${esc(placeRec(d).label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos">${label}</button>${extra}${cellContent(items, b)}${epiEn(d).map(tokEpi).join('')}</div>`; };
 function viewArmarios() {
-  const cons = consIn(enArmarios), lleno = ARMARIOS.map(a => a.id).concat(ARM_SUELO).filter(d => enSitio(d).flat().length || epiEn(d).length);
+  const lleno = ARMARIOS.map(a => a.id).concat(ARM_SUELO).filter(d => enSitio(d).flat().length || epiEn(d).length);
   return `
     <div class="panel">
       <div class="between sec-head"><h2>Armarios</h2></div>
@@ -511,12 +512,11 @@ function viewArmarios() {
     </div>
     ${lleno.length ? `<div class="panel"><div class="list">${lleno.map(d => { const [items, b] = enSitio(d), loose = items.filter(g => !get('boxes', g.box)); return `
       <button class="item" onclick="cellModal(${d})"><div><b>${esc(placeRec(d).label)}</b><small>${esc([...b.map(x => 'caja ' + x.code), ...loose.map(g => g.name + qtyText(g)), ...epiEn(d).map(e => `${epiLabel(e)}${e.size && e.size !== 'Universal' ? ' T' + e.size : ''} ×${epiQty(e)}`)].join(', '))}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div></div>` : ''}
-    ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}`;
+`;
 }
 
 /* ---------- Pasillo: estantería de palés, 5 módulos con suelo y balda 1 ---------- */
 function viewPasillo() {
-  const cons = consIn(d => PASILLO_SITIOS.some(p => p.id === d));
   return `
     <div class="panel">
       <div class="between wrap-row sec-head"><h2>Pasillo</h2></div>
@@ -527,28 +527,26 @@ function viewPasillo() {
           ${Array.from({ length: PAS_MOD }, (_, m) => hueco(100 + (m + 1) * 10 + nv, 'pas-cell' + (nv ? '' : ' pas-floor'), nv === PAS_NIV.length - 1 ? 'M' + (m + 1) : '')).join('')}`).join('')}
       </div></div>
     </div>
-    ${cons.length ? `<div class="panel">${consList(cons, true)}</div>` : ''}
-    ${viewPlace(PASILLO, 'En el pasillo, sin hueco concreto')}`;
+`;
 }
 
 // Pasillo 3 y Otros: lista de lo que hay, con sus cajas
-function viewPlace(door, title) {
+function viewPlace(door, title, hint = '') {
   const p = placeRec(door), at = JSON.stringify({ door }).replace(/"/g, '&quot;');
   const bs = list('boxes').filter(b => !b.vehicle && enAlmacen(b) && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));
   const loose = list('gear').filter(g => !g.vehicle && enAlmacen(g) && g.door === door && !get('boxes', g.box)).sort((a, b) => (a.where || '').localeCompare(b.where || '') || byName(a, b));
-  const cons = consIn(d => d === door);
   const row = g => `<button class="item drag-it" data-gear="${g.id}" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>${g.where ? `<small>${esc(g.where)}</small>` : ''}</div></div>${revTag(g)}${novTag(g)}</button>`;
   return `
     <div class="panel drop-zone" data-door="${door}">
       <div class="between wrap-row sec-head"><h2>${esc(title || p.label)}</h2>
         ${puedeFlota() ? `<button class="btn btn-g" onclick="addMaterial(${at})">${ic('plus')} Material</button>` : ''}</div>
+      ${hint ? `<p class="muted" style="margin:-4px 0 12px">${esc(hint)}</p>` : ''}
       ${bs.map(b => { const [, hex, ink] = colorOf(b), items = boxItems(b.id); return `
         <div class="well drag-it place-box" data-box="${b.id}">
           <button class="between box-head" onclick="boxDetail('${b.id}')"><span class="row"><span class="box-chip" style="--c:${hex}; --ink:${ink}">${esc(b.code)}</span><b>${esc(b.name || '')}</b>${novTag(b)}</span><span class="muted">${items.length}</span></button>
           ${items.length ? `<div class="list">${items.map(row).join('')}</div>` : ''}</div>`; }).join('')}
       ${loose.length ? `<div class="list">${loose.map(row).join('')}</div>` : ''}
-      ${consList(cons)}
-      ${!bs.length && !loose.length && !cons.length ? `<p class="muted">${door === OTROS ? 'Material guardado en otros sitios (nave, otro parque…). Al añadirlo, escribe dónde está.' : 'Vacío.'}</p>` : ''}
+      ${!bs.length && !loose.length ? '<p class="muted">Vacío.</p>' : ''}
       ${bs.length || loose.length ? `<button class="btn btn-g btn-sm" style="margin-top:12px" onclick="printLabels(${door})">${ic('qr')} Etiquetas</button>` : ''}
     </div>`;
 }

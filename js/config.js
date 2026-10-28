@@ -19,8 +19,9 @@ const RENAULT_MOD = { '': ['Vacía (sin módulo)', 'v-ab-chasis'], cont: ['Conte
 // Posición de cada hueco sobre el dibujo del lateral (img/contenedor-lateral.webp): izquierda, arriba, ancho y alto en %
 const HUECO_RECT = { 1: [5.73, 4.48, 19.56, 49.25], 2: [5.73, 56.72, 19.56, 35.82], 3: [27.75, 4.48, 45.11, 26.12], 4: [27.75, 37.01, 21.15, 26.42],
   7: [51.37, 37.01, 21.5, 26.42], 5: [27.75, 69.4, 21.15, 23.13], 8: [51.37, 69.4, 21.5, 23.13], 9: [75.33, 4.48, 18.94, 49.25], 10: [75.33, 56.72, 18.94, 35.82] };
-// Otros sitios donde se guarda material, fuera del contenedor (mismo campo «door» que los huecos)
-const PASILLO = 101, OTROS = 301;
+// Otros sitios donde se guarda material, fuera del contenedor (mismo campo «door» que los huecos). ESCALON: el material
+// en revisión o arreglándose. PASILLO («pasillo sin hueco») y OTROS ya no se usan: lo que hubiera pasa a «sin ubicar»
+const PASILLO = 101, OTROS = 301, ESCALON = 302;
 // Pasillo: estantería de palés (montantes azules, largueros naranjas) con PAS_MOD módulos y dos alturas: el suelo y la
 // primera balda. id = 100 + módulo × 10 + nivel (nivel 0 = suelo); PASILLO (101) es «en el pasillo, sin sitio concreto».
 const PAS_MOD = 5, PAS_NIV = ['Suelo', 'Balda 1'];
@@ -29,13 +30,12 @@ const PASILLO_SITIOS = Array.from({ length: PAS_MOD }, (_, m) => PAS_NIV.map((nv
 // id = 200 + armario × 10 + balda; ARM_SUELO es el suelo de la estantería, delante de los armarios (cascos, cajas, nevera…)
 const ARM_BALDAS = 5, ARM_SUELO = 290;
 const ARMARIOS = [1, 2, 3].flatMap(n => Array.from({ length: ARM_BALDAS }, (_, b) => ({ id: 200 + n * 10 + b + 1, n, balda: b + 1 })));
-const enPasillo = d => d === PASILLO || PASILLO_SITIOS.some(p => p.id === d);
+const enPasillo = d => PASILLO_SITIOS.some(p => p.id === d);
 const enArmarios = d => d === ARM_SUELO || ARMARIOS.some(a => a.id === d);
-const PLACES = [{ id: PASILLO, label: 'Pasillo', short: 'Pasillo', area: 'pasillo' },
-  ...PASILLO_SITIOS.map(p => ({ id: p.id, label: `Pasillo · módulo ${p.mod} · ${PAS_NIV[p.niv].toLowerCase()}`, short: `Pasillo M${p.mod} ${p.niv ? 'balda' : 'suelo'}`, area: 'pasillo' })),
+const PLACES = [...PASILLO_SITIOS.map(p => ({ id: p.id, label: `Pasillo · módulo ${p.mod} · ${PAS_NIV[p.niv].toLowerCase()}`, short: `Pasillo M${p.mod} ${p.niv ? 'balda' : 'suelo'}`, area: 'pasillo' })),
   ...ARMARIOS.map(a => ({ id: a.id, label: `Armario ${a.n} · balda ${a.balda}`, short: `Armario ${a.n} b${a.balda}`, area: 'armarios' })),
   { id: ARM_SUELO, label: 'Delante de los armarios', short: 'Delante armarios', area: 'armarios' },
-  { id: OTROS, label: 'Otros', area: 'otros' }];
+  { id: ESCALON, label: 'Escalón', short: 'Escalón', area: 'escalon' }];
 // Situación del material en revisión
 const REV_STATES = { taller: ['En el taller', 'warn'], espera: ['A la espera de revisión', 'warn'], inoperativo: ['Inoperativo', 'bad'], operativo: ['Operativo (con defecto)', 'ok'], baja: ['De baja', 'bad'] };
 // EPI que lleva cada persona
