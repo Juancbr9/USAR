@@ -2,7 +2,7 @@
 // USAR 242 · Ajustes: mi cuenta, este móvil, equipo, administración e historial
 
 /* ==================== VISTA: AJUSTES ==================== */
-let installPrompt = null;
+let installPrompt = null, AJ_MORE = false;   // AJ_MORE: las unidades siguen desplegadas al cambiar una
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; if (prefs.tab === 'ajustes') render(); });
 
 // Lo justo para cada persona: su cuenta y cómo ve la app en su móvil. Los datos se comparten solos (no hay nada que
@@ -38,7 +38,7 @@ function viewAjustes() {
           : ios ? '<p class="muted">En Safari pulsa <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.</p>'
           : '<p class="muted">En el menú del navegador elige <b>Instalar aplicación</b> o <b>Añadir a pantalla de inicio</b>.</p>'}
       </div>`}
-      <details class="panel span2 aj-more">
+      <details class="panel span2 aj-more" ${AJ_MORE ? 'open' : ''} ontoggle="AJ_MORE = this.open">
         <summary class="sec-title" style="margin:0; cursor:pointer">${ic('locate')} Unidades de coordenadas y distancias</summary>
         <div class="grid g2" style="margin-top:12px">
           <label class="lbl">Coordenadas<select class="input" onchange="setPref({ coordFmt: this.value })">${[['latlon', 'Latitud y longitud (28.12350, -15.43630)'], ['utm', 'UTM (28R 457151 E 3110960 N)'], ['mgrs', 'MGRS (28R DS 57150 10960)']].map(([k, l]) => `<option value="${k}" ${coordFmt() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>

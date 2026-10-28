@@ -40,9 +40,10 @@ with sync_playwright() as p:
     # Sin mantenimiento, GRANADOS entra con normalidad y no ve el interruptor
     a.evaluate("setPref({ session: 'OP-01', activeOperator: 'GRANADOS', tab: 'ajustes' })"); a.wait_for_selector('.topbar:visible')
     assert a.locator('.mant-card').count() == 0 and a.locator('text=Activar mantenimiento').count() == 0
-    # Ajustes en bloques: GRANADOS ve su cuenta, su móvil y el equipo, pero no Administración ni copias
+    # Ajustes en bloques: GRANADOS (sin ser jefe) ve su cuenta y su móvil, pero no Administración, copias ni historial,
+    # ni nada de sincronizar a mano
     t = a.inner_text('#view').lower()
-    assert all(g in t for g in ['mi cuenta', 'este móvil', 'equipo', 'historial']), t
+    assert all(g in t for g in ['mi cuenta', 'este móvil']) and 'historial' not in t and 'sincronizar' not in t, t
     assert 'administración' not in t and a.locator('text=Restaurar datos iniciales').count() == 0
     # Sigue igual al recargar (se guarda con los datos)
     a.reload(); a.wait_for_selector('.topbar:visible'); assert a.locator('.mant-card').count() == 0

@@ -129,7 +129,8 @@ with sync_playwright() as p:
     back = a.evaluate("parseCoord('28R 457151 3110960')"); assert abs(back[0] - 28.1235) < 1e-4, back
     assert a.evaluate("parseCoord('28,1235; -15,4363')") == [28.1235, -15.4363]
     a.evaluate("go('ajustes')"); a.wait_for_timeout(150)
-    a.select_option('.panel:has-text("Unidades") select >> nth=0', 'mgrs'); a.select_option('.panel:has-text("Unidades") select >> nth=1', 'km')
+    a.evaluate("document.querySelector('.aj-more').open = true"); a.wait_for_timeout(100)   # las unidades van plegadas en Ajustes
+    a.select_option('.aj-more select >> nth=0', 'mgrs'); a.select_option('.aj-more select >> nth=1', 'km')
     assert a.evaluate("[prefs.coordFmt, prefs.distUnit, fmtDist(250)]") == ['mgrs', 'km', '0,25 km']
     # Worksite: desplegables, coordenadas en MGRS y varios riesgos
     a.evaluate("openMission('M-1', 'worksites')"); a.wait_for_timeout(150); a.click('button.btn-a:has-text("Worksite")')
