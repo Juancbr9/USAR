@@ -39,6 +39,7 @@ function render() {
   $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)();
   const screen = [prefs.tab, prefs.mission, prefs.person, prefs.move, prefs.ws].join('|');
   if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
+  document.body.classList.toggle('mision', !!document.querySelector('#view .mc'));
   if (document.querySelector('.cvi')) fitCells();
   navTrack();
   if ($('search').value) renderSearch();

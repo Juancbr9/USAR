@@ -32,7 +32,7 @@ function viewMission(m) {
 
   return `
     <button class="link" onclick="go('${m.type === 'ejercicio' ? 'ejercicios' : 'intervenciones'}')">${ic('back', 'i-sm')} ${m.type === 'ejercicio' ? 'Todos los ejercicios' : 'Todas las intervenciones'}</button>
-    <div class="panel">
+    ${m.status === 'active' ? missionConsole(m) : `<div class="panel">
       <div class="row" style="margin-bottom:8px"><span class="tag ${m.type === 'ejercicio' ? 'info' : 'warn'}">${esc(MISSION_TYPES[m.type] || m.type || 'Operación')}</span>${m.scope === 'bic' ? '<span class="tag info">Patrimonio BIC</span>' : ''}<span class="tag ${cls}">${label}</span>
         <span class="tag neutral">Fase ${(m.phase || 0) + 1}/${phasesFor(m).length}: ${phaseOf(m).short}</span></div>
       <h2 style="font-size:22px">${esc(m.title)}</h2>
@@ -50,13 +50,38 @@ function viewMission(m) {
         <button class="btn btn-g" onclick="open('https://wa.me/?text=' + encodeURIComponent(missionText(mget('${m.id}'))), '_blank')">${ic('chat')} Orden de salida</button>
         <button class="btn btn-g" aria-label="Más acciones" onclick="missionMenu('${m.id}')">${ic('dots')}</button>
       </div>
-    </div>
+    </div>`}
 
     <div class="mlayout"><nav class="tabs" aria-label="Secciones de la operación">${tabs.map(([id, icon, name]) => `
       <button class="tab ${tab === id ? 'on' : ''}" ${tab === id ? 'aria-current="page"' : ''} onclick="setPref({ mtab: '${id}' })">${ic(icon, 'i-sm')}${name}${counts[id] ? `<span class="n">${counts[id]}</span>` : ''}</button>`).join('')}
     </nav>
     <div class="mbody">${body}</div></div>`;
 }
+
+// Modo misión: con la operación en curso, la cabecera es una consola oscura y de letra grande, con el tiempo
+// transcurrido y la hora siempre a la vista, las cifras que importan y lo justo para actuar
+const hms = ms => { const t = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(t / 3600), Math.floor(t / 60) % 60, t % 60].map(n => String(n).padStart(2, '0')).join(':'); };
+function missionConsole(m) {
+  const inZone = presence(m).filter(p => p.state === 'in').length, pend = victimsOf(m.id).filter(v => !isOut(v)).length;
+  const par = Math.round((parEvery(m) - (Date.now() - lastPar(m))) / 6e4);
+  const stat = (n, label, tab, cls = '') => `<button class="mc-stat ${cls}" onclick="setPref({ mtab: '${tab}' })"><b class="num">${n}</b><small>${label}</small></button>`;
+  return `<div class="mc ${m.type === 'ejercicio' ? 'ex' : ''}">
+    <div class="mc-top"><span class="live-tag">${m.type === 'ejercicio' ? 'Ejercicio' : 'Activación'} en curso</span><span class="mc-now" data-now>${fmtHour(Date.now())}</span></div>
+    <h2 class="mc-title">${esc(m.title)}</h2>
+    <p class="mc-sub">Fase ${(m.phase || 0) + 1}/${phasesFor(m).length}: ${esc(phaseOf(m).short)}${m.location ? ` · <a href="${mapsUrl(m.location)}" target="_blank" rel="noopener">${esc(m.location)} ↗</a>` : ''}${m.channel ? ` · ${ic('radio', 'i-sm')} ${esc(m.channel)}` : ''}</p>
+    <div class="mc-clock"><b class="num" data-since="${m.startedAt || Date.now()}">${hms(Date.now() - (m.startedAt || Date.now()))}</b><small>desde ${m.startedAt ? fmtHour(m.startedAt) : '—'}</small></div>
+    <div class="mc-stats">${stat(inZone, 'en zona', 'personal')}${stat(pend, 'víctimas pendientes', 'victimas', pend ? 'warn' : '')}${stat(par <= 0 ? '¡Ya!' : par + ' min', 'próximo recuento', 'seguridad', par <= 0 ? 'bad' : par <= 5 ? 'warn' : '')}</div>
+    <div class="mc-acts">
+      <button class="btn btn-stop" onclick="finishMission('${m.id}')">${ic('stop')} Finalizar</button>
+      <button class="btn mc-btn" onclick="missionForm('${m.id}')">${ic('pencil')} Editar</button>
+      <button class="btn mc-btn" aria-label="Más acciones" onclick="missionMenu('${m.id}')">${ic('dots')}</button>
+    </div></div>`;
+}
+// El reloj de la consola corre solo (sin volver a pintar la pantalla)
+setInterval(() => {
+  document.querySelectorAll('[data-since]').forEach(el => { el.textContent = hms(Date.now() - +el.dataset.since); });
+  document.querySelectorAll('[data-now]').forEach(el => { el.textContent = fmtHour(Date.now()); });
+}, 500);
 
 function missionMenu(mid) {
   const m = mget(mid);
