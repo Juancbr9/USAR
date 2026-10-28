@@ -32,6 +32,22 @@ with sync_playwright() as p:
     a.evaluate("setPref({ tab: 'vencimientos', vwin: 0 })"); a.wait_for_timeout(200)
     t = a.inner_text('#view'); assert 'ET-110940' in t and 'cita 28/10 11:00' in t and 'ITV' in t
 
+    # ITV: al llegar la fecha, Inicio pregunta si la ha pasado; se apunta el resultado, los fallos y la próxima fecha
+    a.evaluate("(() => { const v = get('vehicles', 'V-VPI'); put('vehicles', { ...v, units: v.units.map(u => ({ ...u, itv: todayISO() })) }); setPref({ tab: 'avisos' }); })()"); a.wait_for_timeout(200)
+    assert a.locator('.item:has-text("ET-121338")').count() == 1 and 'ITV: ¿la han pasado?'.upper() in a.inner_text('#view').upper()
+    a.click('.item:has-text("ET-121338")'); a.wait_for_selector('#modalForm [name=res]')
+    a.select_option('#modalForm [name=res]', 'desfavorable'); a.fill('#modalForm [name=next]', '2026-12-01'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
+    assert a.evaluate("get('vehicles', 'V-VPI').units[0].itvs") is None, 'desfavorable sin fallos: pide apuntarlos'
+    a.fill('#modalForm [name=defects]', 'Luz de matrícula fundida'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
+    u = a.evaluate("get('vehicles', 'V-VPI').units[0]")
+    assert u['itv'] == '2026-12-01' and u['itvs'][0]['res'] == 'desfavorable' and u['itvs'][0]['defects'] == 'Luz de matrícula fundida', u
+    assert 'ITV' in a.inner_text('#modal') and 'Luz de matrícula fundida' in a.inner_text('#modal'), 'la ficha del vehículo muestra la última ITV'
+    a.keyboard.press('Escape'); a.evaluate("render()"); a.wait_for_timeout(150); assert a.locator('#view .item:has-text("ET-121338")').count() == 0, 'el aviso desaparece'
+    # Editar la matrícula no borra su historial de ITV
+    a.evaluate("unitForm('V-VPI', get('vehicles', 'V-VPI').units[0].id)"); a.wait_for_selector('#modalForm [name=plate]'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
+    assert len(a.evaluate("get('vehicles', 'V-VPI').units[0].itvs")) == 1
+    a.keyboard.press('Escape')
+
     # Quien gestiona la flota (en las pruebas, GRANADOS) pasa la ATB 110940 a M2 desde su ficha: cambia de modelo y de dibujo
     a.evaluate("setPref({ tab: 'vehiculos' })"); a.wait_for_timeout(200)
     assert '9 matrículas' in a.inner_text('#view')

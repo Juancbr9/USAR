@@ -160,10 +160,12 @@ function alerts() {
     out: gearList.filter(g => g.out && !g.out.mission).sort(byName),   // préstamos; lo que sale con una operación no es un aviso
     ready: operators().flatMap(o => readinessIssues(o.id).map(([cls, text]) => ({ o, cls, text }))),
     // Matrículas cuya última revista de salida tuvo fallos (hasta que otra revista salga bien)
-    veh: vehicles().flatMap(v => (v.units || []).map(u => ({ v, u, c: lastVcheck(u.id) }))).filter(x => x.c?.fails.length)
+    veh: vehicles().flatMap(v => (v.units || []).map(u => ({ v, u, c: lastVcheck(u.id) }))).filter(x => x.c?.fails.length),
+    // ITV que ya ha llegado: se pregunta si la ha pasado
+    itv: itvPending()
   };
 }
-const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length;
+const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length;
 
 /* ==================== VISTA: INICIO ==================== */
 // Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, accesos rápidos y lo próximo del calendario
@@ -246,6 +248,8 @@ function viewAvisos() {
         d.kind === 'gear' ? d.item.name : `${epiLabel(d.item)} de ${opName(d.item.holder)}`, d.what, dueTag(d.date))))}
       ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`findGo('cons', '${c.id}')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)), 'log',
         `<button class="btn btn-g full" style="margin-top:10px" onclick="pedidoForm()">${ic('share')} Preparar el pedido</button>`)}
+      ${section('ITV: ¿la han pasado?', 'warn', a.itv.map(x => row(`itvForm('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`,
+        `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)))}
       ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))))}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
@@ -294,6 +298,7 @@ function reportText() {
   block('🦺 EPI por revisar', a.epi.map(e => `${epiLabel(e)} de ${opName(e.holder)}`));
   block('⏰ Vencimientos', a.due.map(d => `${d.kind === 'gear' ? d.item.name : epiLabel(d.item) + ' de ' + opName(d.item.holder)}: ${due(d.date).text.toLowerCase()}`));
   block('📦 Stock bajo', a.low.map(c => `${c.name}: ${c.stock} ${c.unit} (mín. ${c.min})`));
+  block('🚗 ITV sin apuntar', a.itv.map(x => `${x.v.name} ${x.u.plate}: ${fmtDate(x.u.itv)}`));
   block('🚒 Vehículos con fallos', a.veh.map(x => `${x.v.name} ${x.u.plate}: ${x.c.fails.join(', ')}`));
   block('↗️ Fuera del contenedor', a.out.map(g => `${g.name} → ${g.out.who}`));
   if (!alertCount(a)) lines.push('', '✅ *Sin incidencias*');

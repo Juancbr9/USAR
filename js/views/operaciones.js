@@ -220,8 +220,9 @@ function vehicleView(id) {
   const units = unitsOf_(v);
   const unitRow = u => { const c = lastVcheck(u.id); return `
     <div class="item unit-row"><div class="grow"><b class="nw">${esc(u.plate)}</b>${u.use || u.titular ? `<small>${esc([u.use, u.titular].filter(Boolean).join(' · '))}</small>` : ''}
-      ${c ? `<button class="link vc-line ${c.fails.length ? 'bad' : 'ok'}" onclick="vcheckHistory('${id}', '${u.id}')">${esc(checkLine(c))}</button>` : '<small class="muted">Sin revista de salida</small>'}</div>
-      <div class="unit-acts">${itvTag(u)}<button class="btn btn-g btn-sm" onclick="vcheckForm('${id}', '${u.id}')">${ic('clipboard', 'i-sm')} Revista</button></div></div>`; };
+      ${c ? `<button class="link vc-line ${c.fails.length ? 'bad' : 'ok'}" onclick="vcheckHistory('${id}', '${u.id}')">${esc(checkLine(c))}</button>` : '<small class="muted">Sin revista de salida</small>'}
+      ${(l => l ? `<button class="link vc-line ${ITV_RES[l.res]?.[1] === 'ok' ? 'ok' : 'bad'}" onclick="itvHistory('${id}', '${u.id}')">ITV ${fmtDate(l.date)}: ${esc(ITV_RES[l.res]?.[0].split(' (')[0] || l.res)}${l.defects ? ' · ' + esc(l.defects) : ''}</button>` : '')(itvLast(u))}</div>
+      <div class="unit-acts">${u.itv && daysTo(u.itv) <= 0 ? `<button class="btn btn-a btn-sm" onclick="itvForm('${id}', '${u.id}')">${ic('alert', 'i-sm')} ¿Pasó la ITV?</button>` : `<button class="link" aria-label="ITV de ${esc(u.plate)}" onclick="itvHistory('${id}', '${u.id}')">${itvTag(u) || '<span class="tag neutral">ITV</span>'}</button>`}<button class="btn btn-g btn-sm" onclick="vcheckForm('${id}', '${u.id}')">${ic('clipboard', 'i-sm')} Revista</button></div></div>`; };
   openModal(v.name, `
     ${id === RENAULT ? `<p class="muted" style="margin-bottom:10px">Viene vacía detrás. Elige un módulo para verla con él; en cada actividad se elige el que lleva.</p>
       <div class="form">${modPreview('', 'Módulo')}</div>` : `<div class="veh-hero">${vehArt(v, 'lg')}</div>`}
@@ -255,6 +256,39 @@ function vcheckForm(vid, unit = '') {
     vehicleView(vid);
   });
 }
+/* ---------- ITV: al llegar la fecha se pregunta si la ha pasado; resultado, defectos y próxima fecha ---------- */
+const ITV_RES = { favorable: ['Favorable', 'ok'], desfavorable: ['Desfavorable (con defectos)', 'warn'], negativa: ['Negativa (no puede circular)', 'bad'] };
+// Matrículas cuya ITV ya ha llegado (o pasado) y aún no se ha apuntado el resultado
+const itvPending = () => vehicles().flatMap(v => (v.units || []).filter(u => u.itv && daysTo(u.itv) <= 0).map(u => ({ v, u })));
+const itvLast = u => (u.itvs || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+function itvForm(vid, unit, pre = {}) {
+  const v = get('vehicles', vid), u = (v?.units || []).find(x => x.id === unit); if (!u) return;
+  const next = new Date(); next.setFullYear(next.getFullYear() + 1);
+  openForm(`ITV · ${v.name} ${u.plate}`, [
+    { k: 'res', label: '¿Ha pasado la ITV?', value: pre.res || 'favorable', options: Object.entries(ITV_RES).map(([k, [l]]) => [k, l]), required: true, wide: true },
+    { k: 'date', label: 'Fecha en que se pasó', type: 'date', value: pre.date || todayISO(), required: true },
+    { k: 'next', label: 'Próxima fecha (siguiente ITV, o volver a pasarla si ha fallado)', type: 'date', value: pre.next || next.toISOString().slice(0, 10), required: true, wide: true },
+    { k: 'defects', label: 'Fallos o defectos (si ha tenido)', type: 'textarea', value: pre.defects || '', wide: true, placeholder: 'Ej: Luz de matrícula fundida; holgura en la dirección' },
+    { k: 'station', label: 'Estación ITV', value: pre.station || '', placeholder: 'Ej: ITV Arinaga' }
+  ], val => {
+    if (val.res !== 'favorable' && !val.defects.trim()) { toast('Apunta qué fallos ha tenido', 'bad'); return itvForm(vid, unit, val); }
+    const rec = { date: val.date, res: val.res, next: val.next, defects: val.defects.trim(), station: val.station.trim(), by: prefs.activeOperator };
+    const cur = get('vehicles', vid);
+    put('vehicles', { ...cur, units: cur.units.map(x => x.id === unit ? { ...x, itv: val.next, cita: '', itvs: [...(x.itvs || []), rec] } : x) },
+      `ITV ${u.plate}: ${ITV_RES[val.res][0].toLowerCase()}${rec.defects ? ' (' + rec.defects + ')' : ''}; próxima ${fmtDate(val.next)}`);
+    vehicleView(vid);
+  });
+}
+function itvHistory(vid, unit) {
+  const v = get('vehicles', vid), u = (v?.units || []).find(x => x.id === unit); if (!u) return;
+  const hs = (u.itvs || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  openModal(`ITV · ${u.plate}`, `<p class="muted" style="margin-bottom:10px">${u.itv ? `Próxima: ${fmtDate(u.itv)}` : 'Sin fecha de ITV'}</p>
+    <div class="list">${hs.map(h => `<div class="item"><div class="grow"><b>${fmtDate(h.date)}${h.station ? ' · ' + esc(h.station) : ''}</b>
+      ${h.defects ? `<small class="${h.res === 'favorable' ? '' : 'bad-text'}">Defectos: ${esc(h.defects)}</small>` : ''}<small>Próxima: ${fmtDate(h.next)}${h.by ? ' · ' + esc(h.by) : ''}</small></div>
+      <span class="tag ${ITV_RES[h.res]?.[1] || 'neutral'}">${esc((ITV_RES[h.res]?.[0] || h.res).split(' (')[0])}</span></div>`).join('') || '<p class="muted">Aún no hay ITV apuntadas.</p>'}</div>
+    <button class="btn btn-a full" style="margin-top:12px" onclick="itvForm('${vid}', '${unit}')">${ic('check')} Apuntar ITV</button>`);
+}
+
 function vcheckHistory(vid, unit = '') {
   const v = get('vehicles', vid), u = (v.units || []).find(x => x.id === unit), cs = checksOf(vid, unit);
   openModal(`Revistas · ${u ? u.plate : v.name}`, `<div class="list">${cs.map(c => `
@@ -305,7 +339,7 @@ function unitForm(vid, id) {
     if (!plate) return toast('Falta la matrícula', 'bad');
     const dup = allUnits().find(x => x.plate === plate && x.id !== id);
     if (dup) return toast(`La matrícula ${plate} ya está en ${vehName(dup.vid)}`, 'bad');
-    const rec = { id: id || unitId(plate), plate, itv: val.itv, cita: val.cita, use: val.use, titular: val.titular, suplente: val.suplente };
+    const rec = { ...u, id: id || unitId(plate), plate, itv: val.itv, cita: val.cita, use: val.use, titular: val.titular, suplente: val.suplente };
     const to = get('vehicles', val.vid) || v;
     if (to.id !== vid) stamp('vehicles', { ...v, units: (v.units || []).filter(x => x.id !== id) });
     put('vehicles', { ...to, units: [...(to.units || []).filter(x => x.id !== rec.id), rec] },
