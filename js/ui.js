@@ -4,7 +4,27 @@
 /* ==================== RENDER GENERAL ==================== */
 // Áreas, secciones y barra de navegación: ver js/areas.js
 
-// Al cambiar de pantalla (no en cada actualización de datos) el contenido aparece con un fundido corto
+/* ---------- Movimiento ----------
+   Transiciones entre pantallas, ventanas que suben y bajan, el menú que se desliza y cifras que cuentan. Solo con la
+   clase «motion» en <html>: no si el móvil pide reducir el movimiento (accesibilidad) ni en las pruebas automáticas
+   (navigator.webdriver), que necesitan que todo esté quieto al momento. */
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const setMotion = () => document.documentElement.classList.toggle('motion', !reduceMotion.matches && !navigator.webdriver);
+setMotion(); reduceMotion.addEventListener?.('change', setMotion);
+const motion = () => document.documentElement.classList.contains('motion');
+// Cifras que cuentan desde cero hasta su valor al entrar en la pantalla (data-count, con data-suf detrás: «%», «/13»…)
+function countUp() {
+  document.querySelectorAll('#view [data-count]').forEach(el => {
+    const to = +el.dataset.count, suf = el.dataset.suf || '', t0 = performance.now();
+    if (!(to > 0)) return;
+    const step = t => { const p = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(to * e) + suf; if (p < 1 && el.isConnected) requestAnimationFrame(step); };
+    el.textContent = '0' + suf; requestAnimationFrame(step);
+  });
+}
+// La cabecera se eleva (sombra) en cuanto se baja un poco
+addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 4), { passive: true });
+
+// Al cambiar de pantalla (no en cada actualización de datos) el contenido entra con una transición corta
 let LAST_SCREEN = '';
 function render() {
   if (!loggedIn()) return renderLogin();
@@ -18,7 +38,7 @@ function render() {
   renderActivationBar();
   $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)();
   const screen = [prefs.tab, prefs.mission, prefs.person, prefs.move, prefs.ws].join('|');
-  if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); }
+  if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
   if (document.querySelector('.cvi')) fitCells();
   navTrack();
   if ($('search').value) renderSearch();
@@ -73,9 +93,17 @@ function renderDrawer(count = alertCount(alerts()), active = list('missions').so
       <button class="icon-btn" aria-label="Cerrar menú" onclick="toggleDrawer(false)">${ic('x', 'i-lg')}</button></div>
     ${menuTree(count, active)}`;
 }
+let DRAWER_CLOSING = null;
 function toggleDrawer(open) {
   const d = $('drawer'); if (!d) return;
-  open ??= d.classList.contains('hidden');
+  open ??= d.classList.contains('hidden') || !!DRAWER_CLOSING;
+  if (DRAWER_CLOSING) { clearTimeout(DRAWER_CLOSING); DRAWER_CLOSING = null; d.classList.remove('closing'); if (!open) { d.classList.add('hidden'); $('drawerPanel').innerHTML = ''; } }
+  if (!open && !d.classList.contains('hidden') && motion()) {
+    // Se desliza hacia fuera y luego se oculta
+    d.classList.add('closing'); document.body.classList.remove('drawer-open'); $('menuBtn')?.setAttribute('aria-expanded', false);
+    DRAWER_CLOSING = setTimeout(() => { DRAWER_CLOSING = null; d.classList.remove('closing'); d.classList.add('hidden'); $('drawerPanel').innerHTML = ''; }, 200);
+    return;
+  }
   d.classList.toggle('hidden', !open); document.body.classList.toggle('drawer-open', open);
   if (!open) $('drawerPanel').innerHTML = '';
   $('menuBtn')?.setAttribute('aria-expanded', open);
@@ -149,8 +177,9 @@ function viewAvisos() {
   // Indicadores
   const ops = operators(), alDia = ops.filter(o => !readinessIssues(o.id).length).length;
   const exp = expiries(), late = exp.filter(x => daysTo(x.date) < 0).length, soon = exp.filter(x => daysTo(x.date) >= 0 && daysTo(x.date) <= 30).length;
-  const kpi = (icon, label, value, sub, cls, onclick) => `<button class="dash-kpi ${cls}" onclick="${onclick}">
-    <span class="dash-kpi-i">${ic(icon)}</span><small>${label}</small><b>${value}</b><span class="dash-kpi-sub">${sub}</span></button>`;
+  // value: [cifra, lo que va detrás] para que la cifra cuente al entrar
+  const kpi = (icon, label, [n, suf = ''], sub, cls, onclick) => `<button class="dash-kpi ${cls}" onclick="${onclick}">
+    <span class="dash-kpi-i">${ic(icon)}</span><small>${label}</small><b data-count="${n}" data-suf="${esc(suf)}">${n}${esc(suf)}</b><span class="dash-kpi-sub">${sub}</span></button>`;
   // Accesos rápidos (con el color de su parte de la app)
   const quick = [['intervenciones', 'alert', 'Activación', 'ops'], ['ejercicios', 'flag', 'Ejercicios', 'ops'], ['contenedor', 'box', 'Material', 'log'], ['revista', 'clipboard', 'Revista', 'log'],
     ['vehiculos', 'truck', 'Vehículos', 'log'], ['personal', 'hardhat', 'Personal', 'team'], ['calendario', 'calendar', 'Calendario', 'team'], ['guia', 'book', 'Guía de campo', 'help']];
@@ -183,10 +212,10 @@ function viewAvisos() {
     ${next ? `<button class="item next-out" onclick="openMission('${next.id}')"><div><small>Próxima salida</small><b>${esc(next.title)}</b><small>${fmtDT(next.date)}${next.location ? ', ' + esc(next.location) : ''}</small></div><span class="tag warn">En preparación</span></button>` : ''}
 
     <div class="dash-kpis">
-      ${kpi('box', 'Material operativo', `${pct}%`, `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
-      ${kpi('wrench', 'En revisión', a.review.length + a.broken.length, a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
-      ${kpi('users', 'Personal al día', `${alDia}/${ops.length}`, 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
-      ${kpi('clock', 'Vencimientos', late + soon, late ? `${late} caducados` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); go('vencimientos')")}
+      ${kpi('box', 'Material operativo', [pct, '%'], `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
+      ${kpi('wrench', 'En revisión', [a.review.length + a.broken.length], a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
+      ${kpi('users', 'Personal al día', [alDia, '/' + ops.length], 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
+      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} caducados` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); go('vencimientos')")}
     </div>
 
     ${total ? `<div class="grid g2">
@@ -220,7 +249,7 @@ function viewAvisos() {
     </div>
 
     <div class="dash-actions">
-      <button class="btn btn-g" onclick="shareText(reportText())">${ic('share')} Enviar estado del material</button>
+      <button class="btn btn-g" onclick="shareText(reportText())">${ic('share')} Enviar estado</button>
       <button class="btn btn-g" onclick="printManifest()">${ic('printer')} Imprimir estado</button>
     </div>`;
 }
@@ -289,7 +318,9 @@ function clearSearch() { $('search').value = ''; renderSearch(); $('searchbar').
 /* ==================== MODAL Y FORMULARIOS ==================== */
 // Ventana: el foco pasa a la ventana (sin abrir el teclado) y vuelve al botón que la abrió al cerrar
 let modalReturn = null;
+let MODAL_CLOSING = null;   // con movimiento, la ventana se cierra tras bajar (y si se abre otra entretanto, no se cierra)
 function openModal(title, html) {
+  if (MODAL_CLOSING) { clearTimeout(MODAL_CLOSING); MODAL_CLOSING = null; $('modal').classList.remove('closing'); }
   const wasOpen = !$('modal').classList.contains('hidden');
   if (!wasOpen) { modalReturn = document.activeElement; history.pushState({ nav: navSnap(), modal: 1 }, ''); }
   $('modalTitle').textContent = title;
@@ -299,8 +330,11 @@ function openModal(title, html) {
   sheet.setAttribute('tabindex', '-1'); sheet.focus({ preventScroll: true });
 }
 function closeModal() {
-  if ($('modal').classList.contains('hidden')) return;
-  $('modal').classList.add('hidden');
+  if ($('modal').classList.contains('hidden') || MODAL_CLOSING) return;
+  if (motion()) {
+    $('modal').classList.add('closing');
+    MODAL_CLOSING = setTimeout(() => { MODAL_CLOSING = null; $('modal').classList.remove('closing'); $('modal').classList.add('hidden'); }, 180);
+  } else $('modal').classList.add('hidden');
   if (modalReturn?.isConnected) modalReturn.focus({ preventScroll: true });
   modalReturn = null;
 }
