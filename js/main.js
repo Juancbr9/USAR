@@ -4,8 +4,8 @@
 /* ==================== ARRANQUE ==================== */
 const VIEWS = {
   avisos: viewAvisos, contenedor: viewContenedor, revista: viewRevista,
-  operaciones: viewOperaciones, ajustes: viewAjustes, guia: viewGuia, despliegue: viewDespliegue, personal: viewPersonal, vencimientos: viewVencimientos, listas: viewListas, calendario: viewCalendario, manual: viewManual,
-  vehiculos: viewVehiculos, intervenciones: () => viewMissionList('intervencion'), ejercicios: () => viewMissionList('ejercicio'), revision: viewRevision, entregas: viewEntregas, fuera: viewFuera, epi: viewEpi,
+  operaciones: viewOperaciones, ajustes: viewAjustes, guia: viewGuia, personal: viewPersonal, listas: viewListas, calendario: viewCalendario, manual: viewManual,
+  vehiculos: viewVehiculos, actividades: viewActividades, revision: viewRevision, entregas: viewEntregas, fuera: viewFuera, epi: viewEpi,
   maniobras: () => viewActs('maniobra'), convoy: () => viewActs('convoy')
 };
 

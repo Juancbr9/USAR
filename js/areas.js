@@ -1,47 +1,51 @@
 'use strict';
-// USAR 242 · Orden de la app: áreas con su color para saber siempre dónde estás.
-//   Actividades (rojo) → activación (intervenciones), ejercicios, maniobras y convoy
-//   Logística (azul)   → contenedor, revista, stock, EPI, vehículos y despliegue
-//   Equipo (petróleo)  → personal, calendario, puestos y vencimientos
-//   Ayuda (gris)       → manual, guía de campo, listas y ajustes
+// USAR 242 · Orden de la app: cada cosa en un solo sitio, con el color de su área para saber siempre dónde estás.
+//   Inicio                → resumen del día, avisos y vencimientos
+//   Actividades (rojo)    → una sola lista (intervenciones, ejercicios, maniobras y convoyes) y el calendario
+//   Material (azul)       → almacén, fuera, revisión y revista
+//   Vehículos (azul)      → flota, ITV y revista de salida
+//   Equipo (petróleo)     → personal y EPI
+//   Guía de campo (gris)  → consulta en la zona
+//   Ajustes (gris)        → ajustes, listas y manual de uso
 // Cuando hay una operación en curso, una barra fija lo recuerda en todas las pantallas.
 
 const AREAS = {
-  home: { name: 'Inicio', icon: 'home', desc: 'Resumen del día y avisos' },
-  ops: { name: 'Actividades', icon: 'radio', desc: 'Activación, ejercicios, maniobras y convoyes', hub: 'operaciones' },
-  log: { name: 'Logística', icon: 'package', desc: 'Material, revista, stock, EPI, vehículos y preparación del despliegue', hub: 'logistica' },
-  team: { name: 'Equipo', icon: 'users', desc: 'Personas, documentación, formación, guardias y caducidades', hub: 'equipo' },
-  help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas, manual de uso y guía de campo', hub: 'mas' }
+  home: { name: 'Inicio', icon: 'home', desc: 'Resumen del día, avisos y vencimientos' },
+  ops: { name: 'Actividades', icon: 'radio', desc: 'Intervenciones, ejercicios, maniobras, convoyes y calendario', hub: 'operaciones' },
+  log: { name: 'Material', icon: 'case', desc: 'Almacén, lo que está fuera, revisión y revista', hub: 'logistica' },
+  team: { name: 'Equipo', icon: 'users', desc: 'Personas, documentación, formación y EPI', hub: 'equipo' },
+  help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
-// [id, icono, título, descripción, área]
+// Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
+const MENU = ['avisos', 'ops', 'log', 'vehiculos', 'team', 'guia', 'help'];
+// [id, icono, título, descripción, área, grupo, oculta (no sale en el menú: se llega desde otra pantalla)]
 const SECTIONS = [
-  ['avisos', 'home', 'Inicio', 'Resumen del día y avisos', 'home'],
-  ['intervenciones', 'alert', 'Activación', 'Intervenciones: salidas reales', 'ops'],
-  ['ejercicios', 'flag', 'Ejercicios', 'Simulacros y prácticas', 'ops'],
-  ['maniobras', 'tent', 'Maniobras', 'Traslado de personal, vehículos y material, alojamientos y planning diario', 'ops'],
-  ['convoy', 'route', 'Convoy', 'Movimiento de un sitio a otro, solo ida o ida y vuelta', 'ops'],
-  // Material: con subopciones (sexto campo) que el menú pinta sangradas bajo «Material»
-  // Todo el material guardado en una sola página: contenedor, pasillo, armarios, otros y el fungible de cada sitio
+  ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
+  ['actividades', 'radio', 'Todas las actividades', 'Intervenciones, ejercicios, maniobras y convoyes', 'ops'],
+  ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'ops'],
+  // Cada tipo se abre desde «Todas las actividades» (los nombres antiguos llevan ahí, ya filtrada)
+  ['intervenciones', 'alert', 'Intervenciones', 'Salidas reales', 'ops', '', true],
+  ['ejercicios', 'flag', 'Ejercicios', 'Simulacros y prácticas', 'ops', '', true],
+  ['maniobras', 'tent', 'Maniobras', 'Traslado de personal, vehículos y material, alojamientos y planning diario', 'ops', '', true],
+  ['convoy', 'route', 'Convoyes', 'Movimiento de un sitio a otro, solo ida o ida y vuelta', 'ops', '', true],
+  // Todo el material guardado en una sola página: contenedor, pasillo, armarios, escalón y fungible
   ['contenedor', 'box', 'Almacén', 'Contenedor, pasillo, armarios, escalón y fungible', 'log', 'mat'],
   ['fuera', 'out', 'Fuera', 'Lo que tiene cada uno, lo prestado con firma y lo que está en actividades', 'log', 'mat'],
   ['revision', 'wrench', 'Revisión', 'En el escalón, en el taller y novedades', 'log', 'mat'],
   ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log', 'mat'],
-  // Apartados de esa página (séptimo campo: no salen sueltos en el menú; llevan a la página, a su altura)
+  // Apartados de esa página (no salen sueltos en el menú; llevan a la página, a su altura)
   ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos, suelo y balda', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios con sus baldas', 'log', 'mat', true],
   ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],
   ['entregas', 'out', 'Entregas con firma', 'Material prestado a personal de fuera, con firma', 'log', 'mat', true],
-  ['vehiculos', 'truck', 'Vehículos', 'Flota de la unidad y plazas', 'log'],
-  ['despliegue', 'heli', 'Alistamiento y despliegue', 'Ficha del equipo, manifiestos y mercancías peligrosas', 'log'],
+  ['vehiculos', 'truck', 'Vehículos', 'Flota, ITV y revista de salida', 'log'],
   ['personal', 'users', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
   ['epi', 'hardhat', 'EPI', 'Qué lleva cada uno y la reserva', 'team'],
-  ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'team'],
-  ['vencimientos', 'clock', 'Vencimientos', 'Documentos, cursos, EPI y mantenimiento por fecha', 'team'],
+  ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help'],
   ['ajustes', 'grid', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
   ['listas', 'layers', 'Listas y opciones', 'Opciones de los desplegables: añade las vuestras', 'help'],
-  ['manual', 'file', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help'],
-  ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help']
+  ['manual', 'file', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help']
 ];
 const HUBS = { logistica: 'log', equipo: 'team', mas: 'help' };
 const sectionOf = tab => SECTIONS.find(s => s[0] === tab);
@@ -62,17 +66,18 @@ function sectionStatus(id) {
       const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
       return last && t(last) ? [`Última: ${fmtDate(new Date(t(last)).toISOString().slice(0, 10))}`, 'ok'] : ['Sin revistas', 'neutral']; }
     case 'vehiculos': return [`${list('vehicles').length} vehículos`, 'neutral'];
-    case 'despliegue': { const fs = get('meta', 'factsheet')?.value; return [TEAM_STATUS[fs?.status || 'base'], fs?.status && fs.status !== 'base' ? 'warn' : 'neutral']; }
     case 'personal': { const n = operators().reduce((s, o) => s + readinessIssues(o.id).length, 0); return n ? [`${n} avisos`, 'warn'] : [`${operators().length} personas`, 'ok']; }
     case 'calendario': { const next = list('events').filter(e => (e.start || '') >= localNow()).sort((x, y) => x.start.localeCompare(y.start))[0];
       return next ? [`Próximo: ${fmtDT(next.start)}`, 'info'] : ['Nada programado', 'neutral']; }
-    case 'vencimientos': { const n = expiries().filter(x => daysTo(x.date) <= 30).length; return n ? [`${n} en 30 días`, 'warn'] : ['Nada próximo', 'ok']; }
     default: return null;
   }
 }
 
-// Las antiguas portadas de área (Logística, Equipo, Más) repetían el menú: ahora llevan a su primera sección
-const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', puestos: 'personal' };
+// Las antiguas portadas de área (Logística, Equipo, Más) repetían el menú: ahora llevan a su primera sección.
+// Vencimientos está en Inicio y Alistamiento se quitó.
+const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', puestos: 'personal', despliegue: 'personal', vencimientos: 'avisos' };
+// Cada tipo de actividad se ve en «Todas las actividades», ya filtrada por él
+const ACT_FILTER = { intervenciones: 'intervencion', ejercicios: 'ejercicio', maniobras: 'maniobra', convoy: 'convoy' };
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
 // Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
 const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];

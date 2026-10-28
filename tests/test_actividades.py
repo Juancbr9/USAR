@@ -1,4 +1,4 @@
-"""Prueba de Actividades: el menú (Activación, Ejercicios, Maniobras y Convoy), una maniobra con alojamiento, planning
+"""Prueba de Actividades: una sola lista con filtro (intervenciones, ejercicios, maniobras y convoyes), una maniobra con alojamiento, planning
 diario y quién va marcado de una vez, el reparto de vehículos sin duplicados y un convoy de ida y vuelta.
 Uso: python3 tests/test_actividades.py  (con la app en APP_URL)"""
 import os, sys
@@ -18,12 +18,15 @@ with sync_playwright() as p:
     a = br.new_context(viewport={'width': 400, 'height': 860}).new_page(); watch(a, 'MOVIL')
     a.goto(APP); a.wait_for_selector('#view > *')
 
-    # Menú: el área se llama Actividades y dentro están los cuatro apartados
+    # Menú: el área Actividades tiene una sola lista (con filtro por tipo) y el calendario
     a.click('#menuBtn'); a.click('#drawer .dr-group-head:has-text("Actividades")')
-    assert a.locator('#drawer .dr-item').all_inner_texts()[1:5] == ['Activación', 'Ejercicios', 'Maniobras', 'Convoy'], a.locator('#drawer .dr-item').all_inner_texts()
+    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item').all_inner_texts()[1:3]] == ['Todas las actividades', 'Calendario'], a.locator('#drawer .dr-item').all_inner_texts()
     a.keyboard.press('Escape')
-    sesion.menu(a, 'Activación'); assert a.locator('button:has-text("Nueva intervención")').count() == 1
-    assert a.evaluate("document.documentElement.dataset.area") == 'ops'
+    sesion.menu(a, 'Todas las actividades'); assert a.evaluate("document.documentElement.dataset.area") == 'ops'
+    # Un solo botón «Nueva» que pregunta el tipo; con un filtro puesto, crea ese tipo directamente
+    a.click('#view button:has-text("Nueva")'); assert a.locator('#modal .op-tile').all_inner_texts() and len(a.locator('#modal .op-tile').all_inner_texts()) == 4
+    a.keyboard.press('Escape'); a.wait_for_selector('#modal', state='hidden')
+    sesion.menu(a, 'Activación'); assert a.locator('#view button:has-text("Nueva intervención")').count() == 1, a.locator('#view button:has-text("Nueva intervención")').count()
 
     # Maniobra de tres días con alojamiento que cambia
     sesion.menu(a, 'Maniobras'); a.click('button:has-text("Nueva maniobra")')

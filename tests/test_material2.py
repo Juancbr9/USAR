@@ -23,10 +23,9 @@ with sync_playwright() as p:
     save = lambda: (a.click('#modalForm button:has-text("Guardar")'), a.wait_for_timeout(400))
 
     # ---------- Menú: Material con sus subopciones ----------
-    a.click('#menuBtn'); a.click('#drawer .dr-group-head:has-text("Logística")'); a.wait_for_timeout(100)
-    assert a.locator('#drawer .dr-item.sub2').count() == 0, 'Material empieza plegado'
+    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.sub').count() == 0, 'Material empieza plegado'
     a.click('#drawer .dr-group-head:has-text("Material")'); a.wait_for_timeout(100)
-    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub2').all_inner_texts()] == ['Almacén', 'Fuera', 'Revisión', 'Revista']
+    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['Almacén', 'Fuera', 'Revisión', 'Revista']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
     # Contenedor y almacén: arriba lo que se arrastra (contenedor, pasillo, armarios, escalón) y el fungible al final, plegado
     a.click('#drawer .dr-item:has-text("Almacén")'); a.wait_for_timeout(150)
@@ -162,9 +161,11 @@ with sync_playwright() as p:
     assert a.locator('.mat-veh:has-text("Amarok"):has-text("4 × Puntales de madera"):has-text("Escalera plegable")').count() == 1
     txt = a.evaluate("missionText(mget('M-1'))"); assert 'En Amarok · 1234 ABC: Escalera plegable, 4 × Puntales de madera' in txt and 'Extra: Grupo electrógeno' in txt, txt
 
-    # ---------- Operaciones: dos botones grandes, sin «+» ----------
+    # ---------- Actividades: una sola lista; «Nueva» pregunta el tipo con cuatro botones grandes ----------
     a.evaluate("go('operaciones')"); a.wait_for_timeout(150)
-    assert a.locator('.op-tile').count() == 2 and a.locator('.op-tile svg').count() == 2 and 'En preparación' in a.inner_text('#view')
+    assert a.evaluate("prefs.tab") == 'actividades' and 'En preparación' in a.inner_text('#view')
+    a.click('#view button:has-text("Nueva")'); assert a.locator('#modal .op-tile').count() == 4 and a.locator('#modal .op-tile svg').count() == 4
+    a.keyboard.press('Escape')
 
     # ---------- Coordenadas ----------
     mg = a.evaluate("toMGRS(28.1235, -15.4363)"); assert mg == '28R DS 57150 10960', mg

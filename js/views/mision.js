@@ -31,7 +31,7 @@ function viewMission(m) {
   }[tab](m);
 
   return `
-    <button class="link" onclick="go('${m.type === 'ejercicio' ? 'ejercicios' : 'intervenciones'}')">${ic('back', 'i-sm')} ${m.type === 'ejercicio' ? 'Todos los ejercicios' : 'Todas las intervenciones'}</button>
+    <button class="link" onclick="go('actividades')">${ic('back', 'i-sm')} Actividades</button>
     ${m.status === 'active' ? missionConsole(m) : `<div class="panel">
       <div class="row" style="margin-bottom:8px"><span class="tag ${m.type === 'ejercicio' ? 'info' : 'warn'}">${esc(MISSION_TYPES[m.type] || m.type || 'Operación')}</span>${m.scope === 'bic' ? '<span class="tag info">Patrimonio BIC</span>' : ''}<span class="tag ${cls}">${label}</span>
         <span class="tag neutral">Fase ${(m.phase || 0) + 1}/${phasesFor(m).length}: ${phaseOf(m).short}</span></div>

@@ -62,7 +62,7 @@ with sync_playwright() as p:
     assert a.evaluate("(() => { const f = [{ k: 'type', catalog: 'herTypes', carry: 'herType' }]; openForm('x', f, () => {}); const v = document.querySelector('#modalForm [name=type]').value; closeModal(); return v; })()") == 'Orfebrería'
 
     # Vencimientos y búsqueda
-    more('Vencimientos'); a.click('.chip:has-text("1 año")'); a.wait_for_timeout(150)
+    more('Inicio'); a.click('#venc .chip:has-text("1 año")'); a.wait_for_timeout(150)
     assert a.locator('.item:has-text("Pasaporte de GRANADOS")').count() == 1
     a.screenshot(path=f'{OUT}/vencimientos.png', full_page=True)
     a.click('[aria-label="Buscar"], #searchBtn, button[onclick="toggleSearch()"]'); a.fill('#search', 'PAB998877'); a.dispatch_event('#search', 'input'); a.wait_for_timeout(200)

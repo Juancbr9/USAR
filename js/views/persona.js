@@ -25,7 +25,6 @@ function viewPersonal() {
       <div class="between wrap-row sec-head"><div><h2>Personal</h2>
         </div>
         <div class="row"><button class="btn btn-a" onclick="newPersonForm()">${ic('plus')} Persona</button>
-          <button class="btn btn-g" onclick="go('epi')">${ic('hardhat')} EPI</button>
           <button class="btn btn-g" onclick="printPersonCards()">${ic('printer')} Tarjetas QR</button></div></div>
       <label class="lbl">Perfil de misión (reparte células y puestos de todos)
         <select class="input" onchange="applyPreset(this.value)">${Object.entries(PRESETS).map(([k, [label]]) => `<option value="${k}" ${mission() === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label>
@@ -71,7 +70,7 @@ function viewPerson(o) {
         ${o.phone ? `<a class="btn btn-a" href="tel:${esc(o.phone.replace(/\s/g, ''))}">${ic('phone')} Llamar</a>
           <a class="btn btn-g" target="_blank" rel="noopener" href="https://wa.me/${esc(o.phone.replace(/\D/g, '').replace(/^(?!34)(\d{9})$/, '34$1'))}">${ic('chat')} WhatsApp</a>` : ''}
         <button class="btn btn-g" onclick="personForm('${o.id}')">${ic('pencil')} Editar datos</button>
-        <button class="btn btn-g" onclick="readinessForm('${o.id}')">${ic('flag')} Alistamiento</button>
+        <button class="btn btn-g" onclick="readinessForm('${o.id}')">${ic('flag')} Pasaporte y emergencia</button>
       </div>
       <details style="margin-top:12px"><summary class="link">${ic('qr', 'i-sm')} Tarjeta QR para fichar</summary>
         <div class="qr" style="margin-top:10px">${QR.svg(personCode(o.id))}</div>
@@ -225,20 +224,18 @@ function expiries() {
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function viewVencimientos() {
-  const win = prefs.vwin ?? 90;
-  const all = expiries(), shown = all.filter(x => win === 0 || daysTo(x.date) <= win);
+// Vencimientos (en Inicio): todo lo que caduca por fecha, a 30 días, 3 meses, 1 año o todo
+function vencPanel() {
+  const win = prefs.vwin ?? 30;
+  const all = expiries(), shown = all.filter(x => win === 0 || daysTo(x.date) <= win), late = all.filter(x => daysTo(x.date) < 0).length;
   return `
-    <div class="panel"><h2>Vencimientos</h2>
+    <div class="panel area-panel" id="venc" data-area="home">
+      <div class="between sec-head"><h3>${ic('clock')} Vencimientos</h3>${late ? `<span class="tag bad">${late} caducados</span>` : ''}</div>
       <div class="row chips">${[[30, '30 días'], [90, '3 meses'], [365, '1 año'], [0, 'Todo']].map(([d, l]) => `<button class="chip ${win === d ? 'on' : ''}" onclick="setPref({ vwin: ${d} })">${l}</button>`).join('')}</div>
-    </div>
-    <div class="status" style="grid-template-columns:repeat(2, 1fr)">
-      <div class="kpi ${all.some(x => daysTo(x.date) < 0) ? 'bad' : 'ok'}"><div><small>Caducados</small><b>${all.filter(x => daysTo(x.date) < 0).length}</b></div></div>
-      <div class="kpi ${all.some(x => daysTo(x.date) >= 0 && daysTo(x.date) <= 30) ? 'warn' : 'ok'}"><div><small>En 30 días</small><b>${all.filter(x => daysTo(x.date) >= 0 && daysTo(x.date) <= 30).length}</b></div></div>
-    </div>
-    <div class="panel">${shown.length ? `<div class="list">${shown.map(x => {
+      ${shown.length ? `<div class="list" style="margin-top:10px">${shown.map(x => {
       const n = daysTo(x.date), cls = n < 0 ? 'bad' : n <= 30 ? 'warn' : 'neutral';
       return `<button class="item" onclick="${x.go}"><div><b>${esc(x.what).replace(/\b([A-Z]{2}-\d{4,}(?: [A-Z]{2})?)/g, '<span class="nw">$1</span>')}</b><small>${x.kind} · ${fmtDate(x.date)}</small></div>
         <span class="tag ${cls}">${n < 0 ? `Caducado hace ${-n} d` : n === 0 ? 'Hoy' : `En ${n} d`}</span></button>`; }).join('')}</div>`
-      : emptyState('checkc', 'Nada vence en este plazo', 'Documentos, cualificaciones, EPI, mantenimientos e ITV al día.')}</div>`;
+      : emptyState('checkc', 'Nada vence en este plazo', 'Documentos, cualificaciones, EPI, mantenimientos e ITV al día.')}
+    </div>`;
 }

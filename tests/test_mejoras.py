@@ -32,14 +32,13 @@ with sync_playwright() as p:
     assert a.evaluate("list('epis').filter(e => e.holder === 'OP-01').length") == 3
     more('Personal'); a.click('.item:has-text("GRANADOS")'); a.click('.ptabs .ctab:has-text("EPI")'); assert a.locator('.panel:has-text("EPI asignado") .item:has-text("Casco USAR · Blanco")').count() == 1
 
-    # Alistamiento: pasaporte que caduca en 3 meses → aviso; datos médicos solo locales
-    more('Alistamiento')
-    a.click('.item:has-text("GRANADOS")'); a.click('button:has-text("Alistamiento")')
+    # Pasaporte (ficha de la persona): caduca en 3 meses → aviso; datos médicos en su propio registro
+    more('Personal'); a.click('.item:has-text("GRANADOS")'); a.click('button:has-text("Pasaporte y emergencia")')
     a.fill('[name=fullName]', 'Juan Granados Pérez'); a.fill('[name=passportNo]', 'PAA123456')
     a.fill('[name=passportExp]', (datetime.date.today() + datetime.timedelta(days=90)).isoformat())
     a.fill('[name=emergencyPhone]', '600000000'); a.select_option('[name=blood]', '0+'); save()
     assert a.evaluate("get('medical', 'OP-01').blood") == '0+' and a.evaluate("get('readiness', 'OP-01').blood") is None, 'el grupo sanguíneo va en su propio registro'
-    a.click('button:has-text("Alistamiento")'); a.locator('#modal button.span2:has-text("Cualificaciones")').click()
+    a.click('button:has-text("Pasaporte y emergencia")'); a.locator('#modal button.span2:has-text("Cualificaciones")').click()
     a.fill('#qualForm [name=name]', 'Espacios confinados'); a.fill('#qualForm [name=expires]', (datetime.date.today() - datetime.timedelta(days=3)).isoformat())
     a.click('#qualForm button'); a.wait_for_timeout(150); a.keyboard.press('Escape')
     issues = a.evaluate("readinessIssues('OP-01').map(i => i[1]).join(' | ')"); print('Alistamiento:', issues)
@@ -51,16 +50,8 @@ with sync_playwright() as p:
     a.evaluate("Sync.disconnect()")
     nav('Inicio'); assert a.locator('.panel:has-text("Documentación del personal") .item:has-text("GRANADOS")').count() >= 1
 
-    # Ficha del equipo y manifiesto de material
-    more('Alistamiento'); a.click('button:has-text("Ficha del equipo")'); a.select_option('[name=status]', 'alerta'); a.fill('[name=dogs]', '2'); save()
-    assert '*Perros:* 2' in a.evaluate("factsheetText()")
-    a.evaluate("put('boxes', { id: 'K-C01', code: 'C-01', name: 'Holmatro', color: 'negro', door: 1, shelf: 'A', vehicle: '', heli: 'si', tare: 13 })")
-    more('Material'); a.evaluate("gearDetail(list('gear').find(g => g.name.startsWith('Extractor')).id)"); a.click('#modal button:has-text("Editar")')
-    a.select_option('[name=func]', 'Rescate'); a.fill('[name=weight]', '14.5'); a.select_option('[name=box]', 'K-C01'); a.select_option('[name=dg]', 'Baterías de litio'); save()
-    more('Alistamiento'); kpis = a.inner_text('.status'); assert '15 kg' in kpis or '14,5' in kpis or '14 kg' in kpis, kpis
-    a.evaluate("printGearManifest()"); assert 'Rescate' in a.inner_html('#print') and 'C-01' in a.inner_html('#print')
-    a.evaluate("printPersonnelManifest()"); assert 'PAA123456' in a.inner_html('#print')
-    a.screenshot(path=f'{OUT}/mejoras-despliegue.png', full_page=True)
+    # La página «Alistamiento y despliegue» ya no está: su nombre antiguo lleva a Personal
+    a.evaluate("go('despliegue')"); assert a.evaluate("prefs.tab") == 'personal'
 
     # Operación: disponibilidad, inicio, PAR, salidas, bienestar
     nav('Operaciones'); a.click('button:has-text("Intervención")'); a.click('#modal .item:has-text("En blanco")')

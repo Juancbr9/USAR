@@ -115,7 +115,7 @@ with sync_playwright() as p:
     tab('Contenedor')
     assert a.locator('.tok.is-out').count() == 0 and a.evaluate("list('gear').filter(g => g.out).length") == 0, 'material no devuelto'
     tab('Operaciones'); a.click('summary:has-text("Terminadas")'); a.click('.item:has-text("Derrumbe")'); a.screenshot(path=f'{OUT}/ops-cerrada.png', full_page=True); a.click('button[aria-label="Más acciones"]'); a.click('.menu-item:has-text("Duplicar")')
-    a.wait_for_timeout(200); a.click('#view button.link:has-text("Todas las intervenciones")'); n = a.locator('.list .item[onclick^=openMission]').count(); print('Operaciones en la lista:', n); assert n == 2
+    a.wait_for_timeout(200); a.click('#view button.link:has-text("Actividades")'); n = a.locator('.list .item[onclick^=openMission]').count(); print('Operaciones en la lista:', n); assert n == 2
     a.screenshot(path=f'{OUT}/ops-lista2.png', full_page=True)
     br.close()
 print('PROBLEMAS:', problems or 'ninguno')
