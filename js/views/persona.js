@@ -61,7 +61,7 @@ function viewPerson(o) {
     <div class="panel carne">
       <div class="carne-top"><span class="carne-unit">USAR 242 · ${esc(o.cell || 'Sin célula')}</span><span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : issues.length ? 'warn' : 'ok'}">${issues.length ? issues.length + (issues.length === 1 ? ' aviso' : ' avisos') : 'Al día'}</span></div>
       <div class="person-head">
-        ${o.photo ? `<img class="person-photo" data-img="op:${o.id}" alt="">` : `<span class="avatar xl">${esc(initials(o.name))}</span>`}
+        ${o.photo ? `<img class="person-photo" data-img="op:${o.id}" alt="">` : `<button class="add-photo" onclick="personForm('${o.id}')" aria-label="Poner foto de ${esc(o.name)}"><span class="avatar xl">${esc(initials(o.name))}</span><span class="cam">${ic('camera', 'i-sm')}</span></button>`}
         <div class="grow"><h2>${esc(o.name)}${o.active === false ? ' <span class="tag neutral">De baja</span>' : ''}</h2><p class="muted">${esc(r.fullName || '')}</p><p class="carne-role">${esc(o.role || 'Sin puesto')}</p>
           ${(o.funcs || []).length ? `<div class="row tags" style="margin-top:6px">${o.funcs.map(f => `<span class="tag info">${esc(f)}</span>`).join('')}</div>` : ''}</div>
         ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}

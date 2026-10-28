@@ -16,7 +16,8 @@ const ALM_SECS = {
 const almOrder = () => { const o = (prefs.almOrder || []).filter(id => ALM_SECS[id]); return [...o, ...Object.keys(ALM_SECS).filter(id => !o.includes(id))]; };
 const almFolded = id => prefs.almFold?.[id] ?? id === 'fungible';
 const almUnfold = id => almFolded(id) && setPref({ almFold: { ...prefs.almFold, [id]: false } });
-function almFold(id) { setPref({ almFold: { ...prefs.almFold, [id]: !almFolded(id) } }); }
+let ALM_OPENING = '';   // la parte que se acaba de desplegar (para abrirla con animación)
+function almFold(id) { ALM_OPENING = almFolded(id) ? id : ''; setPref({ almFold: { ...prefs.almFold, [id]: !almFolded(id) } }); }
 function almFoldAll() { const fold = !almOrder().every(almFolded); setPref({ almFold: Object.fromEntries(Object.keys(ALM_SECS).map(id => [id, fold])) }); }
 // Parte de la página donde se ve un sitio (para desplegarla al buscar)
 const almSecOf = d => !d ? 'sinubicar' : d <= 20 ? 'contenedor' : enPasillo(d) ? 'pasillo' : enArmarios(d) ? 'armarios' : d === ESCALON ? 'escalon' : '';
@@ -34,11 +35,12 @@ function viewContenedor() {
     ${almOrder().map(id => {
       if (id === 'sinubicar' && almCount(id) === 'Vacío') return '';
       const [title, icon, view] = ALM_SECS[id], folded = almFolded(id);
-      return `<section id="alm-${id}" class="alm-sec ${folded ? 'folded' : ''}" data-sec="${id}">
+      const opening = ALM_OPENING === id;
+      return `<section id="alm-${id}" class="alm-sec ${folded ? 'folded' : ''} ${opening ? 'opening' : ''}" data-sec="${id}">
         <div class="alm-bar"><button class="alm-grip" aria-label="Arrastrar para cambiar el orden de ${title}">${ic('grip')}</button>
           <button class="alm-tog" aria-expanded="${!folded}" onclick="ALM_NOCLICK || almFold('${id}')">${ic(icon, 'i-sm')}<b>${title}</b><small>${almCount(id)}</small>${ic('chev', 'i-sm alm-chev')}</button></div>
         ${folded ? '' : `<div class="alm-body">${view()}</div>`}</section>`;
-    }).join('')}`;
+    }).join('')}${(ALM_OPENING = '', '')}`;
 }
 // Todo el fungible junto (al final de serie, plegado)
 function viewFungible() {
@@ -126,7 +128,8 @@ function gearDetail(id) {
     : [REV_STATES[g.rev?.state]?.[0] || g.status, g.status === 'AVERIADO' ? 'bad' : 'warn'];
   openModal(g.name, `
     <div class="fx-hero">
-      <div class="fx-art">${g.photo ? `<img src="${esc(g.photo)}" alt="Foto de ${esc(g.name)}">` : toolArt(g.name)}</div>
+      ${g.photo ? `<div class="fx-art"><img src="${esc(g.photo)}" alt="Foto de ${esc(g.name)}"></div>`
+        : puedeFlota() ? `<button class="add-photo" onclick="gearForm('${id}')" aria-label="Poner foto de ${esc(g.name)}"><span class="fx-art">${toolArt(g.name)}</span><span class="cam">${ic('camera', 'i-sm')}</span></button>` : `<div class="fx-art">${toolArt(g.name)}</div>`}
       <div class="fx-info"><span class="tag ${stCls}">${esc(stTxt)}</span><b>${ic('pin', 'i-sm')} ${esc(whereIs(g))}</b>
         ${boxOf(g) ? `<small>En la caja ${esc(boxCode(g))} · ${esc(boxOf(g).name || '')}</small>` : ''}</div>
     </div>
