@@ -248,6 +248,6 @@ async function enableNotifications() {
 // Si la app está en segundo plano, el aviso sale también como notificación del sistema
 async function systemNotify(msg) {
   if (document.visibilityState === 'visible' || !('Notification' in window) || Notification.permission !== 'granted') return;
-  try { (await navigator.serviceWorker?.ready)?.showNotification('USAR 242', { body: msg, icon: 'icon-192.png', badge: 'icon-192.png', tag: msg.slice(0, 40), vibrate: [200, 100, 200] }); }
+  try { (await navigator.serviceWorker?.ready)?.showNotification('USAR 242', { body: msg, icon: 'icon-any-192.png', badge: 'icon-mono-512.png', tag: msg.slice(0, 40), vibrate: [200, 100, 200] }); }
   catch { try { new Notification('USAR 242', { body: msg }); } catch {} }
 }
