@@ -1488,3 +1488,26 @@ body.scrolled .topbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .22); }
 .cl-it.found { outline: 3px solid #f5b800; outline-offset: 2px; animation: found .6s ease-in-out 5; }
 @media (prefers-reduced-motion: reduce) { .cl-it.found { animation: none; } }
 .cv-switch { gap: 8px; flex-wrap: wrap; align-items: stretch; }
+/* Modo misión: consola oscura de la operación en curso, con reloj y cifras grandes */
+body.mision { background: #0e1511; }
+body.mision #view > .link { color: #c9d4cb; }
+@media (max-width: 1023px) { body.mision .mlayout > .tabs { background: #0e1511; } }
+.mc { background: linear-gradient(160deg, #18221c, #0b110d); color: #f2f5f2; border-radius: var(--r); padding: 18px; margin-bottom: 14px; box-shadow: 0 12px 30px rgba(0,0,0,.35); position: relative; overflow: hidden; }
+.mc::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: repeating-linear-gradient(-45deg, #ff3b30 0 10px, #111 10px 20px); }
+.mc.ex::after { background: repeating-linear-gradient(-45deg, #f5b800 0 10px, #111 10px 20px); }
+.mc .live-tag { color: #ff6b62; font-size: 13px; text-transform: uppercase; letter-spacing: .6px; }
+.mc.ex .live-tag { color: #f5b800; } .mc.ex .live-tag::before { background: #f5b800; }
+.mc-top { display: flex; justify-content: space-between; align-items: center; }
+.mc-now { font: 700 18px var(--num); color: #c9d4cb; }
+.mc-title { font: 800 26px/1.1 var(--cond); text-transform: uppercase; letter-spacing: .3px; margin-top: 8px; color: #fff; }
+.mc-sub { color: #aab8ae; margin-top: 4px; font-size: 14px; } .mc-sub a { color: #fff; text-decoration: underline; } .mc-sub .i-sm { vertical-align: -2px; }
+.mc-clock { margin: 14px 0 6px; display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.mc-clock b { font: 800 clamp(38px, 12vw, 56px)/1 var(--cond); letter-spacing: 1px; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mc-clock small { color: #aab8ae; font-size: 13px; }
+.mc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.mc-stat { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r-sm); padding: 10px 6px; text-align: center; color: #fff; }
+.mc-stat b { display: block; font: 800 28px/1.1 var(--cond); white-space: nowrap; }
+.mc-stat small { color: #aab8ae; font-size: 12px; line-height: 1.2; display: block; }
+.mc-stat.warn b { color: #f5b800; } .mc-stat.bad { background: rgba(255,59,48,.18); border-color: rgba(255,59,48,.5); } .mc-stat.bad b { color: #ff6b62; }
+.mc-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.mc-btn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.18); }

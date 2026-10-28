@@ -98,7 +98,12 @@ with sync_playwright() as p:
     a.screenshot(path=f'{OUT}/ops-detalle.png', full_page=True)
 
     a.click('button:has-text("Iniciar")'); a.wait_for_timeout(200)
+    # Modo misión: consola oscura con el reloj corriendo, las cifras y Finalizar
+    assert a.locator('#view .mc').count() == 1 and a.evaluate("document.body.classList.contains('mision')")
+    t0 = a.inner_text('.mc-clock b'); a.wait_for_timeout(2200); assert a.inner_text('.mc-clock b') != t0, 'el reloj corre'
+    assert a.locator('.mc-stat').count() == 3 and a.locator('.mc button:has-text("Finalizar")').count() == 1
     tab('Contenedor')
+    assert not a.evaluate("document.body.classList.contains('mision')")
     assert a.locator('.tok.is-out').count() == 0, 'lo que sale con la operación no se tacha (solo los préstamos)'
     assert a.evaluate("list('gear').filter(g => g.door === 5 && g.out?.who?.includes('Derrumbe')).length") == 17
     tab('Avisos'); assert a.locator('.panel.live').count() == 1
