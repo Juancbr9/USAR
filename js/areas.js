@@ -73,21 +73,8 @@ const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', epi
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
 // Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
 const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles', 'fuera'];
-// Botones de la barra «Ir a» (en el orden que tenga cada uno la página; «Sin ubicar» va justo debajo del contenedor)
-const ALMACEN_JUMP_L = { contenedor: ['Contenedor', 'box'], pasillo: ['Pasillo', 'layers'], armarios: ['Armarios', 'case'], escalon: ['Escalón', 'wrench'], fungible: ['Fungible', 'package'] };
-const almacenJumpIds = () => almOrder().filter(id => ALMACEN_JUMP_L[id]);
-const almacenJump = () => `<div class="alm-jump" role="group" aria-label="Ir a">${almacenJumpIds().map(id => [id, ...ALMACEN_JUMP_L[id]]).map(([id, l, icon], i) =>
-  `<button class="${i ? '' : 'on'}" data-jump="${id}" onclick="almacenGo('${id}', true)">${ic(icon, 'i-sm')}<span>${l}</span></button>`).join('')}</div>`;
-// Al bajar por la página se marca en la barra la parte que se está viendo
-let JUMP_HOLD = 0;   // tras tocar un botón, ese se queda marcado aunque la página no pueda bajar más
-addEventListener('scroll', () => {
-  const bar = document.querySelector('.alm-jump'); if (!bar || Date.now() < JUMP_HOLD) return;
-  const line = bar.getBoundingClientRect().bottom + 60;
-  const ids = almacenJumpIds(), cur = ids.filter(id => (document.getElementById('alm-' + id)?.getBoundingClientRect().top ?? Infinity) <= line).at(-1) || ids[0];
-  bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.jump === cur));
-}, { passive: true });
+// Lleva a una parte de «Contenedor y almacén» (desplegándola), p. ej. desde los nombres antiguos del menú
 function almacenGo(id, smooth) {
-  JUMP_HOLD = Date.now() + 1200; document.querySelectorAll('.alm-jump button').forEach(b => b.classList.toggle('on', b.dataset.jump === id));
   almUnfold(id); document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
 const areaHeader = () => '';

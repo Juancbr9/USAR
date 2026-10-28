@@ -32,7 +32,7 @@ with sync_playwright() as p:
     a.click('#drawer .dr-item:has-text("Contenedor y almacén")'); a.wait_for_timeout(150)
     secs = lambda: a.evaluate("[...document.querySelectorAll('#view .alm-sec')].map(s => s.dataset.sec)")
     assert [s for s in secs() if s != 'sinubicar'] == ['contenedor', 'pasillo', 'armarios', 'escalon', 'fungible'], secs()
-    assert a.locator('#view .alm-jump button').all_inner_texts() == ['Contenedor', 'Pasillo', 'Armarios', 'Escalón', 'Fungible']
+    assert a.locator('#view .alm-jump').count() == 0, 'sin barra «Ir a»'
     assert a.locator('#alm-fungible.folded').count() == 1 and a.locator('#view .cons-item').count() == 0, 'el fungible, plegado'
     # Cada parte se pliega tocando su barra (y se ve cuánto tiene); «Plegar todo» / «Desplegar todo»
     a.click('#alm-contenedor .alm-tog'); a.wait_for_timeout(100)
@@ -42,7 +42,7 @@ with sync_playwright() as p:
     # Se ordenan arrastrando el asa: el escalón, encima del contenedor (se recuerda)
     g = a.locator('#alm-escalon .alm-grip').bounding_box(); t = a.locator('#alm-contenedor').bounding_box()
     a.mouse.move(g['x'] + 20, g['y'] + 20); a.mouse.down(); a.mouse.move(t['x'] + 100, t['y'] + 6, steps=10); a.mouse.up(); a.wait_for_timeout(200)
-    assert secs()[:2] == ['escalon', 'contenedor'] and a.locator('#view .alm-jump button').first.inner_text() == 'Escalón'
+    assert secs()[:2] == ['escalon', 'contenedor']
     a.reload(); a.wait_for_selector('#view .alm-sec'); assert secs()[:2] == ['escalon', 'contenedor']
     # Con el dedo: se mantiene pulsada la barra (no hace falta el asa) y se lleva encima de otra; un toque corto solo pliega
     cdp = c.new_cdp_session(a)
@@ -72,7 +72,7 @@ with sync_playwright() as p:
     a.click('#modal .add-mat [data-add=package]'); a.fill('#modalForm [name=name]', 'Bridas grandes'); a.select_option('#modalForm [name=place]', '110')
     a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     cid = a.evaluate("list('consumables').find(c => c.name === 'Bridas grandes').id")
-    a.click('#view .alm-jump button:has-text("Fungible")'); a.wait_for_timeout(300)
+    a.evaluate("go('consumibles')"); a.wait_for_timeout(300)
     assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible() and 'Pasillo M1 suelo' in a.inner_text(f'#alm-fungible [data-cons="{cid}"]')
     a.click(f'#alm-fungible [data-cons="{cid}"] button:has-text("+5")'); a.wait_for_timeout(100)
     assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible(), 'sigue desplegado al cambiar el stock'

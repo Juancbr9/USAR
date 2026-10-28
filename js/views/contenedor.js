@@ -30,8 +30,7 @@ function almCount(id) {
 }
 function viewContenedor() {
   const all = almOrder().every(almFolded);
-  return `${almacenJump()}
-    <div class="alm-tools"><button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
+  return `    <div class="alm-tools"><button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
     ${almOrder().map(id => {
       if (id === 'sinubicar' && almCount(id) === 'Vacío') return '';
       const [title, icon, view] = ALM_SECS[id], folded = almFolded(id);

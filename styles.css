@@ -792,9 +792,9 @@ label .dictate-wrap .mic { top: 11px; }
 @media (max-width: 999px) { .door-veh .door-name { display: block; } .door-veh .between { flex-direction: row; } }
 
 /* ==================== Menú de tres rayas (el menú completo; en el móvil, junto a la barra de abajo) ==================== */
-body { padding-bottom: calc(var(--nav-h) + 28px + var(--sa-b)); }
-@media (min-width: 900px) { body { padding-bottom: calc(28px + var(--sa-b)); } .fab { bottom: calc(22px + var(--sa-b)); } }
-@media (min-width: 900px) and (max-width: 1023px) { #nav { display: none !important; } }
+body { padding-bottom: calc(28px + var(--sa-b)); }
+.fab { bottom: calc(22px + var(--sa-b)); }
+@media (max-width: 1023px) { #nav { display: none !important; } }
 .menu-btn { position: relative; flex: none; margin-left: -6px; }
 .burger { display: grid; gap: 5px; width: 22px; }
 .burger i { display: block; height: 2.5px; border-radius: 2px; background: currentColor; }
@@ -1468,13 +1468,6 @@ body.scrolled .topbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .22); }
 .fx-act:active { transform: scale(.95); }
 @media (hover: hover) and (pointer: fine) { .fx-act:hover { box-shadow: var(--sh-2); } }
 .fx-more { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-/* Barra inferior del móvil: Inicio, Actividades, Material, Equipo y Más (el menú completo) */
-@media (max-width: 899px) {
-  .nav { display: grid; grid-template-columns: repeat(5, 1fr); }
-  .nav-btn { font-size: 9.5px; letter-spacing: .2px; text-transform: none; font-weight: 700; transition: background-color .2s, color .2s; }
-  .nav-btn span { font-size: 11px; }
-  .nav-btn.on { box-shadow: 0 4px 12px rgba(245, 184, 0, .35); }
-  .nav-btn .count.live { background: var(--bad); animation: pulse 1.4s infinite; }
 }
 /* Contenedor en lista: un renglón por hueco con sus cajas y lo suelto */
 .cl { display: grid; gap: 8px; }
