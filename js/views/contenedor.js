@@ -212,9 +212,13 @@ function viewRevision() {
     <button class="item" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
       <small>${revSince(g)}${r.where ? ' · ' + esc(r.where) : ''}</small>
       ${r.reason ? `<small>${esc(r.reason)}</small>` : ''}</div></div>${revTag(g)}</button>`; };
+  // En el escalón (aquí, a mano) y en el taller o en otro sitio (lo tiene alguien, en un vehículo, sin sitio…)
+  const enEsc = inRev.filter(g => g.door === ESCALON && !g.vehicle && !g.out), away = inRev.filter(g => !enEsc.includes(g));
+  const grp = (title, icon, gs, hint) => gs.length ? `<h3 class="sec-title rev-grp">${ic(icon, 'i-sm')} ${title} <span class="tag neutral">${gs.length}</span></h3>${hint ? `<p class="muted" style="margin:-6px 0 8px">${hint}</p>` : ''}<div class="list">${gs.map(card).join('')}</div>` : '';
   return `
-    <div class="panel"><div class="between sec-head"><h2>En revisión</h2><span class="tag ${inRev.length ? 'warn' : 'ok'}">${inRev.length}</span></div>
-      ${inRev.length ? `<div class="list">${inRev.map(card).join('')}</div>` : emptyState('checkc', 'Nada en revisión', 'Todo el material está operativo.')}</div>
+    <div class="panel"><div class="between sec-head"><h2>Revisión</h2><span class="tag ${inRev.length ? 'warn' : 'ok'}">${inRev.length}</span></div>
+      ${inRev.length ? grp('En el escalón', 'wrench', enEsc, 'Aquí, a la espera o arreglándose.') + grp('En el taller o en otro sitio', 'truck', away, 'Fuera del escalón: en el taller, con alguien o sin colocar.')
+        : emptyState('checkc', 'Nada en revisión', 'Todo el material está operativo.')}</div>
     ${nov.length ? `<div class="panel"><h3 class="sec-title">${ic('alert')} Con novedad (${nov.length})</h3><div class="list">${nov.map(x => x.code !== undefined && get('boxes', x.id) ? `
       <button class="item" onclick="boxDetail('${x.id}')"><div class="who-row"><span class="box-chip sm" style="--c:${colorOf(x)[1]}; --ink:${colorOf(x)[2]}">${esc(x.code)}</span><div><b>Caja ${esc(x.code)} · ${esc(x.name || '')}</b><small>${esc(x.nov.text)}</small></div></div>${novTag(x)}</button>` : `
       <button class="item" onclick="gearDetail('${x.id}')"><div class="who-row">${artMini(x)}<div><b>${esc(x.name)}</b><small>${esc(x.nov.text)}</small></div></div>${novTag(x)}</button>`).join('')}</div></div>` : ''}

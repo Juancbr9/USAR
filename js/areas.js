@@ -22,18 +22,20 @@ const SECTIONS = [
   ['convoy', 'route', 'Convoy', 'Movimiento de un sitio a otro, solo ida o ida y vuelta', 'ops'],
   // Material: con subopciones (sexto campo) que el menú pinta sangradas bajo «Material»
   // Todo el material guardado en una sola página: contenedor, pasillo, armarios, otros y el fungible de cada sitio
-  ['contenedor', 'box', 'Contenedor y almacén', 'Contenedor, pasillo, armarios y otros, con su material fungible', 'log', 'mat'],
-  ['revision', 'wrench', 'En revisión', 'Taller, a la espera, inoperativo y novedades', 'log', 'mat'],
+  ['contenedor', 'box', 'Almacén', 'Contenedor, pasillo, armarios, escalón y fungible', 'log', 'mat'],
+  ['fuera', 'out', 'Fuera', 'Lo que tiene cada uno, lo prestado con firma y lo que está en actividades', 'log', 'mat'],
+  ['revision', 'wrench', 'Revisión', 'En el escalón, en el taller y novedades', 'log', 'mat'],
+  ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log', 'mat'],
   // Apartados de esa página (séptimo campo: no salen sueltos en el menú; llevan a la página, a su altura)
   ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos, suelo y balda', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios con sus baldas', 'log', 'mat', true],
   ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],
-  ['entregas', 'out', 'Entregas', 'Material prestado a personal de fuera, con firma', 'log', 'mat'],
-  ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log'],
+  ['entregas', 'out', 'Entregas con firma', 'Material prestado a personal de fuera, con firma', 'log', 'mat', true],
   ['vehiculos', 'truck', 'Vehículos', 'Flota de la unidad y plazas', 'log'],
   ['despliegue', 'heli', 'Alistamiento y despliegue', 'Ficha del equipo, manifiestos y mercancías peligrosas', 'log'],
-  ['personal', 'hardhat', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
+  ['personal', 'users', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
+  ['epi', 'hardhat', 'EPI', 'Qué lleva cada uno y la reserva', 'team'],
   ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'team'],
   ['vencimientos', 'clock', 'Vencimientos', 'Documentos, cursos, EPI y mantenimiento por fecha', 'team'],
   ['ajustes', 'grid', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
@@ -50,6 +52,7 @@ function sectionStatus(id) {
   const a = alerts(), gearList = list('gear');
   switch (id) {
     case 'revision': { const n = gearList.filter(g => g.status !== 'OPERATIVO').length; return n ? [`${n} en revisión`, 'warn'] : ['Nada en revisión', 'ok']; }
+    case 'fuera':
     case 'entregas': { const late = list('loans').filter(l => !l.returned && l.due && daysTo(l.due) < 0).length; return late ? [`${late} sin devolver a tiempo`, 'bad'] : ['', 'neutral']; }
     case 'contenedor': { const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
       if (a.low.length) return [`${a.low.length} fungibles bajo mínimo`, 'bad'];
@@ -69,10 +72,10 @@ function sectionStatus(id) {
 }
 
 // Las antiguas portadas de área (Logística, Equipo, Más) repetían el menú: ahora llevan a su primera sección
-const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', epi: 'personal', puestos: 'personal' };
+const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', puestos: 'personal' };
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
 // Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
-const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles', 'fuera'];
+const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];
 // Lleva a una parte de «Contenedor y almacén» (desplegándola), p. ej. desde los nombres antiguos del menú
 function almacenGo(id, smooth) {
   almUnfold(id); document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }

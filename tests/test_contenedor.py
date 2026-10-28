@@ -143,7 +143,7 @@ with sync_playwright() as p:
       mk('K-1', 'C-01', 1, 300); mk('K-2', 'C-02', 2, 250); mk('K-3', 'C-03', 4, 200);
       commit(); go('contenedor');
     })()"""); b.wait_for_timeout(200)
-    assert b.evaluate("MAT_TABS") == ['contenedor', 'revision', 'entregas']
+    assert b.evaluate("MAT_TABS") == ['contenedor', 'fuera', 'revision', 'revista']
     drag = lambda src, dst: (lambda s, t: (b.mouse.move(s['x'] + 8, s['y'] + 8), b.mouse.down(), b.mouse.move(s['x'] + 20, s['y'] + 20, steps=3),
                                           b.mouse.move(t['x'] + t['width'] / 2, t['y'] + t['height'] / 2, steps=10), b.mouse.up(), b.wait_for_timeout(250)))(b.locator(src).bounding_box(), b.locator(dst).bounding_box())
     drag('.tok-gear:has-text("Pistola de clavos")', '.tok-box[data-box="K-3"]')

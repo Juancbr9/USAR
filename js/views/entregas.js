@@ -184,3 +184,35 @@ async function loanPdf(id) {
   d.pages.forEach((p, i) => { d.cur = p; d.text(L, 290, `${teamCode()} · Acta ${l.id} · generada el ${new Date().toLocaleString('es-ES')} · página ${i + 1} de ${d.pages.length}`, { size: 7.5, color: [0.4, 0.4, 0.4] }); });
   await savePdf(d.output(), `Acta-entrega-${fold(l.to).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${l.date}.pdf`);
 }
+
+/* ==================== FUERA: todo lo que no está en su sitio ==================== */
+// En una sola lista: lo que lleva cada persona del equipo, lo prestado con firma a personal de fuera y lo que ha salido
+// con una actividad (vuelve solo al finalizarla). Se devuelve desde aquí con un toque.
+function viewFuera() {
+  const ops = operators().map(o => [o, boxesWith(o), gearWith(o)]).filter(([, b, g]) => b.length + g.length);
+  const open = loans().filter(l => !l.returned);
+  const ms = list('missions').filter(m => m.status === 'active').map(m => [m, list('gear').filter(g => g.out?.mission === m.id).sort(byName)]).filter(([, gs]) => gs.length);
+  const nPer = ops.reduce((s, [, b, g]) => s + b.length + g.length, 0), nLoan = open.reduce((s, l) => s + loanGear(l).length, 0), nAct = ms.reduce((s, [, gs]) => s + gs.length, 0);
+  const since = t => t ? 'desde ' + fmtWhen(t) : '';
+  const back = (fn, label = 'Devolver') => `<button class="btn btn-g btn-sm" onclick="${fn}">${ic('in', 'i-sm')} ${label}</button>`;
+  const rowBox = b => `<div class="item"><button class="who-row grow link-row" onclick="boxDetail('${b.id}')"><span class="box-chip sm" style="--c:${colorOf(b)[1]}; --ink:${colorOf(b)[2]}">${esc(b.code)}</span><div><b>${esc(b.name || 'Caja ' + b.code)}</b><small>${esc([boxItems(b.id).length + ' equipos', since(b.out.since)].filter(Boolean).join(' · '))}</small></div></button>${back(`returnBox('${b.id}')`)}</div>`;
+  const rowGear = (g, fn) => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b><small>${esc([boxCode(g) && 'Caja ' + boxCode(g), since(g.out?.since), g.out?.note].filter(Boolean).join(' · '))}</small></div></button>${fn || ''}</div>`;
+  return `
+    <div class="panel">
+      <div class="between sec-head"><div><h2>Fuera</h2><p class="muted">Lo que no está en su sitio y quién lo tiene.</p></div>
+        <button class="btn btn-a" onclick="loanForm()">${ic('plus')} Entrega con firma</button></div>
+      <div class="fuera-kpis">
+        <span><b class="num">${nPer}</b><small>con el equipo</small></span><span class="${open.some(loanLate) ? 'bad' : ''}"><b class="num">${nLoan}</b><small>prestado fuera</small></span><span><b class="num">${nAct}</b><small>en actividades</small></span></div>
+    </div>
+    ${!nPer && !nLoan && !nAct ? `<div class="panel">${emptyState('checkc', 'Todo está en su sitio', 'Cuando alguien lleve material, se preste con firma o salga con una actividad, sale aquí.')}</div>` : ''}
+    ${ops.map(([o, bs, gs]) => `<div class="panel fuera-grp"><div class="between sec-head"><button class="who-row link-row" onclick="openPerson('${o.id}')">${personPhoto(o, 'sm')}<h3>${esc(o.name)}</h3></button><span class="tag info">${bs.length + gs.length}</span></div>
+      <div class="list">${bs.map(rowBox).join('')}${gs.map(g => rowGear(g, back(`checkin('${g.id}'); closeModal()`))).join('')}</div></div>`).join('')}
+    ${open.length ? `<div class="panel fuera-grp"><div class="between sec-head"><h3>${ic('out', 'i-sm')} Prestado con firma</h3><span class="tag ${open.some(loanLate) ? 'bad' : 'info'}">${open.length}</span></div>
+      <div class="list">${open.map(l => `<button class="item" onclick="loanDetail('${l.id}')"><div><b>${esc(loanWho(l))}</b>
+        <small>${esc(loanGear(l).map(g => g.name).join(', ') || 'Sin material')} · ${fmtDate(l.date)}${l.due ? ' → ' + fmtDate(l.due) : ''}</small></div>
+        <span class="tag ${loanLate(l) ? 'bad' : 'info'}">${loanLate(l) ? 'Sin devolver' : 'Prestado'}</span></button>`).join('')}</div></div>` : ''}
+    ${ms.map(([m, gs]) => `<div class="panel fuera-grp"><div class="between sec-head"><button class="link-row" onclick="openMission('${m.id}')"><h3>${ic('radio', 'i-sm')} ${esc(m.title)}</h3></button><span class="tag info">${gs.length}</span></div>
+      <p class="muted" style="margin:-4px 0 10px">Vuelve a su sitio al finalizar la actividad.</p>
+      <div class="list">${gs.map(g => rowGear(g)).join('')}</div></div>`).join('')}
+    <button class="btn btn-g btn-sm full" onclick="go('entregas')">${ic('history')} Entregas con firma (todas, también las devueltas)</button>`;
+}
