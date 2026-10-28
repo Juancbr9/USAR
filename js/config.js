@@ -12,7 +12,7 @@ const SIDE_L = [{ id: 1, c: '1', r: '1 / 3' }, { id: 2, c: '1', r: '3' }, { id: 
   { id: 7, c: '3', r: '2' }, { id: 5, c: '2', r: '3' }, { id: 8, c: '3', r: '3' }, { id: 9, c: '4', r: '1 / 3' }, { id: 10, c: '4', r: '3' }];
 const HUECOS = [...SIDE_L.map(h => ({ ...h, label: h.label || 'B' + h.id })), ...SIDE_L.map(h => ({ ...h, id: h.id + 10, label: h.label ? 'B13 y B16' : 'B' + (h.id + 10) }))];
 // Dibujos de los vehículos de la unidad (img/veh/<id>.webp); los demás usan su foto si se pone, o un icono
-const VEH_ART = ['V-SANGYONG', 'V-GUAGUA-G', 'V-GUAGUA-P', 'V-VPI', 'V-AMB', 'V-AMAROK', 'V-CAM-VERDE', 'V-AB', 'V-CUPRA', 'V-ATB-M1', 'V-ATB-M2', 'V-AB-CHASIS'];
+const VEH_ART = ['V-SANGYONG', 'V-GUAGUA-G', 'V-GUAGUA-P', 'V-VPI', 'V-AMB', 'V-AMAROK', 'V-CAM-VERDE', 'V-AB', 'V-CUPRA', 'V-ATB-M1', 'V-ATB-M2', 'V-AB-CHASIS', 'V-RQ-GE'];
 // Autobomba Renault: siempre vacía detrás; el módulo se elige al llevarla a una actividad (o para verla), y con él el dibujo
 const RENAULT = 'V-AB-CHASIS';
 const RENAULT_MOD = { '': ['Vacía (sin módulo)', 'v-ab-chasis'], cont: ['Contenedor pequeño', 'v-ab-cont'], cont2: ['Contenedor pequeño 2', 'v-ab-cont2'], lcif: ['Módulo LCIF', 'v-ab-lcif'] };
