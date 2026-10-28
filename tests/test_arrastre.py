@@ -100,6 +100,14 @@ with sync_playwright() as p:
       delete d.meta.armbase; localStorage.setItem(KEY.db, JSON.stringify(d)); window.__gid = g.id; sessionStorage.setItem('gid', g.id); })()""")
     a.reload(); a.wait_for_selector('#view > *')
     assert a.evaluate("get('gear', sessionStorage.getItem('gid')).door") == 225 and a.evaluate("get('meta', 'armbase').value") == 1
+    # Contenedor en lista: un renglón por hueco; buscar marca el equipo en su renglón y tocarlo abre la ficha
+    a.evaluate("setPref({ tab: 'contenedor', cside: 'izq', cview: 'lista' })"); a.wait_for_timeout(200)
+    assert a.locator('.cvi').count() == 0 and a.locator('.cl .cl-row').count() == a.evaluate("HUECOS.filter(h => h.id <= 10).length")
+    gl = a.evaluate("list('gear').find(g => !g.box && !g.vehicle && g.door > 0 && g.door <= 10 && !g.out).id")
+    a.evaluate(f"findGo('gear', '{gl}')"); a.wait_for_timeout(200)
+    assert a.locator(f'.cl-row .cl-it[data-gear="{gl}"].found').count() == 1
+    a.click(f'.cl-row .cl-it[data-gear="{gl}"]'); a.wait_for_selector('.fx-hero')
+    a.evaluate("closeModal(); setPref({ cview: '' })"); a.wait_for_selector('.cvi')
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

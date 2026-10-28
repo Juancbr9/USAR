@@ -228,25 +228,25 @@ function viewContVisual() {
   const side = SIDES[prefs.cside] ? prefs.cside : 'izq', [sideTitle, range, off] = SIDES[side];
   const gear = list('gear'), bs = list('boxes');
   const at = d => [gear.filter(g => !g.vehicle && enAlmacen(g) && (g.door || 0) === d), bs.filter(b => !b.vehicle && enAlmacen(b) && (b.door || 0) === d)];
-  const first = off + 1;
-  const [ug, ub] = at(0);
+  const [ug, ub] = at(0), lista = prefs.cview === 'lista';
   return `
     <div class="panel">
       <div class="between wrap-row sec-head">
-        <div><h2>${esc(sideTitle)}</h2><p class="muted">Toca un hueco para verlo; mantén pulsado para arrastrar.</p></div>
+        <div><h2>${esc(sideTitle)}</h2><p class="muted">${lista ? 'Lo que hay en cada hueco; toca uno para verlo entero.' : 'Toca un hueco para verlo; mantén pulsado para arrastrar.'}</p></div>
         <div class="row"><button class="btn btn-g btn-sm" onclick="printBoxLabels()">${ic('qr')} Etiquetas</button>
           <button class="btn btn-g btn-sm" onclick="openScanner(null, { title: 'Escanear material', hint: 'Apunta a la etiqueta QR de un equipo o de una caja' })">${ic('scan')} Escanear</button>
           ${(n => n ? `<button class="btn btn-g btn-sm" onclick="pedidoForm()">${ic('share')} Pedido <span class="tag bad">${n}</span></button>` : '')(list('consumables').filter(consLow).length)}
           ${puedeFlota() ? `<button class="btn btn-a btn-sm" onclick="addMaterial()">${ic('plus')} Material</button>` : ''}</div>
-        <div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" data-cside="${k}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
+        <div class="row cv-switch"><div class="seg-row" role="group" aria-label="Lateral">${Object.entries(SIDES).map(([k, [l, r]]) => `<button class="${k === side ? 'on' : ''}" data-cside="${k}" onclick="setPref({ cside: '${k}' })">${l.replace('Lateral i', 'I').replace('Lateral d', 'D')} <small>${r}</small></button>`).join('')}</div>
+        <div class="seg-row" role="group" aria-label="Vista">${[['', 'grid', 'Dibujo'], ['lista', 'list', 'Lista']].map(([k, icon, l]) => `<button class="${(prefs.cview || '') === k ? 'on' : ''}" onclick="setPref({ cview: '${k}' })">${ic(icon, 'i-sm')} ${l}</button>`).join('')}</div></div>
       </div>
-      <div class="cv cvi" data-side="${side}">
+      ${lista ? contList(off, at) : `<div class="cv cvi" data-side="${side}">
         <img class="cvi-bg" src="img/contenedor-lateral.webp" alt="" aria-hidden="true" width="1200" height="708">
         <div class="cv-grid">${HUECOS.filter(h => h.id > off && h.id <= off + 10).map(h => { const [items, b] = at(h.id), [x, y, w, hh] = HUECO_RECT[h.id - off]; return `
           <div class="cv-cell ${h.label.includes(' y ') ? 'cv-wide' : ''}" style="left:${x}%; top:${y}%; width:${w}%; height:${hh}%" data-door="${h.id}" onclick="cvClick(event, ${h.id})">
             <button class="cv-tag" aria-label="${esc(h.label)}: ${b.length} cajas y ${items.filter(g => !get('boxes', g.box)).length} equipos sueltos">${esc(h.label)}</button>${cellContent(items, b, true)}<span class="cv-more" hidden></span></div>`; }).join('')}</div>
       </div>
-      <div class="cv-legend"><span><i class="lg-box"></i>Caja</span><span><i class="lg-gear"></i>Suelto</span><span><i class="lg-bad"></i>En revisión</span><span><i class="lg-nov"></i>Novedad</span></div>
+      <div class="cv-legend"><span><i class="lg-box"></i>Caja</span><span><i class="lg-gear"></i>Suelto</span><span><i class="lg-bad"></i>En revisión</span><span><i class="lg-nov"></i>Novedad</span></div>`}
     </div>
     ${ug.length || ub.length ? `<div class="panel">
       <h3 class="sec-title">${ic('alert')} Sin ubicar</h3>
@@ -254,6 +254,19 @@ function viewContVisual() {
     </div>` : ''}
     ${consIn(d => d <= 20).length ? `<div class="panel" id="alm-fungible">${consList(consIn(d => d <= 20), true)}</div>` : ''}
 `;
+}
+
+// Vista en lista del lateral: un renglón por hueco con sus cajas (con su código y color) y el material suelto
+function contList(off, at) {
+  return `<div class="cl">${HUECOS.filter(h => h.id > off && h.id <= off + 10).map(h => {
+    const [items, b] = at(h.id), loose = items.filter(g => !get('boxes', g.box)).sort(byName);
+    const bad = [...items, ...b].some(x => x.nov?.text || (x.status && x.status !== 'OPERATIVO'));
+    return `<div class="cl-row" data-door="${h.id}" role="button" tabindex="0" onclick="cvClick(event, ${h.id})">
+      <span class="cl-label">${esc(h.label)}${bad ? '<i class="cl-dot"></i>' : ''}</span>
+      <div class="cl-body">${b.sort((x, y) => (x.pos || 0) - (y.pos || 0)).map(x => `<span class="box-chip sm cl-it" data-box="${x.id}" style="--c:${colorOf(x)[1]}; --ink:${colorOf(x)[2]}" title="${esc(x.name || '')}">${esc(x.code)}</span>`).join('')}
+        ${loose.map(g => `<span class="cl-gear cl-it" data-gear="${g.id}">${esc(g.name)}${qtyText(g)}${revTag(g)}${novTag(g)}</span>`).join('')}
+        ${!b.length && !loose.length ? '<span class="muted">Vacío</span>' : ''}</div>
+      ${ic('chev', 'i-sm')}</div>`; }).join('')}</div>`;
 }
 
 // El dibujo no crece: lo que no cabe en un hueco se resume en «+N» (se ve todo al tocar el hueco)
@@ -278,7 +291,7 @@ addEventListener('resize', () => document.querySelector('.cvi') && fitCells());
 let CV_SUPPRESS = false;
 function cvClick(e, door, veh = '') {
   if (CV_SUPPRESS) return;
-  const tok = e.target.closest('.tok');
+  const tok = e.target.closest('.tok, .cl-it');
   if (tok?.dataset.epi) return epiForm(tok.dataset.epi);
   if (tok?.dataset.box) return boxDetail(tok.dataset.box);
   if (tok?.dataset.gear) return gearDetail(tok.dataset.gear);
