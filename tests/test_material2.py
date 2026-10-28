@@ -44,6 +44,14 @@ with sync_playwright() as p:
     a.mouse.move(g['x'] + 20, g['y'] + 20); a.mouse.down(); a.mouse.move(t['x'] + 100, t['y'] + 6, steps=10); a.mouse.up(); a.wait_for_timeout(200)
     assert secs()[:2] == ['escalon', 'contenedor'] and a.locator('#view .alm-jump button').first.inner_text() == 'Escalón'
     a.reload(); a.wait_for_selector('#view .alm-sec'); assert secs()[:2] == ['escalon', 'contenedor']
+    # Con el dedo: se mantiene pulsada la barra (no hace falta el asa) y se lleva encima de otra; un toque corto solo pliega
+    cdp = c.new_cdp_session(a)
+    tch = lambda tp, x=0, y=0: cdp.send('Input.dispatchTouchEvent', {'type': tp, 'touchPoints': [] if tp == 'touchEnd' else [{'x': x, 'y': y}]})
+    f = a.locator('#alm-fungible .alm-tog b').bounding_box(); t = a.locator('#alm-escalon').bounding_box(); x, y = f['x'] + 10, f['y'] + 8
+    tch('touchStart', x, y); a.wait_for_timeout(500)
+    for i in range(1, 13): tch('touchMove', x, y + (t['y'] + 6 - y) * i / 12); a.wait_for_timeout(30)
+    tch('touchEnd'); a.wait_for_timeout(200)
+    assert secs()[0] == 'fungible' and a.locator('#alm-fungible.folded').count() == 1, secs()
     a.click('.alm-tools .link:has-text("Desplegar todo")'); a.wait_for_timeout(100)
     # Armarios: la lista de las baldas se despliega tocando el nombre de cada armario
     assert a.locator('.arm-list').count() == 0

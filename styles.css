@@ -1526,11 +1526,11 @@ body.mision #view > .link { color: #c9d4cb; }
 :root[data-sun] .nav-btn:not(.on) { color: #000; } :root[data-sun] .nav-btn { font-weight: 800; }
 :root[data-sun] .cl-gear, :root[data-sun] .art, :root[data-sun] .fx-art { background: #fff; border: 1.5px solid #000; }
 /* Material: cada parte con su barra (plegar tocándola, ordenar arrastrando el asa) */
-.alm-tools { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 10px 2px 8px; font-size: 13px; }
+.alm-tools { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin: 10px 2px 8px; font-size: 13px; }
 .alm-tools .i-sm { vertical-align: -3px; }
 .alm-tools .link { flex: none; font-weight: 700; }
 .alm-sec { margin-bottom: 12px; border-radius: var(--r); transition: opacity .15s, box-shadow .15s; }
-.alm-bar { display: flex; align-items: stretch; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); margin-bottom: 8px; }
+.alm-bar { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; display: flex; align-items: stretch; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); margin-bottom: 8px; }
 .alm-sec.folded .alm-bar { margin-bottom: 0; }
 .alm-grip { flex: none; width: 44px; display: grid; place-items: center; color: var(--muted); cursor: grab; touch-action: none; border-right: 1px solid var(--line); }
 .alm-grip:active { cursor: grabbing; color: var(--ink); }
@@ -1552,3 +1552,5 @@ button.arm-top { display: flex; align-items: center; justify-content: center; ga
 .arm-top.on .arm-chev { transform: rotate(-90deg); }
 .arm-top.on { background: linear-gradient(#f5b800, #d99f00); }
 .arm-list { margin-top: 10px; }
+.alm-ghost { position: fixed; z-index: 95; margin: 0; pointer-events: none; box-shadow: 0 14px 34px rgba(0,0,0,.3); transform: scale(1.02); border-color: var(--yellow); }
+.alm-ghost .alm-chev { visibility: hidden; }
