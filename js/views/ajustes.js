@@ -2,12 +2,13 @@
 // USAR 242 · Ajustes: mi cuenta, este móvil, equipo, administración e historial
 
 /* ==================== VISTA: AJUSTES ==================== */
-let installPrompt = null;
+let installPrompt = null, AJ_MORE = false;   // AJ_MORE: las unidades siguen desplegadas al cambiar una
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; if (prefs.tab === 'ajustes') render(); });
 
-// Ordenado por a quién afecta: mi cuenta, este móvil, todo el equipo y, solo para ADMIN, administración
+// Lo justo para cada persona: su cuenta y cómo ve la app en su móvil. Los datos se comparten solos (no hay nada que
+// configurar ni sincronizar a mano). Miembros, copias, mantenimiento e historial: solo jefes y ADMIN, en Administración.
 function viewAjustes() {
-  const c = Sync.cfg();
+  const c = Sync.cfg(), jefe = isAdmin() || Sync.role === 'jefe';
   const standalone = instalada(), ios = IOS;
   const logs = list('logs').sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 150);
   const avisos = 'Notification' in window && Notification.permission === 'granted';
@@ -31,37 +32,31 @@ function viewAjustes() {
         <label class="check-row"><input type="checkbox" ${prefs.big ? 'checked' : ''} onchange="setPref({ big: this.checked }); applyTheme()"><span>Botones y letra grandes (con guantes)</span></label>
         <button class="btn btn-g full" style="margin-top:10px" onclick="enableNotifications()" ${avisos ? 'disabled' : ''}>${ic('bell')} ${avisos ? 'Avisos del sistema activados' : 'Activar avisos del sistema'}</button>
       </div>
-      <div class="panel">
-        <h3 class="sec-title">${ic('locate')} Unidades</h3>
-        <label class="lbl">Coordenadas<select class="input" onchange="setPref({ coordFmt: this.value })">${[['latlon', 'Latitud y longitud (28.12350, -15.43630)'], ['utm', 'UTM (28R 457151 E 3110960 N)'], ['mgrs', 'MGRS (28R DS 57150 10960)']].map(([k, l]) => `<option value="${k}" ${coordFmt() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-        <label class="lbl" style="margin-top:10px">Distancias<select class="input" onchange="setPref({ distUnit: this.value })">${[['m', 'Metros'], ['km', 'Kilómetros'], ['cm', 'Centímetros']].map(([k, l]) => `<option value="${k}" ${distUnit() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-        <p class="muted" style="margin-top:8px">Las coordenadas se pueden escribir en cualquiera de los tres formatos.</p>
-      </div>
-      <div class="panel span2">
+      ${standalone ? '' : `<div class="panel">
         <h3 class="sec-title">${ic('phone')} Instalar en el móvil</h3>
-        ${standalone ? '<p class="muted">Ya está instalada.</p>'
-          : installPrompt ? `<p class="muted" style="margin-bottom:12px">Añádela a la pantalla de inicio.</p><button class="btn btn-a full" onclick="installPrompt.prompt(); installPrompt = null">${ic('download')} Instalar app</button>`
+        ${installPrompt ? `<p class="muted" style="margin-bottom:12px">Añádela a la pantalla de inicio.</p><button class="btn btn-a full" onclick="installPrompt.prompt(); installPrompt = null">${ic('download')} Instalar app</button>`
           : ios ? '<p class="muted">En Safari pulsa <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.</p>'
           : '<p class="muted">En el menú del navegador elige <b>Instalar aplicación</b> o <b>Añadir a pantalla de inicio</b>.</p>'}
-      </div>
+      </div>`}
+      <details class="panel span2 aj-more" ${AJ_MORE ? 'open' : ''} ontoggle="AJ_MORE = this.open">
+        <summary class="sec-title" style="margin:0; cursor:pointer">${ic('locate')} Unidades de coordenadas y distancias</summary>
+        <div class="grid g2" style="margin-top:12px">
+          <label class="lbl">Coordenadas<select class="input" onchange="setPref({ coordFmt: this.value })">${[['latlon', 'Latitud y longitud (28.12350, -15.43630)'], ['utm', 'UTM (28R 457151 E 3110960 N)'], ['mgrs', 'MGRS (28R DS 57150 10960)']].map(([k, l]) => `<option value="${k}" ${coordFmt() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="lbl">Distancias<select class="input" onchange="setPref({ distUnit: this.value })">${[['m', 'Metros'], ['km', 'Kilómetros'], ['cm', 'Centímetros']].map(([k, l]) => `<option value="${k}" ${distUnit() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        </div>
+        <p class="muted" style="margin-top:8px">Las coordenadas se pueden escribir en cualquiera de los tres formatos.</p>
+      </details>
     </div>
+    ${c && Sync.error ? `<div class="callout bad"><b>${ic('alert', 'i-sm')} No se pudieron compartir los datos</b><p>${esc(Sync.error)}</p><small class="muted">Se vuelve a intentar sola; tus cambios no se pierden.</small></div>` : ''}
 
-    ${grupo('Equipo', 'Afecta a todo el equipo.')}
-    <div class="panel">
-      <h3 class="sec-title">${ic('cloud')} Datos compartidos</h3>
-      ${!c ? '<p class="muted">Los datos se guardan solo en este móvil.</p>' : !Sync.user ? '<p class="muted">Entra con tu nombre y PIN para ver y compartir los datos del equipo.</p>' : `
-        ${Sync.error ? `<p class="note" style="color:var(--bad); margin-bottom:8px">${esc(Sync.error)}</p>` : ''}
-        <div class="grid g2">
-          <button class="btn btn-g" onclick="Sync.pull().then(() => toast('Sincronizado'))">${ic('refresh')} Sincronizar ahora</button>
-          ${Sync.role === 'jefe' ? `<button class="btn btn-g" onclick="membersModal()">${ic('users')} Miembros y permisos</button>` : ''}
-        </div>`}
-    </div>
-
-    ${isAdmin() ? `
-    ${grupo('Administración', `Solo ${esc(ADMIN)}.`)}
+    ${jefe ? `
+    ${grupo('Administración', 'Solo jefes.')}
     <div class="grid g2">
+      ${c && Sync.role === 'jefe' ? `<div class="panel"><h3 class="sec-title">${ic('users')} Personal con acceso</h3>
+        <p class="muted" style="margin-bottom:10px">Quién entra en la app, con qué PIN y con qué permiso.</p>
+        <button class="btn btn-g full" onclick="membersModal()">${ic('users')} Miembros y permisos</button></div>` : ''}
       ${mantenimientoPanel()}
-      <div class="panel">
+      ${isAdmin() ? `<div class="panel">
         <h3 class="sec-title">${ic('database')} Copias de seguridad</h3>
         <div class="list">
           <button class="btn btn-g" onclick="exportJSON()">${ic('download')} Exportar copia (.json)</button>
@@ -72,15 +67,15 @@ function viewAjustes() {
         <h3 class="sec-title">${ic('alert')} Zona peligrosa</h3>
         <p class="muted" style="margin-bottom:10px">Borra todo y deja los datos de serie${c ? ', en todos los móviles del equipo' : ''}.</p>
         <button class="btn btn-bad full" onclick="resetAll()">Restaurar datos iniciales</button>
-      </div>
-    </div>` : ''}
+      </div>` : ''}
+    </div>
 
     <details class="panel aj-log">
       <summary class="between"><h3 class="sec-title" style="margin:0">${ic('history')} Historial</h3><span class="muted">${logs.length} registros</span></summary>
       <div class="list log" style="max-height:420px; overflow-y:auto; margin-top:12px">${logs.map(l => `
         <div class="well" style="padding:8px 10px"><span class="t">[${fmtWhen(l.ts)}]</span> <span class="w">${esc(l.operator)}:</span> ${esc(l.action)}</div>`).join('')
         || '<p class="muted">Sin actividad registrada.</p>'}</div>
-    </details>`;
+    </details>` : ''}`;
 }
 
 async function exportJSON() {
