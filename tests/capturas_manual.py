@@ -117,9 +117,9 @@ with sync_playwright() as p:
     a.evaluate("setPref({ session: 'OP-01', tab: 'consumibles' })"); a.wait_for_timeout(250)
     ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
-    a.evaluate("prefs.menuOpen = ['log', 'mat']; renderDrawer()"); tall(1360); a.wait_for_timeout(200)
-    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Logística")', 'r', {'d': 60}),
-                    ('#drawer .dr-group-head:has-text("Material")', 'r', {'d': 60}), ('#drawer .dr-dot', 'r', {'d': 30}), ('#drawer .dr-group-head:has-text("Equipo")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
+    a.evaluate("prefs.menuOpen = ['log']; renderDrawer()"); tall(1100); a.wait_for_timeout(200)
+    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Material")', 'r', {'d': 60}),
+                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-dot', 'r', {'d': 30}), ('#drawer .dr-group-head:has-text("Equipo")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Guía de campo")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
 
     # ---------- Operación de ejemplo ----------
@@ -271,8 +271,7 @@ with sync_playwright() as p:
     a.click('#view button:has-text("Documento")'); a.wait_for_timeout(200); a.select_option('[name=type]', 'Carné de conducir')
     ann(a, 'documento', [('#modalForm .photo-field >> nth=0', 'i')], scroll='#modalForm .photo-field', top=200); esc()
     a.evaluate("setPref({ tab: 'calendario' })"); a.wait_for_timeout(200); shot(a, 'calendario')
-    a.evaluate("setPref({ tab: 'vencimientos', vwin: 365 })"); a.wait_for_timeout(200); shot(a, 'vencimientos')
-    a.evaluate("setPref({ tab: 'despliegue' })"); a.wait_for_timeout(200); shot(a, 'alistamiento')
+    a.evaluate("setPref({ tab: 'avisos', vwin: 365 })"); a.wait_for_timeout(200); shot(a, 'vencimientos', '#venc')
     a.evaluate("setPref({ tab: 'listas' }); catalogEditor('docTypes')"); a.wait_for_timeout(200); shot(a, 'listas'); esc()
     a.evaluate("setPref({ tab: 'guia' })"); a.wait_for_timeout(300); shot(a, 'guia')
     a.evaluate("setPref({ tab: 'ajustes' })"); a.wait_for_timeout(200); shot(a, 'ajustes', '.panel:has-text("Pantalla y avisos")')

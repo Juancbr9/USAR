@@ -71,8 +71,8 @@ with sync_playwright() as p:
     calls = ["gearDetail('G-XSS')", "gearDetail('G-XSS3')", "revForm('G-XSS3')", "novForm('gear', 'G-XSS3')", "cellModal(302)", "gearDetail('G-XSS2')", "boxDetail('K-XSS')", "eventDetail('E-XSS')", "docDetail('D-XSS')",
              "victimDetail('V-XSS')", "worksiteDetail(get('worksites', 'W-XSS'))", "confinedDetail('C-XSS')", "heritageDetail('H-XSS')",
              "vehicleForm('V-XSS')", "missionVehicleForm('M-XSS', 'MV-1')", "personForm('OP-02')", "epiForm('EPI-XSS')", "eventForm('E-XSS')",
-             "printMission('M-XSS')", "printBoxLabels()", "printPersonCards()", "printPersonnelManifest()",
-             "printGearManifest()", "printManifest()", "printLabels(3)", "printHeritageLabels('M-BIC')", "printHandover('M-BIC')",
+             "printMission('M-XSS')", "printBoxLabels()", "printPersonCards()",
+             "printManifest()", "printLabels(3)", "printHeritageLabels('M-BIC')", "printHandover('M-BIC')",
              "missionText(mget('M-XSS'))", "go('contenedor'); setPref({ cside: 'izq' })", "go('revision')", "go('armarios')", "go('pasillo')", "go('otros')"]
     for js in calls:
         at(js, f"closeModal(); {js}")

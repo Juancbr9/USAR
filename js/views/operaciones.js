@@ -34,36 +34,18 @@ const mget = id => get('missions', id);
 
 function viewOperaciones() {
   const m = prefs.mission && mget(prefs.mission);
-  return m ? viewMission(m) : viewMissionList();
+  return m ? viewMission(m) : viewActividades();
 }
 
-// Intervenciones o ejercicios (cada uno en su apartado del menú); sin tipo, todas
-function viewMissionList(type) {
-  const ms = list('missions').filter(m => !type || (type === 'ejercicio' ? m.type === 'ejercicio' : m.type !== 'ejercicio')).sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || (b.date || '').localeCompare(a.date || ''));
-  const card = m => {
-    const [label, cls] = MISSION_STATUS[m.status];
-    return `
-      <button class="item" onclick="openMission('${m.id}')">
-        <div><b>${esc(m.title)}</b><small>${mtypeName(m)}${m.scope === 'bic' ? ' de patrimonio (BIC)' : ''} · ${fmtDT(m.date)}${m.location ? ' · ' + esc(m.location) : ''}</small>
-          <small>${missionPeople(m).length} personas · ${worksitesOf(m.id).length} worksites · ${victimsOf(m.id).length} víctimas · fase: ${phaseOf(m).short}</small></div>
-        <span class="tag ${cls}">${label}</span>
-      </button>`;
-  };
-  const by = st => ms.filter(m => m.status === st);
-  const block = (st, title, icon, open = true) => { const xs = by(st); return xs.length ? (open ? `
-    <div class="panel"><h3 class="sec-title">${ic(icon)} ${title} (${xs.length})</h3><div class="list">${xs.map(card).join('')}</div></div>` : `
-    <details class="panel"><summary class="sec-title" style="cursor:pointer">${ic(icon)} ${title} (${xs.length})</summary><div class="list" style="margin-top:10px">${xs.map(card).join('')}</div></details>`) : ''; };
+// Tarjeta de una intervención o ejercicio en «Todas las actividades»
+function missionCard(m) {
+  const [label, cls] = MISSION_STATUS[m.status];
   return `
-    <div class="op-new ${type ? 'one' : ''}">
-      ${type !== 'ejercicio' ? `<button class="op-tile real" onclick="newMission('intervencion')">${ic('alert', 'i-lg')}<b>Nueva intervención</b><small>Salida real</small></button>` : ''}
-      ${type !== 'intervencion' ? `<button class="op-tile ex" onclick="newMission('ejercicio')">${ic('flag', 'i-lg')}<b>Nuevo ejercicio</b><small>Simulacro o práctica</small></button>` : ''}
-    </div>
-    ${block('active', 'En curso', 'play')}
-    ${block('prep', 'En preparación', 'clock')}
-    ${block('done', 'Terminadas', 'history', false)}
-    ${!ms.length ? `<div class="panel">${emptyState(type === 'ejercicio' ? 'flag' : 'alert', `Todavía no hay ${type === 'ejercicio' ? 'ningún ejercicio' : type ? 'ninguna intervención' : 'ninguna'}`,
-      type === 'ejercicio' ? 'Crea el primero con «Nuevo ejercicio» o empieza desde una plantilla.' : 'Cuando haya una salida real, pulsa «Nueva intervención» o empieza desde una plantilla.')}</div>` : ''}
-    ${templatesPanel()}`;
+    <button class="item act-card" data-kind="${m.type === 'ejercicio' ? 'ejercicio' : 'intervencion'}" onclick="openMission('${m.id}')">
+      <div><b>${esc(m.title)}</b><small>${mtypeName(m)}${m.scope === 'bic' ? ' de patrimonio (BIC)' : ''} · ${fmtDT(m.date)}${m.location ? ' · ' + esc(m.location) : ''}</small>
+        <small>${missionPeople(m).length} personas · ${worksitesOf(m.id).length} worksites · ${victimsOf(m.id).length} víctimas · fase: ${phaseOf(m).short}</small></div>
+      <span class="tag ${cls}">${label}</span>
+    </button>`;
 }
 
 function missionForm(id, type = 'intervencion') {

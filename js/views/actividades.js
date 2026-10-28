@@ -15,28 +15,52 @@ const actWhen = x => x.type === 'convoy'
   : !x.start ? 'Sin fecha' : x.end && x.end > x.start ? `del ${fmtDate(x.start)} al ${fmtDate(x.end)} (${eventDays(x).length} días)` : fmtDate(x.start);
 const actRoute = x => [x.origin, x.destination].filter(Boolean).join(' → ');
 const actLines = t => String(t || '').split('\n').map(s => s.trim()).filter(Boolean);
+// Tarjeta de una maniobra o un convoy en «Todas las actividades»
+const actCard = x => `
+  <button class="item act-card" data-kind="${x.type}" onclick="openAct('${x.id}')"><div><b>${esc(x.title)}</b>
+    <small>${ACT_TYPES[x.type][0]} · ${x.type === 'convoy' && actRoute(x) ? esc(actRoute(x)) + ' · ' : x.place ? esc(x.place) + ' · ' : ''}${actWhen(x)}</small>
+    <small>${(x.people || []).length} personas · ${(x.vehicles || []).length} vehículos</small></div>${ic('chev', 'i-sm')}</button>`;
 const openAct = id => { const x = actGet(id); toggleDrawer(false); setPref({ tab: ACT_TYPES[x.type][1], move: id }); scrollTo(0, 0); };
 
 function viewActs(type) {
   const cur = prefs.move && actGet(prefs.move);
-  if (cur && cur.type === type) return viewAct(cur);
-  const [name, , icon, plural] = ACT_TYPES[type], all = acts(type), today = todayISO();
-  const next = all.filter(x => !actEnd(x) || actEnd(x).slice(0, 10) >= today), past = all.filter(x => !next.includes(x)).reverse();
-  const card = x => `
-    <button class="item" onclick="openAct('${x.id}')"><div><b>${esc(x.title)}</b>
-      <small>${type === 'convoy' && actRoute(x) ? esc(actRoute(x)) + ' · ' : x.place ? esc(x.place) + ' · ' : ''}${actWhen(x)}</small>
-      <small>${(x.people || []).length} personas · ${(x.vehicles || []).length} vehículos</small></div>${ic('chev', 'i-sm')}</button>`;
+  return cur && cur.type === type ? viewAct(cur) : viewActividades();
+}
+
+/* ---------- Todas las actividades: una sola lista con filtro por tipo y un solo botón «Nueva» ---------- */
+// [id del filtro, nombre, icono, «Nueva …»]
+const ACT_KINDS = [['intervencion', 'Intervenciones', 'alert', 'Nueva intervención', 'Salida real'], ['ejercicio', 'Ejercicios', 'flag', 'Nuevo ejercicio', 'Simulacro o práctica'],
+  ['maniobra', 'Maniobras', 'tent', 'Nueva maniobra', 'Traslado, alojamiento y planning'], ['convoy', 'Convoyes', 'route', 'Nuevo convoy', 'Movimiento de un sitio a otro']];
+const newActivity = kind => ACT_TYPES[kind] ? actForm(kind) : newMission(kind);
+function newActivityPicker() {
+  openModal('Nueva actividad', `<div class="op-new">${ACT_KINDS.map(([k, , icon, label, sub]) => `
+    <button class="op-tile ${k === 'intervencion' ? 'real' : 'ex'}" onclick="closeModal(); newActivity('${k}')">${ic(icon, 'i-lg')}<b>${label}</b><small>${sub}</small></button>`).join('')}</div>`);
+}
+function viewActividades() {
+  const f = ACT_KINDS.some(k => k[0] === prefs.afil) ? prefs.afil : '', today = todayISO();
+  const kindOf = m => m.type === 'ejercicio' ? 'ejercicio' : 'intervencion';
+  const ms = list('missions').filter(m => !f || kindOf(m) === f), mv = list('moves').filter(x => ACT_TYPES[x.type] && (!f || x.type === f));
+  const when = x => x.date || x.start || '';
+  // En curso, próximas (y en preparación) y terminadas; cada grupo por fecha
+  const live = [...ms.filter(m => m.status === 'active'), ...mv.filter(x => x.start && x.start.slice(0, 10) <= today && actEnd(x).slice(0, 10) >= today)];
+  const next = [...ms.filter(m => m.status === 'prep'), ...mv.filter(x => !live.includes(x) && (!actEnd(x) || actEnd(x).slice(0, 10) >= today))].sort((a, b) => when(a).localeCompare(when(b)));
+  const done = [...ms.filter(m => m.status === 'done'), ...mv.filter(x => !live.includes(x) && !next.includes(x))].sort((a, b) => when(b).localeCompare(when(a)));
+  const card = x => x.status ? missionCard(x) : actCard(x);
+  const one = ACT_KINDS.find(k => k[0] === f);
+  const block = (xs, title, icon) => xs.length ? `<div class="panel"><h3 class="sec-title">${ic(icon)} ${title} (${xs.length})</h3><div class="list">${xs.map(card).join('')}</div></div>` : '';
   return `
-    <div class="op-new one">
-      <button class="op-tile ex" onclick="actForm('${type}')">${ic(icon, 'i-lg')}<b>${type === 'convoy' ? 'Nuevo convoy' : 'Nueva maniobra'}</b>
-        <small>${type === 'convoy' ? 'Movimiento de un sitio a otro' : 'Traslado, alojamiento y planning'}</small></button>
+    <div class="panel">
+      <div class="between sec-head"><div><h2>Actividades</h2><p class="muted">Intervenciones, ejercicios, maniobras y convoyes.</p></div>
+        <button class="btn btn-a" onclick="${one ? `newActivity('${f}')` : 'newActivityPicker()'}">${ic('plus')} ${one ? one[3] : 'Nueva'}</button></div>
+      <div class="row chips act-chips">${[['', 'Todas', 'grid'], ...ACT_KINDS].map(([k, l, icon]) => `<button class="chip ${f === k ? 'on' : ''}" onclick="setPref({ afil: '${k}' })">${ic(icon, 'i-sm')} ${l}</button>`).join('')}</div>
     </div>
-    ${all.length ? `<div class="panel"><h3 class="sec-title">${ic('calendar')} Próximas y en curso (${next.length})</h3>
-      ${next.length ? `<div class="list">${next.map(card).join('')}</div>` : `<p class="muted">No hay ${type === 'convoy' ? 'ningún convoy previsto' : 'ninguna maniobra prevista'}.</p>`}</div>`
-      : `<div class="panel">${emptyState(icon, `Todavía no hay ${type === 'convoy' ? 'ningún convoy' : 'ninguna maniobra'}`,
-        `${plural}: ${SECTIONS.find(s => s[0] === ACT_TYPES[type][1])[3].toLowerCase()}. ${name === 'Convoy' ? 'Crea el primero' : 'Crea la primera'} con el botón de arriba.`)}</div>`}
-    ${past.length ? `<details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('history')} Pasadas (${past.length})</summary>
-      <div class="list" style="margin-top:10px">${past.map(card).join('')}</div></details>` : ''}`;
+    ${block(live, 'En curso', 'play')}
+    ${block(next, 'Próximas y en preparación', 'clock')}
+    ${done.length ? `<details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('history')} Terminadas (${done.length})</summary>
+      <div class="list" style="margin-top:10px">${done.map(card).join('')}</div></details>` : ''}
+    ${!live.length && !next.length && !done.length ? `<div class="panel">${emptyState(one ? one[2] : 'radio', one ? `Todavía no hay ${one[1].toLowerCase()}` : 'Todavía no hay ninguna actividad',
+      `Pulsa «${one ? one[3] : 'Nueva'}»${!f || f === 'intervencion' || f === 'ejercicio' ? ' o empieza desde una plantilla' : ''}.`)}</div>` : ''}
+    ${!f || f === 'intervencion' || f === 'ejercicio' ? templatesPanel() : ''}`;
 }
 
 /* ---------- Datos generales ---------- */
@@ -92,12 +116,12 @@ function deleteAct(id) {
 
 /* ---------- Ficha ---------- */
 function viewAct(x) {
-  const man = x.type === 'maniobra', edit = canAct(x), [name, tab, , plural] = ACT_TYPES[x.type];
+  const man = x.type === 'maniobra', edit = canAct(x), [name] = ACT_TYPES[x.type];
   const opn = id => esc(get('operators', id)?.name || '—'), going = new Set(x.people || []), ops = operators();
   const dd = (t, v) => v ? `<dt>${t}</dt><dd>${v}</dd>` : '';
   return `
     <div class="panel">
-      <button class="link" onclick="go('${tab}')">${ic('back', 'i-sm')} ${plural}</button>
+      <button class="link" onclick="go('actividades')">${ic('back', 'i-sm')} Actividades</button>
       <div class="between sec-head"><div><h2>${esc(x.title)}</h2><p class="muted">${name}${x.by ? ' · creado por ' + opn(x.by) : ''}</p></div>
         ${edit ? `<button class="btn btn-g btn-sm" onclick="actForm('${x.type}', '${x.id}')">${ic('pencil', 'i-sm')} Editar</button>` : ''}</div>
       <dl class="dl">

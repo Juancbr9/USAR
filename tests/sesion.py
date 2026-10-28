@@ -35,10 +35,14 @@ def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=Fa
     return c
 Browser.new_context = new_context
 
-# Ir a una sección por el menú de tres rayas, desplegando sus grupos (Actividades, Logística › Material…)
-LABELS = {'Operaciones': 'Activación', 'Intervenciones': 'Activación', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Almacén', 'Material': 'Almacén', 'Contenedor': 'Almacén',
-          'Alistamiento': 'Alistamiento y despliegue', 'Avisos': 'Inicio'}
+# Ir a una sección por el menú de tres rayas, desplegando sus grupos (Actividades, Material…)
+LABELS = {'Operaciones': 'Todas las actividades', 'Intervenciones': 'Todas las actividades', 'Activación': 'Todas las actividades', 'Actividades': 'Todas las actividades', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Almacén', 'Material': 'Almacén', 'Contenedor': 'Almacén',
+          'Avisos': 'Inicio'}
+# Cada tipo de actividad está en «Todas las actividades», con su filtro
+FILTRO = {'Activación': 'Intervenciones', 'Intervenciones': 'Intervenciones', 'Operaciones': 'Intervenciones', 'Ejercicios': 'Ejercicios', 'Maniobras': 'Maniobras', 'Convoy': 'Convoyes'}
 def menu(pg, label, wait=150):
+    if label in FILTRO:
+        menu(pg, 'Todas las actividades', wait); pg.click(f'#view .act-chips .chip:has-text("{FILTRO[label]}")'); pg.wait_for_timeout(wait); return
     label = LABELS.get(label, label)
     root = '#nav' if pg.locator('#nav .nav-tree').count() and pg.locator('#nav .nav-tree').is_visible() else '#drawer'
     if root == '#drawer': pg.click('#menuBtn')

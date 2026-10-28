@@ -32,6 +32,8 @@ function render() {
   if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
   if (HUB_TO[prefs.tab]) prefs.tab = HUB_TO[prefs.tab];
+  // Cada tipo de actividad se ve en la lista de todas (las maniobras y convoyes abiertos siguen en su ficha)
+  if (ACT_FILTER[prefs.tab] && !(prefs.move && ACT_TYPES[ACT_FILTER[prefs.tab]])) { prefs.afil = ACT_FILTER[prefs.tab]; prefs.tab = 'actividades'; }
   if (prefs.tab === 'consumibles') prefs.almFold = { ...prefs.almFold, fungible: false };   // el fungible se abre desplegado
   if (ALMACEN_TABS.includes(prefs.tab)) prefs.tab = 'contenedor';
   applyArea();
@@ -60,32 +62,33 @@ function renderNav() {
   $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count, active)}</div>` : '';
 }
 
-// Menú por niveles: Inicio, Actividades, Logística (con Material dentro), Equipo y Ajustes. Al tocar un grupo se despliega.
-const tabGroups = tab => { const s = sectionOf(tab) || (tab === 'operaciones' ? [, , , , 'ops'] : null); return s ? [s[4], s[5]].filter(Boolean) : []; };
+// Menú por niveles (en el orden de MENU): Inicio, Actividades, Material, Vehículos, Equipo, Guía de campo y Ajustes.
+// Al tocar un área se despliegan sus secciones (un área abierta a la vez).
+const OPS_TABS = ['operaciones', 'intervenciones', 'ejercicios', 'maniobras', 'convoy'];
+const menuTab = tab => OPS_TABS.includes(tab) ? 'actividades' : ALMACEN_TABS.includes(tab) || tab === 'entregas' ? (tab === 'entregas' ? 'fuera' : 'contenedor') : tab;
+const tabGroups = tab => { tab = menuTab(tab); const s = sectionOf(tab); return s && !MENU.includes(tab) && s[4] !== 'home' ? [s[4]] : []; };
 function menuOpen(g) { return (prefs.menuOpen ?? tabGroups(prefs.tab)).includes(g); }
 function toggleMenuGroup(g) {
-  let cur = prefs.menuOpen ?? tabGroups(prefs.tab);
-  if (cur.includes(g)) cur = cur.filter(x => x !== g && !(g === 'log' && x === 'mat'));
-  else cur = g === 'mat' ? [...cur, 'mat'] : [g];   // en el primer nivel, un grupo abierto a la vez
-  prefs.menuOpen = cur; writeJSON(KEY.prefs, prefs); renderNav();
+  prefs.menuOpen = menuOpen(g) ? [] : [g];
+  writeJSON(KEY.prefs, prefs); renderNav();
 }
 function menuTree(count, active) {
-  const curTab = prefs.tab === 'operaciones' ? (get('missions', prefs.mission)?.type === 'ejercicio' ? 'ejercicios' : 'intervenciones') : ALMACEN_TABS.includes(prefs.tab) ? 'contenedor' : prefs.tab;
+  const curTab = menuTab(prefs.tab);
   const item = (id, icon, title, cls = '') => { const st = sectionStatus(id); return `
     <button class="dr-item ${cls} ${curTab === id ? 'on' : ''}" data-area="${areaOf(id)}" ${curTab === id ? 'aria-current="page"' : ''} onclick="go('${id}')">
       ${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + ' avisos' : 'Todo en orden'}</small>` : ''}</span>
-      ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${id === 'intervenciones' && active ? '<span class="live-dot"></span>' : ''}
+      ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${id === 'actividades' && active ? '<span class="live-dot"></span>' : ''}
       ${st && st[1] !== 'neutral' && st[1] !== 'ok' ? `<span class="dr-dot ${st[1]}" title="${esc(st[0])}"></span>` : ''}</button>`; };
-  const head = (g, icon, title, cls = '') => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
-    return `<button class="dr-group-head ${cls} ${on ? 'has-on' : ''}" data-area="${g === 'mat' ? 'log' : g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
-  const items = (filter, cls) => SECTIONS.filter(s => !s[6] && filter(s)).map(([id, icon, title]) => item(id, icon, title, cls)).join('');
-  return item('avisos', 'home', 'Inicio') + ['ops', 'log', 'team', 'help'].map(ar => `
-    <div class="dr-group ${menuOpen(ar) ? 'open' : ''}" data-area="${ar}">
-      ${head(ar, AREAS[ar].icon, AREAS[ar].name)}
-      ${menuOpen(ar) ? `<div class="dr-children">${ar === 'log'
-        ? `<div class="dr-group sub ${menuOpen('mat') ? 'open' : ''}">${head('mat', 'case', 'Material', 'sub')}${menuOpen('mat') ? `<div class="dr-children">${items(s => s[5] === 'mat', 'sub2')}</div>` : ''}</div>` + items(s => s[4] === ar && !s[5], 'sub')
-        : items(s => s[4] === ar, 'sub')}</div>` : ''}
-    </div>`).join('');
+  const head = (g, icon, title) => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
+    return `<button class="dr-group-head ${on ? 'has-on' : ''}" data-area="${g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
+  return MENU.map(k => {
+    if (!AREAS[k]) { const [id, icon, title] = sectionOf(k); return item(id, icon, k === 'avisos' ? 'Inicio' : title); }
+    const kids = SECTIONS.filter(s => s[4] === k && !s[6] && !MENU.includes(s[0]));
+    return `
+    <div class="dr-group ${menuOpen(k) ? 'open' : ''}" data-area="${k}">
+      ${head(k, AREAS[k].icon, AREAS[k].name)}
+      ${menuOpen(k) ? `<div class="dr-children">${kids.map(([id, icon, title]) => item(id, icon, title, 'sub')).join('')}</div>` : ''}
+    </div>`; }).join('');
 }
 
 // Menú de tres rayas (móvil y tablet)
@@ -115,7 +118,12 @@ function toggleDrawer(open) {
   if (open) { renderDrawer(); d.querySelector('.dr-item.on, .dr-item')?.focus({ preventScroll: true }); history.pushState({ nav: navSnap(), drawer: 1 }, ''); }
 }
 
-function go(tab) { const sub = ALMACEN_TABS.includes(tab) && tab; tab = sub ? 'contenedor' : HUB_TO[tab] || tab; toggleDrawer(false); haptic(8); setPref({ tab, menuOpen: null, ...(['operaciones', 'intervenciones', 'ejercicios'].includes(tab) ? { mission: null, ws: null, mtab: 'resumen' } : {}), ...(ACT_TABS.includes(tab) ? { move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) }); scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'otros' ? 'escalon' : sub); }
+function go(tab) {
+  const sub = ALMACEN_TABS.includes(tab) && tab, afil = ACT_FILTER[tab];
+  tab = sub ? 'contenedor' : afil || tab === 'operaciones' ? 'actividades' : HUB_TO[tab] || tab;
+  toggleDrawer(false); haptic(8);
+  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) });
+  scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'otros' ? 'escalon' : sub); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
 function toggleSearch() {
@@ -168,7 +176,7 @@ function alerts() {
 const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length;
 
 /* ==================== VISTA: INICIO ==================== */
-// Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, accesos rápidos y lo próximo del calendario
+// Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, los vencimientos y lo próximo del calendario
 function viewAvisos() {
   const a = alerts(), total = alertCount(a), gearList = list('gear');
   const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
@@ -191,9 +199,6 @@ function viewAvisos() {
   // value: [cifra, lo que va detrás] para que la cifra cuente al entrar
   const kpi = (icon, label, [n, suf = ''], sub, cls, onclick) => `<button class="dash-kpi ${cls}" onclick="${onclick}">
     <span class="dash-kpi-i">${ic(icon)}</span><small>${label}</small><b data-count="${n}" data-suf="${esc(suf)}">${n}${esc(suf)}</b><span class="dash-kpi-sub">${sub}</span></button>`;
-  // Accesos rápidos (con el color de su parte de la app)
-  const quick = [['intervenciones', 'alert', 'Activación', 'ops'], ['ejercicios', 'flag', 'Ejercicios', 'ops'], ['contenedor', 'box', 'Material', 'log'], ['revista', 'clipboard', 'Revista', 'log'],
-    ['vehiculos', 'truck', 'Vehículos', 'log'], ['personal', 'hardhat', 'Personal', 'team'], ['calendario', 'calendar', 'Calendario', 'team'], ['guia', 'book', 'Guía de campo', 'help']];
   const upcoming = events().filter(e => eventDays(e).at(-1) >= todayISO()).slice(0, 3);
   // Operatividad de la unidad: media de material operativo, personal al día y vehículos sin fallos en su última revista
   const units = vehicles().flatMap(v => v.units || []), vOk = units.filter(u => !lastVcheck(u.id)?.fails.length).length;
@@ -235,7 +240,7 @@ function viewAvisos() {
       ${kpi('box', 'Material operativo', [pct, '%'], `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
       ${kpi('wrench', 'En revisión', [a.review.length + a.broken.length], a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
       ${kpi('users', 'Personal al día', [alDia, '/' + ops.length], 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
-      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} caducados` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); go('vencimientos')")}
+      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} caducados` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); document.getElementById('venc')?.scrollIntoView({ behavior: 'smooth' })")}
     </div>
 
     ${total ? `<div class="grid g2">
@@ -243,9 +248,6 @@ function viewAvisos() {
       ${section('En revisión', 'warn', a.review.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where), '', artMini(g))))}
       ${section('Novedades', 'warn', a.nov.map(x => get('boxes', x.id) && x.code ? row(`boxDetail('${x.id}')`, 'Caja ' + x.code, x.nov.text, '', boxArt(x)) : row(`gearDetail('${x.id}')`, x.name, x.nov.text, '', artMini(x))))}
       ${section('EPI por revisar', 'warn', a.epi.map(e => row(`epiForm('${e.id}')`, `${epiLabel(e)} de ${opName(e.holder)}`, e.size ? 'Talla ' + e.size : 'Sin talla')))}
-      ${section(`Vencen en ${SOON_DAYS} días`, 'warn', a.due.map(d => row(
-        d.kind === 'gear' ? `gearDetail('${d.item.id}')` : `epiForm('${d.item.id}')`,
-        d.kind === 'gear' ? d.item.name : `${epiLabel(d.item)} de ${opName(d.item.holder)}`, d.what, dueTag(d.date))))}
       ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`findGo('cons', '${c.id}')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)), 'log',
         `<button class="btn btn-g full" style="margin-top:10px" onclick="pedidoForm()">${ic('share')} Preparar el pedido</button>`)}
       ${section('ITV: ¿la han pasado?', 'warn', a.itv.map(x => row(`itvForm('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`,
@@ -256,11 +258,8 @@ function viewAvisos() {
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`, '', artMini(g))))}
     </div>` : ''}
 
-    <div class="dash-cols">
-      <div>
-        <h3 class="dash-h">Accesos rápidos</h3>
-        <div class="dash-quick">${quick.map(([t, icon, label, area]) => `<button class="dash-q" data-area="${area}" onclick="go('${t}')"><span class="dash-q-i">${ic(icon)}</span><span>${label}</span></button>`).join('')}</div>
-      </div>
+    ${vencPanel()}
+
       <div class="panel dash-next">
         <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('calendar')} Próximamente</h3><button class="link" onclick="go('calendario')">Calendario</button></div>
         ${upcoming.length ? `<div class="list">${upcoming.map(e => { const d = new Date(e.start); return `<button class="item" onclick="eventDetail('${e.id}')">
@@ -268,7 +267,6 @@ function viewAvisos() {
           <div class="grow"><b>${esc(e.title || e.type)}</b><small>${esc(e.type)}${e.place ? ' · ' + esc(e.place) : ''}</small></div>${ic('chev', 'i-sm')}</button>`; }).join('')}</div>`
           : emptyState('calendar', 'Nada programado', 'Los ejercicios, formaciones y guardias del calendario salen aquí.')}
       </div>
-    </div>
 
     <div class="dash-actions">
       <button class="btn btn-g" onclick="shareText(reportText())">${ic('share')} Enviar estado</button>

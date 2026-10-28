@@ -36,15 +36,20 @@ with sync_playwright() as p:
     assert a.evaluate("document.documentElement.dataset.area") == 'log' and a.locator('.crumb').count() == 0
     # En el móvil no hay barra abajo: todo va por el menú de tres rayas
     assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
-    # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Logística › Material)
+    # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Material)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
-    assert a.locator('#drawer .dr-group-head').all_inner_texts()[:4] == ['Actividades', 'Logística', 'Material', 'Equipo'], a.locator('#drawer .dr-group-head').all_inner_texts()
-    assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 2 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
-    assert a.locator('#drawer .dr-item:has-text("Activación")').count() == 0, 'Actividades está plegada'
+    assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['Actividades', 'Material', 'Equipo', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
+    # Vehículos y Guía de campo van sueltos, sin desplegar nada
+    tops = [t.split('\n')[0] for t in a.locator('#drawer .dr-item:not(.sub)').all_inner_texts()]
+    assert tops == ['Inicio', 'Vehículos', 'Guía de campo'], tops
+    assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 1 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
+    assert a.locator('#drawer .dr-item:has-text("Calendario")').count() == 0, 'Actividades está plegada'
     a.click('#drawer .dr-group-head:has-text("Actividades")')
-    assert a.locator('#drawer .dr-item').all_inner_texts()[1:5] == ['Activación', 'Ejercicios', 'Maniobras', 'Convoy'] and a.locator('#drawer .dr-item:has-text("Contenedor")').count() == 0, 'un grupo abierto a la vez'
+    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['Todas las actividades', 'Calendario'] and a.locator('#drawer .dr-item:has-text("Almacén")').count() == 0, 'un grupo abierto a la vez'
+    # Alistamiento y Vencimientos ya no están en el menú (los vencimientos van en Inicio)
+    assert a.locator('#drawer .dr-item:has-text("Alistamiento"), #drawer .dr-item:has-text("Vencimientos")').count() == 0
     a.click('#drawer .dr-group-head:has-text("Ajustes")')
-    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item').all_inner_texts()[1:]] == ['General', 'Listas y opciones', 'Manual de uso', 'Guía de campo']
+    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['General', 'Listas y opciones', 'Manual de uso']
     a.keyboard.press('Escape'); assert a.locator('#drawer').is_hidden()
     a.evaluate("go('logistica')"); assert a.evaluate("prefs.tab") == 'contenedor', 'las antiguas portadas llevan a su primera sección'
     sesion.menu(a, 'Personal'); assert a.evaluate("document.documentElement.dataset.area") == 'team'
@@ -79,9 +84,9 @@ with sync_playwright() as p:
     b.on('pageerror', lambda e: problems.append(f'PC ERROR {e}')); b.on('dialog', lambda x: x.accept())
     b.goto(APP); b.wait_for_selector('#view > *')
     assert b.evaluate("getComputedStyle(document.getElementById('nav')).position") == 'fixed'
-    for g in ['Actividades', 'Logística', 'Equipo', 'Ajustes']:
+    for g in ['Actividades', 'Material', 'Equipo', 'Ajustes']:
         assert b.locator(f'#nav .dr-group-head:has-text("{g}")').is_visible(), 'la barra lateral va por áreas desplegables'
-    b.click('#nav .dr-group-head:has-text("Equipo")'); b.wait_for_timeout(150)
+    b.click('#nav .dr-group-head:has-text("Actividades")'); b.wait_for_timeout(150)
     assert b.locator('#nav .dr-item:has-text("Calendario")').is_visible(), 'al tocar un área se ven sus secciones'
     sesion.menu(b, 'Intervenciones'); b.click('button:has-text("Nueva intervención")'); b.click('#modal .item:has-text("En blanco")')
     b.fill('[name=title]', 'Prueba PC'); b.click('#modalForm button:has-text("Guardar")'); b.wait_for_timeout(300)
