@@ -193,12 +193,21 @@ function viewAvisos() {
   const quick = [['intervenciones', 'alert', 'Activación', 'ops'], ['ejercicios', 'flag', 'Ejercicios', 'ops'], ['contenedor', 'box', 'Material', 'log'], ['revista', 'clipboard', 'Revista', 'log'],
     ['vehiculos', 'truck', 'Vehículos', 'log'], ['personal', 'hardhat', 'Personal', 'team'], ['calendario', 'calendar', 'Calendario', 'team'], ['guia', 'book', 'Guía de campo', 'help']];
   const upcoming = events().filter(e => eventDays(e).at(-1) >= todayISO()).slice(0, 3);
+  // Operatividad de la unidad: media de material operativo, personal al día y vehículos sin fallos en su última revista
+  const units = vehicles().flatMap(v => v.units || []), vOk = units.filter(u => !lastVcheck(u.id)?.fails.length).length;
+  const parts = [pct, ops.length ? alDia / ops.length * 100 : 100, units.length ? vOk / units.length * 100 : 100], ready = Math.round(parts.reduce((s, x) => s + x, 0) / 3);
+  const R = 34, C = 2 * Math.PI * R;
 
   return `
     <div class="hero">
-      <p class="hero-date">${esc(today)}</p>
-      <p class="hello">${hello}, ${esc(prefs.activeOperator)}</p>
-      <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo el material está en orden.`}</p>
+      <div class="hero-row"><div class="grow">
+        <p class="hero-date">${esc(today)}</p>
+        <p class="hello">${hello}, ${esc(prefs.activeOperator)}</p>
+        <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo el material está en orden.`}</p></div>
+        <div class="ring ${ready >= 90 ? 'ok' : ready >= 75 ? 'warn' : 'bad'}" role="img" aria-label="Operatividad de la unidad: ${ready} %" title="Material ${Math.round(parts[0])} % · Personal ${Math.round(parts[1])} % · Vehículos ${Math.round(parts[2])} %">
+          <svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="${R}" class="ring-bg"/><circle cx="40" cy="40" r="${R}" class="ring-fg" style="--c:${C.toFixed(1)}; --off:${(C * (1 - ready / 100)).toFixed(1)}"/></svg>
+          <b data-count="${ready}" data-suf="%">${ready}%</b><small>operativa</small></div>
+      </div>
     </div>
 
     ${active.map(m => {
