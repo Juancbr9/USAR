@@ -34,10 +34,8 @@ with sync_playwright() as p:
     # Áreas: color de cabecera, menú sin repeticiones y franja de activación
     sesion.menu(a, 'En revisión')
     assert a.evaluate("document.documentElement.dataset.area") == 'log' and a.locator('.crumb').count() == 0
-    # En el móvil, barra de abajo con Inicio, Actividades, Material, Equipo y Más; marca el área actual
-    assert a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
-    assert a.locator('#nav .nav-btn').all_inner_texts() == ['Inicio', 'Actividades', 'Material', 'Equipo', 'Más'], a.locator('#nav .nav-btn').all_inner_texts()
-    assert a.locator('#nav .nav-btn.on').inner_text() == 'Material'
+    # En el móvil no hay barra abajo: todo va por el menú de tres rayas
+    assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
     # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Logística › Material)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
     assert a.locator('#drawer .dr-group-head').all_inner_texts()[:4] == ['Actividades', 'Logística', 'Material', 'Equipo'], a.locator('#drawer .dr-group-head').all_inner_texts()

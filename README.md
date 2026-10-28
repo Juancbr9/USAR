@@ -8,7 +8,7 @@ App web del equipo **USAR 242**: contenedor con sus huecos B1–B20 y sus cajas 
 
 Colores inspirados en la UME (verde de uniformidad y amarillo señal), tipografía Barlow y una franja de chevrones como en los vehículos de emergencia. No se usa el escudo oficial de la UME. Cada herramienta tiene una ilustración propia, que se sustituye por la foto real si se añade una.
 
-Navegación con el **menú de tres rayas** (arriba a la izquierda): todas las secciones agrupadas por área, con su color y un punto cuando tienen algo pendiente. En el móvil, además, una barra abajo con Inicio, Actividades, Material, Equipo y «Más» (el menú completo). En tablet horizontal y PC el menú queda fijo a la izquierda.
+Navegación con el **menú de tres rayas** (arriba a la izquierda): todas las secciones agrupadas por área, con su color y un punto cuando tienen algo pendiente. En tablet horizontal y PC el menú queda fijo a la izquierda.
 
 ## Qué hace
 
