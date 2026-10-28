@@ -31,14 +31,13 @@ function almCount(id) {
 function viewContenedor() {
   const all = almOrder().every(almFolded);
   return `${almacenJump()}
-    <div class="alm-tools"><span class="muted">Toca una barra para plegarla; arrástrala por ${ic('grip', 'i-sm')} para cambiar el orden.</span>
-      <button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
+    <div class="alm-tools"><button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
     ${almOrder().map(id => {
       if (id === 'sinubicar' && almCount(id) === 'Vacío') return '';
       const [title, icon, view] = ALM_SECS[id], folded = almFolded(id);
       return `<section id="alm-${id}" class="alm-sec ${folded ? 'folded' : ''}" data-sec="${id}">
         <div class="alm-bar"><button class="alm-grip" aria-label="Arrastrar para cambiar el orden de ${title}">${ic('grip')}</button>
-          <button class="alm-tog" aria-expanded="${!folded}" onclick="almFold('${id}')">${ic(icon, 'i-sm')}<b>${title}</b><small>${almCount(id)}</small>${ic('chev', 'i-sm alm-chev')}</button></div>
+          <button class="alm-tog" aria-expanded="${!folded}" onclick="ALM_NOCLICK || almFold('${id}')">${ic(icon, 'i-sm')}<b>${title}</b><small>${almCount(id)}</small>${ic('chev', 'i-sm alm-chev')}</button></div>
         ${folded ? '' : `<div class="alm-body">${view()}</div>`}</section>`;
     }).join('')}`;
 }
@@ -51,37 +50,50 @@ function viewFungible() {
   </div>`;
 }
 
-// Ordenar las partes arrastrando su asa: la barra amarilla marca dónde quedará al soltar
-let SEC_DRAG = null;
+// Ordenar las partes: se mantiene pulsada la barra (o se arrastra desde el asa ⋮⋮) y se lleva encima o debajo de otra;
+// la barra sigue al dedo y una raya amarilla marca dónde quedará. Un toque corto solo pliega o despliega.
+let SEC_DRAG = null, ALM_NOCLICK = false;
+function secStart(d) {
+  d.started = true; haptic(25);
+  const r = d.bar.getBoundingClientRect(); d.dy = d.y - r.top;
+  d.ghost = Object.assign(d.bar.cloneNode(true), { className: 'alm-bar alm-ghost' });
+  Object.assign(d.ghost.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px' });
+  document.body.appendChild(d.ghost); d.sec.classList.add('sec-moving'); document.body.classList.add('sec-sorting');
+}
 document.addEventListener('pointerdown', e => {
-  const grip = e.target.closest('.alm-grip'); if (!grip || e.button > 0) return;
-  e.preventDefault(); haptic(15);
-  const sec = grip.closest('.alm-sec'); SEC_DRAG = { id: sec.dataset.sec, sec };
-  sec.classList.add('sec-moving'); document.body.classList.add('sec-sorting');
+  const bar = e.target.closest('#view .alm-bar'); if (!bar || e.button > 0) return;
+  const grip = !!e.target.closest('.alm-grip'), d = { bar, sec: bar.closest('.alm-sec'), x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse' };
+  d.id = d.sec.dataset.sec; SEC_DRAG = d;
+  if (grip) { e.preventDefault(); secStart(d); }
+  else d.timer = setTimeout(() => SEC_DRAG === d && secStart(d), d.touch ? 350 : 450);
 });
 document.addEventListener('pointermove', e => {
   const d = SEC_DRAG; if (!d) return;
-  d.y = e.clientY;
+  if (!d.started) { if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) { clearTimeout(d.timer); SEC_DRAG = null; } return; }
+  d.ghost.style.top = e.clientY - d.dy + 'px';
   document.querySelectorAll('.alm-sec.drop-before, .alm-sec.drop-after').forEach(s => s.classList.remove('drop-before', 'drop-after'));
-  const t = document.elementFromPoint(e.clientX, e.clientY)?.closest('.alm-sec');
+  d.ghost.hidden = true; const t = document.elementFromPoint(e.clientX, e.clientY)?.closest('.alm-sec'); d.ghost.hidden = false;
   d.to = t && t !== d.sec ? [t.dataset.sec, e.clientY < t.getBoundingClientRect().top + t.getBoundingClientRect().height / 2 ? 'before' : 'after'] : null;
   if (d.to) t.classList.add('drop-' + d.to[1]);
-  const edge = e.clientY < 110 ? -1 : e.clientY > innerHeight - 110 ? 1 : 0;
+  const edge = e.clientY < 130 ? -1 : e.clientY > innerHeight - 130 ? 1 : 0;
   if (edge && !d.scroll) d.scroll = setInterval(() => scrollBy(0, edge * 14), 30);
   if (!edge && d.scroll) { clearInterval(d.scroll); d.scroll = null; }
 });
+document.addEventListener('touchmove', e => { if (SEC_DRAG?.started) e.preventDefault(); }, { passive: false });
+document.addEventListener('contextmenu', e => { if (e.target.closest('.alm-bar')) e.preventDefault(); });
 const secDragEnd = () => {
-  const d = SEC_DRAG; if (!d) return; SEC_DRAG = null; clearInterval(d.scroll);
+  const d = SEC_DRAG; if (!d) return; SEC_DRAG = null; clearTimeout(d.timer); clearInterval(d.scroll); d.ghost?.remove();
   document.querySelectorAll('.alm-sec').forEach(s => s.classList.remove('drop-before', 'drop-after', 'sec-moving')); document.body.classList.remove('sec-sorting');
+  if (d.started) { ALM_NOCLICK = true; setTimeout(() => { ALM_NOCLICK = false; }, 60); }
   return d;
 };
 document.addEventListener('pointerup', () => {
-  const d = secDragEnd(); if (!d?.to) return;
+  const d = secDragEnd(); if (!d?.started || !d.to) return;
   const o = almOrder().filter(id => id !== d.id), [to, where] = d.to;
   o.splice(o.indexOf(to) + (where === 'after' ? 1 : 0), 0, d.id);
   setPref({ almOrder: o }); haptic(10);
 });
-document.addEventListener('pointercancel', secDragEnd);
+document.addEventListener('pointercancel', () => { if (!SEC_DRAG?.started) secDragEnd(); });
 
 // «+ Material» elige qué se añade: equipo o herramienta, caja o material fungible (en ese sitio, si se pasa)
 function addMaterial(at = {}) {
