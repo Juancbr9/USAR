@@ -51,9 +51,14 @@ WIDE.addEventListener?.('change', () => renderNav());
 function renderNav() {
   const count = alertCount(alerts()), active = list('missions').some(m => m.status === 'active');
   renderDrawer(count, active);
-  // Tablet en horizontal y PC: el mismo menú desplegable, fijo a la izquierda
-  $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count, active)}</div>` : '';
+  // Tablet en horizontal y PC: el mismo menú desplegable, fijo a la izquierda. En el móvil, una barra abajo con lo más
+  // usado (se llega con el pulgar, también con guantes) y «Más» para el menú completo
+  const area = areaOf(prefs.tab);
+  $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count, active)}</div>`
+    : NAV_BAR.map(([t, icon, label, a]) => `<button class="nav-btn ${area === a ? 'on' : ''}" onclick="go('${t}')" ${area === a ? 'aria-current="page"' : ''}>${ic(icon)}<span>${label}</span>${t === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${a === 'ops' && active ? '<span class="count live">●</span>' : ''}</button>`).join('')
+      + `<button class="nav-btn ${area === 'help' ? 'on' : ''}" onclick="toggleDrawer(true)" aria-label="Más: menú completo">${ic('grid')}<span>Más</span></button>`;
 }
+const NAV_BAR = [['avisos', 'home', 'Inicio', 'home'], ['intervenciones', 'radio', 'Actividades', 'ops'], ['contenedor', 'box', 'Material', 'log'], ['personal', 'users', 'Equipo', 'team']];
 
 // Menú por niveles: Inicio, Actividades, Logística (con Material dentro), Equipo y Ajustes. Al tocar un grupo se despliega.
 const tabGroups = tab => { const s = sectionOf(tab) || (tab === 'operaciones' ? [, , , , 'ops'] : null); return s ? [s[4], s[5]].filter(Boolean) : []; };

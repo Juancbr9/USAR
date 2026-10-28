@@ -132,11 +132,11 @@ function boxDetail(id) {
         ${revTag(g)}${novTag(g)}
         <button class="link" aria-label="Sacar de la caja" title="Sacar de la caja" onclick="moveGear('${g.id}', ${b.door || 0}, '${b.vehicle || ''}'); boxDetail('${id}')">${ic('out', 'i-sm')}</button></div>`).join('')}</div>`
       : '<p class="muted">Caja vacía.</p>'}
-    <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:14px">
-      <button class="btn btn-g" onclick="novForm('box', '${id}')">${ic('pencil')} ${b.nov?.text ? 'Cambiar nota' : 'Nota / novedad'}</button>
-      <button class="btn btn-g" onclick="moveForm('box', '${id}')">${ic('move')} Mover</button>
-      ${puedeFlota() ? `<button class="btn btn-g" onclick="boxForm('${id}')">${ic('pencil')} Editar</button>` : ''}
-      <button class="btn btn-g" onclick="printBoxLabels(['${id}'])">${ic('qr')} Etiqueta</button>
+    <div class="fx-acts" style="margin-top:14px">
+      <button class="fx-act" onclick="moveForm('box', '${id}')">${ic('move')}Mover</button>
+      <button class="fx-act" onclick="novForm('box', '${id}')">${ic('pencil')}${b.nov?.text ? 'Cambiar nota' : 'Nota / novedad'}</button>
+      <button class="fx-act" onclick="printBoxLabels(['${id}'])">${ic('qr')}Etiqueta</button>
+      ${puedeFlota() ? `<button class="fx-act" onclick="boxForm('${id}')">${ic('pencil')}Editar</button>` : ''}
     </div>`);
 }
 

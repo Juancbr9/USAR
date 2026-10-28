@@ -6,7 +6,7 @@
 // Parte de una sección: { h: título, p: explicación, steps: [pasos], img: [archivo, pie, [[n, qué es], …]] }
 const MANUAL = [
   { id: 'areas', area: 'help', icon: 'grid', title: 'Cómo está ordenada la app',
-    what: 'La app se divide en cuatro áreas (Actividades, Logística, Equipo y Ajustes), cada una con su color, para que sepas siempre dónde estás. La cabecera toma el color del área. Todas las secciones están en el menú de tres rayas, arriba a la izquierda.',
+    what: 'La app se divide en cuatro áreas (Actividades, Logística, Equipo y Ajustes), cada una con su color, para que sepas siempre dónde estás. La cabecera toma el color del área. En el móvil, la barra de abajo lleva a lo más usado (Inicio, Actividades, Material y Equipo) y «Más» abre el menú completo; todas las secciones están también en el menú de tres rayas, arriba a la izquierda.',
     parts: [
       { h: 'La cabecera', p: 'Está siempre arriba, en todas las pantallas. Su color te dice en qué área estás.',
         img: ['cabecera', 'La cabecera', [[1, 'Menú de tres rayas: abre todas las secciones. El número rojo son los avisos pendientes.'], [2, 'Lupa: «¿Dónde está…?». Busca en todo y del material dice dónde está.']]] },
@@ -20,7 +20,7 @@ const MANUAL = [
         'Con una operación en marcha aparece una franja a rayas bajo la cabecera, en todas las pantallas: roja si es una intervención real y ámbar si es un ejercicio. Tócala para volver a la operación.'] }
     ],
     example: 'Estás revisando el stock (cabecera azul) y llega una activación: al iniciarla, la franja roja «ACTIVACIÓN EN CURSO» te acompaña aunque vuelvas a Logística.',
-    tips: ['En tablet en horizontal y en el PC no hay tres rayas: el menú está siempre abierto a la izquierda.', 'Escape (en el PC) cierra el menú y las ventanas.'] },
+    tips: ['En tablet en horizontal y en el PC no hay tres rayas ni barra abajo: el menú está siempre abierto a la izquierda.', 'Escape (en el PC) cierra el menú y las ventanas.'] },
 
   { id: 'empezar', area: 'home', icon: 'home', title: 'Primeros pasos e Inicio', go: 'avisos',
     what: 'La app reúne el material del contenedor, los EPI, el personal y cada intervención o ejercicio. Funciona sin cobertura y comparte los datos entre todos los móviles del equipo.',
