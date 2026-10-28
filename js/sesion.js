@@ -146,7 +146,7 @@ function renderLogin() {
         ${names ? (names.length ? `<div class="name-grid">${names.map(n => `<button type="button" class="btn btn-g" onclick="LOGIN_NOTE = ''; setPref({ loginPick: ${jsq(n)} }); document.querySelector('.login [name=pin]')?.focus()">${esc(n)}</button>`).join('')}</div>`
           : `<p class="muted">Aún no hay nadie con PIN. ${esc(ADMIN)} los pone en Ajustes → Miembros y permisos.</p>`) : '<p class="muted">Cargando…</p>'}
         <p id="loginMsg" class="bad-text" role="alert">${esc(LOGIN_NOTE)}</p>
-        <button type="button" class="link" onclick="LOGIN_NOTE = ''; setPref({ loginMail: true })">Entrar con correo</button>
+        <button type="button" class="link login-admin" onclick="LOGIN_NOTE = ''; setPref({ loginMail: true })">Entrar con correo (administración)</button>
       </div>`}${iosInstall()}
     </div>`;
   // Con la huella activada, se pide nada más abrir la app (una vez; luego queda el botón)

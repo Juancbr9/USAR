@@ -136,6 +136,8 @@ function renderSyncBadge() {
     error: ['bad', 'Error al sincronizar']
   }[Sync.status];
   el.innerHTML = text ? `<span class="dot ${dot}"></span>${text}` : '';
+  // Todo bien: no se enseña (la app sincroniza sola); solo se ve sin conexión o si hay un error
+  el.classList.toggle('quiet', ['online', 'syncing', 'local'].includes(Sync.status));
 }
 
 function alerts() {

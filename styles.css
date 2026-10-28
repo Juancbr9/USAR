@@ -1451,3 +1451,7 @@ body.scrolled .topbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .22); }
 .motion .login-card { animation: rise .55s .12s var(--ease) both; }
 .motion .name-grid > * { animation: rise .45s var(--ease) both; animation-delay: .25s; }
 .motion .name-grid > :nth-child(2n) { animation-delay: .29s; } .motion .name-grid > :nth-child(n+5) { animation-delay: .33s; } .motion .name-grid > :nth-child(n+9) { animation-delay: .37s; }
+/* Cabecera: el estado de los datos solo se ve si hay un problema */
+.sync.quiet { display: none; }
+/* Entrada: el correo, discreto (acceso de administración) */
+.login-admin { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
