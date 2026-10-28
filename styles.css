@@ -1511,3 +1511,17 @@ body.mision #view > .link { color: #c9d4cb; }
 .mc-stat.warn b { color: #f5b800; } .mc-stat.bad { background: rgba(255,59,48,.18); border-color: rgba(255,59,48,.5); } .mc-stat.bad b { color: #ff6b62; }
 .mc-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .mc-btn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.18); }
+/* Pantalla de carga: el escudo y una barra, con los colores de la entrada */
+.boot { position: fixed; inset: 0; z-index: 200; display: grid; place-content: center; justify-items: center; gap: 18px; background: var(--bar, #16251b); color: #c9d4cb; }
+.boot img { width: 120px; height: 120px; filter: drop-shadow(0 8px 20px rgba(0,0,0,.4)); }
+.boot-bar { width: 140px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15); overflow: hidden; }
+.boot-bar i { display: block; width: 40%; height: 100%; background: var(--yellow, #f5b800); border-radius: 2px; animation: boot 1.1s ease-in-out infinite; }
+@keyframes boot { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .boot-bar i { animation: none; width: 100%; } }
+/* Personal: fotos más grandes en la lista */
+.pers-list .avatar, .pers-list .avatar-img { width: 48px; height: 48px; font-size: 17px; }
+/* Modo sol: también las piezas nuevas con borde marcado y sin sombras suaves */
+:root[data-sun] { --sh-1: none; --sh-2: none; }
+:root[data-sun] .dash-kpi, :root[data-sun] .fx-act, :root[data-sun] .cl-row, :root[data-sun] .fx-hero, :root[data-sun] .dash-q, :root[data-sun] .empty { border: 2px solid #000; }
+:root[data-sun] .nav-btn:not(.on) { color: #000; } :root[data-sun] .nav-btn { font-weight: 800; }
+:root[data-sun] .cl-gear, :root[data-sun] .art, :root[data-sun] .fx-art { background: #fff; border: 1.5px solid #000; }

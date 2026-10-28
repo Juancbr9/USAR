@@ -33,7 +33,7 @@ function viewPersonal() {
     <div class="grid g3">${cells.map(cell => { const members = ops.filter(x => (x.cell || 'Sin célula') === cell); return `
       <div class="panel">
         <div class="between sec-head"><h3>${esc(cell)}</h3><span class="muted">${members.length}</span></div>
-        <div class="list">${members.map(p => { const issues = readinessIssues(p.id), eb = epiBad(p.id), n = issues.length + (eb ? 1 : 0); return `
+        <div class="list pers-list">${members.map(p => { const issues = readinessIssues(p.id), eb = epiBad(p.id), n = issues.length + (eb ? 1 : 0); return `
           <button class="item" onclick="openPerson('${p.id}')">
             <div class="who-row">${personPhoto(p)}<div><b>${esc(p.name)}</b><small>${esc([p.role, ...(p.funcs || [])].filter(Boolean).join(' · '))}</small>
               <small>${docsOf(p.id).length} documentos${eb ? ` · ${eb} EPI por revisar` : ''}</small></div></div>

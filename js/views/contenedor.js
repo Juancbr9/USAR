@@ -129,10 +129,10 @@ function viewRevision() {
     <div class="panel"><div class="between sec-head"><h2>En revisión</h2><span class="tag ${inRev.length ? 'warn' : 'ok'}">${inRev.length}</span></div>
       ${inRev.length ? `<div class="list">${inRev.map(card).join('')}</div>` : emptyState('checkc', 'Nada en revisión', 'Todo el material está operativo.')}</div>
     ${nov.length ? `<div class="panel"><h3 class="sec-title">${ic('alert')} Con novedad (${nov.length})</h3><div class="list">${nov.map(x => x.code !== undefined && get('boxes', x.id) ? `
-      <button class="item" onclick="boxDetail('${x.id}')"><div><b>Caja ${esc(x.code)} · ${esc(x.name || '')}</b><small>${esc(x.nov.text)}</small></div>${novTag(x)}</button>` : `
+      <button class="item" onclick="boxDetail('${x.id}')"><div class="who-row"><span class="box-chip sm" style="--c:${colorOf(x)[1]}; --ink:${colorOf(x)[2]}">${esc(x.code)}</span><div><b>Caja ${esc(x.code)} · ${esc(x.name || '')}</b><small>${esc(x.nov.text)}</small></div></div>${novTag(x)}</button>` : `
       <button class="item" onclick="gearDetail('${x.id}')"><div class="who-row">${artMini(x)}<div><b>${esc(x.name)}</b><small>${esc(x.nov.text)}</small></div></div>${novTag(x)}</button>`).join('')}</div></div>` : ''}
     ${done.length ? `<details class="panel"><summary class="sec-title" style="cursor:pointer">${ic('history')} Revisiones terminadas</summary><div class="list" style="margin-top:10px">${done.map(({ g, h }) => `
-      <button class="item" onclick="gearDetail('${g.id}')"><div><b>${esc(g.name)}</b><small>${h.since ? fmtDate(h.since) + ' → ' : ''}${fmtDate(h.end)}${h.where ? ' · ' + esc(h.where) : ''}${h.endNotes ? ' · ' + esc(h.endNotes) : ''}</small></div><span class="tag ${h.result === 'OPERATIVO' ? 'ok' : 'bad'}">${h.result === 'OPERATIVO' ? 'Operativo' : 'Sin arreglo'}</span></button>`).join('')}</div></details>` : ''}`;
+      <button class="item" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}</b><small>${h.since ? fmtDate(h.since) + ' → ' : ''}${fmtDate(h.end)}${h.where ? ' · ' + esc(h.where) : ''}${h.endNotes ? ' · ' + esc(h.endNotes) : ''}</small></div></div><span class="tag ${h.result === 'OPERATIVO' ? 'ok' : 'bad'}">${h.result === 'OPERATIVO' ? 'Operativo' : 'Sin arreglo'}</span></button>`).join('')}</div></details>` : ''}`;
 }
 
 function gearToBox(id) {

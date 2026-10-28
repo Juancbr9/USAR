@@ -27,6 +27,7 @@ addEventListener('scroll', () => document.body.classList.toggle('scrolled', scro
 // Al cambiar de pantalla (no en cada actualización de datos) el contenido entra con una transición corta
 let LAST_SCREEN = '';
 function render() {
+  $('boot')?.remove();
   if (!loggedIn()) return renderLogin();
   if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
@@ -36,7 +37,9 @@ function render() {
   renderHeader();
   renderNav();
   renderActivationBar();
-  $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)();
+  // Si una pantalla falla, se ve un aviso con salida (y el error sigue llegando a la consola)
+  try { $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)(); }
+  catch (e) { $('view').innerHTML = errorState(); setTimeout(() => { throw e; }); }
   const screen = [prefs.tab, prefs.mission, prefs.person, prefs.move, prefs.ws].join('|');
   if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
   document.body.classList.toggle('mision', !!document.querySelector('#view .mc'));
@@ -171,8 +174,10 @@ const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi
 function viewAvisos() {
   const a = alerts(), total = alertCount(a), gearList = list('gear');
   const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
-  const row = (onclick, title, sub, right = '') =>
-    `<button class="item" onclick="${onclick}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${right}</button>`;
+  // art: dibujo del equipo o la caja delante (como en el resto de listas del material)
+  const row = (onclick, title, sub, right = '', art = '') =>
+    `<button class="item" onclick="${onclick}">${art ? '<div class="who-row">' + art : ''}<div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${art ? '</div>' : ''}${right}</button>`;
+  const boxArt = b => `<span class="box-chip sm" style="--c:${colorOf(b)[1]}; --ink:${colorOf(b)[2]}">${esc(b.code)}</span>`;
   const section = (title, cls, rows, area = 'log', foot = '') => rows.length ? `
     <div class="panel area-panel" data-area="${area}"><div class="between sec-head"><h3><span class="area-chip">${AREAS[area].name}</span>${title}</h3><span class="tag ${cls}">${rows.length}</span></div>
     <div class="list">${rows.join('')}</div>${foot}</div>` : '';
@@ -227,9 +232,9 @@ function viewAvisos() {
     </div>
 
     ${total ? `<div class="grid g2">
-      ${section('Averiados', 'bad', a.broken.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where))))}
-      ${section('En revisión', 'warn', a.review.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where))))}
-      ${section('Novedades', 'warn', a.nov.map(x => get('boxes', x.id) && x.code ? row(`boxDetail('${x.id}')`, 'Caja ' + x.code, x.nov.text) : row(`gearDetail('${x.id}')`, x.name, x.nov.text)))}
+      ${section('Averiados', 'bad', a.broken.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where), '', artMini(g))))}
+      ${section('En revisión', 'warn', a.review.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where), '', artMini(g))))}
+      ${section('Novedades', 'warn', a.nov.map(x => get('boxes', x.id) && x.code ? row(`boxDetail('${x.id}')`, 'Caja ' + x.code, x.nov.text, '', boxArt(x)) : row(`gearDetail('${x.id}')`, x.name, x.nov.text, '', artMini(x))))}
       ${section('EPI por revisar', 'warn', a.epi.map(e => row(`epiForm('${e.id}')`, `${epiLabel(e)} de ${opName(e.holder)}`, e.size ? 'Talla ' + e.size : 'Sin talla')))}
       ${section(`Vencen en ${SOON_DAYS} días`, 'warn', a.due.map(d => row(
         d.kind === 'gear' ? `gearDetail('${d.item.id}')` : `epiForm('${d.item.id}')`,
@@ -239,7 +244,7 @@ function viewAvisos() {
       ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))))}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
-        `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`)))}
+        `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`, '', artMini(g))))}
     </div>` : ''}
 
     <div class="dash-cols">
@@ -263,6 +268,8 @@ function viewAvisos() {
 }
 
 // Estado vacío: icono en un círculo, una frase y, si hace falta, el botón para empezar
+const errorState = () => `<div class="panel">${emptyState('alert', 'Esta pantalla no se ha podido abrir', 'Tus datos están a salvo. Vuelve a Inicio o recarga la app; si se repite, avisa al jefe.',
+  `<div class="row" style="justify-content:center; margin-top:12px"><button class="btn btn-a" onclick="go('avisos')">${ic('home')} Ir a Inicio</button><button class="btn btn-g" onclick="location.reload()">${ic('refresh')} Recargar</button></div>`)}</div>`;
 const emptyState = (icon, title, text = '', action = '') => `<div class="empty"><span class="empty-i">${ic(icon)}</span><b>${esc(title)}</b>${text ? `<p>${esc(text)}</p>` : ''}${action}</div>`;
 
 // Una línea con la situación de lo que está en revisión: dónde está, desde cuándo y por qué
