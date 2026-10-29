@@ -87,14 +87,15 @@ function renderMantenimiento() {
 function setMantenimiento(on) { put('meta', { id: 'mantenimiento', value: on, allow: mantPasan() }, on ? 'Mantenimiento activado' : 'Mantenimiento terminado'); toast(on ? 'Solo tú tienes acceso' : 'Todo el equipo tiene acceso'); }
 function mantenimientoPanel() {
   if (!isAdmin()) return '';
-  const on = enMantenimiento();
+  const on = enMantenimiento(), pasan = mantPasan(), ops = operators().filter(o => o.name !== ADMIN);
   return `
-    <div class="panel">
-      <h3 class="sec-title">${ic('wrench')} Mantenimiento</h3>
-      <p class="muted" style="margin-bottom:10px">${on ? `Activo: solo ${esc(ADMIN)} usa la app. El resto ve «${esc(MANT_MSG)}».` : 'Desactivado: todo el equipo usa la app.'}</p>
-      <button class="btn ${on ? 'btn-a' : 'btn-bad'} full" onclick="setMantenimiento(${!on})">${on ? 'Dar acceso a todo el equipo' : 'Activar mantenimiento (solo yo)'}</button>
-      <p class="muted" style="margin:12px 0 6px">También entran durante el mantenimiento:</p>
-      <div class="row chips mant-pasan">${operators().filter(o => o.name !== ADMIN).map(o => `<button class="chip ${mantPasan().includes(o.name) ? 'on' : ''}" onclick="toggleMantPasa('${esc(o.name)}')">${esc(o.name)}</button>`).join('')}</div>
+    <div class="panel mant-admin ${on ? 'on' : ''}">
+      <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('wrench')} Mantenimiento</h3>
+        <span class="tag ${on ? 'warn' : 'ok'}">${on ? 'Activo' : 'Desactivado'}</span></div>
+      <p class="muted" style="margin-bottom:10px">${on ? `Solo tú${pasan.length ? ' y quien marques abajo' : ''} usáis la app. El resto ve «${esc(MANT_MSG)}».` : 'Todo el equipo usa la app.'}</p>
+      <button class="btn ${on ? 'btn-a' : 'btn-bad'} full" onclick="setMantenimiento(${!on})">${on ? `${ic('checkc')} Dar acceso a todo el equipo` : `${ic('wrench')} Activar mantenimiento (solo yo)`}</button>
+      ${on ? `<p class="muted" style="margin:14px 0 6px">O da acceso solo a algunos (toca su nombre):</p>
+      <div class="row chips mant-pasan">${ops.map(o => `<button class="chip ${pasan.includes(o.name) ? 'on' : ''}" aria-pressed="${pasan.includes(o.name)}" onclick="toggleMantPasa('${esc(o.name)}')">${pasan.includes(o.name) ? ic('checkc', 'i-sm') + ' ' : ''}${esc(o.name)}</button>`).join('')}</div>` : ''}
     </div>`;
 }
 function toggleMantPasa(name) {
