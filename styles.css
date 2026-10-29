@@ -1608,3 +1608,5 @@ img[data-img]:not([src]), img[data-img][src=""] { background: linear-gradient(10
 .add-photo .cam { position: absolute; right: -4px; bottom: -4px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--area); color: var(--area-ink); box-shadow: var(--sh-2); border: 2px solid var(--surface); }
 .add-photo .cam .i-sm { width: 16px; height: 16px; }
 :root[data-sun] .ring small { color: #fff; }
+/* Mantenimiento (solo RODRI): arriba en Inicio y en Ajustes, con su color mientras está activo */
+.mant-admin.on { border-color: var(--warn, #a86f00); box-shadow: inset 0 4px 0 #e0a100; }

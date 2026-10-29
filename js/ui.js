@@ -206,6 +206,7 @@ function viewAvisos() {
   const R = 34, C = 2 * Math.PI * R;
 
   return `
+    ${enMantenimiento() ? mantenimientoPanel() : ''}
     <div class="hero">
       <div class="hero-row"><div class="grow">
         <p class="hero-date">${esc(today)}</p>

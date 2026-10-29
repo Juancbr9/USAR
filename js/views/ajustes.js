@@ -15,6 +15,7 @@ function viewAjustes() {
   const grupo = (titulo, desc) => `<div class="aj-group"><h2>${titulo}</h2><p class="muted">${desc}</p></div>`;
 
   return `
+    ${mantenimientoPanel()}
     ${grupo('Mi cuenta', 'Tu sesión en este móvil.')}
     <div class="panel">
       <div class="between wrap-row">
@@ -55,7 +56,6 @@ function viewAjustes() {
       ${c && Sync.role === 'jefe' ? `<div class="panel"><h3 class="sec-title">${ic('users')} Personal con acceso</h3>
         <p class="muted" style="margin-bottom:10px">Quién entra en la app, con qué PIN y con qué permiso.</p>
         <button class="btn btn-g full" onclick="membersModal()">${ic('users')} Miembros y permisos</button></div>` : ''}
-      ${mantenimientoPanel()}
       ${isAdmin() ? `<div class="panel">
         <h3 class="sec-title">${ic('database')} Copias de seguridad</h3>
         <div class="list">
