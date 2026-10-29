@@ -52,6 +52,14 @@ with sync_playwright() as p:
     a.click('text=Activar mantenimiento'); a.wait_for_timeout(200)
     a.evaluate("setPref({ session: 'OP-01', activeOperator: 'GRANADOS' })"); a.wait_for_selector('.mant-card')
     a.wait_for_function("document.querySelector('.mant-img').naturalWidth > 0")  # se ve el muñequito
+    # RODRI deja entrar a GRANADOS durante el mantenimiento (y a nadie más)
+    a.evaluate(f"setPref({{ session: '{rodri}', activeOperator: 'RODRI', tab: 'ajustes' }})"); a.wait_for_timeout(200)
+    a.click('.mant-pasan .chip:has-text("GRANADOS")'); a.wait_for_timeout(200)
+    assert a.evaluate("get('meta', 'mantenimiento')") == {'id': 'mantenimiento', 'value': True, 'allow': ['GRANADOS']} or a.evaluate("get('meta', 'mantenimiento').allow") == ['GRANADOS']
+    a.evaluate("setPref({ session: 'OP-01', activeOperator: 'GRANADOS' })"); a.wait_for_selector('.topbar:visible')
+    assert a.locator('.mant-card').count() == 0, 'GRANADOS entra durante el mantenimiento'
+    dorta = a.evaluate("operators().find(o => o.name === 'DORTA').id")
+    a.evaluate(f"setPref({{ session: '{dorta}', activeOperator: 'DORTA' }})"); a.wait_for_selector('.mant-card')
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')
