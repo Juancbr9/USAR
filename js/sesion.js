@@ -40,7 +40,9 @@ document.addEventListener('visibilitychange', () => {
 // Activo por defecto; ADMIN lo quita o lo vuelve a poner en Ajustes y llega a todos los móviles con los datos compartidos.
 const isAdmin = () => me()?.name === ADMIN;
 const enMantenimiento = () => (get('meta', 'mantenimiento')?.value ?? MANT_DEFECTO) !== false;
-const bloqueado = () => enMantenimiento() && !isAdmin();
+// Quien entra también durante el mantenimiento (además de ADMIN)
+const mantPasan = () => get('meta', 'mantenimiento')?.allow ?? MANT_PASAN;
+const bloqueado = () => enMantenimiento() && !isAdmin() && !mantPasan().includes(me()?.name);
 // Material, cajas, consumibles, vehículos y extras de las salidas: solo ADMIN (y a quien él dé el permiso de logística en su
 // ficha) los añade, cambia o elimina. Con usuario de Supabase hace falta además que sea jefe (la base de datos solo deja
 // crear o borrar material a los jefes): así ADMIN, con una segunda cuenta de miembro, ve la app como el resto.
@@ -82,7 +84,7 @@ function renderMantenimiento() {
       </div>${iosInstall()}
     </div>`;
 }
-function setMantenimiento(on) { put('meta', { id: 'mantenimiento', value: on }, on ? 'Mantenimiento activado' : 'Mantenimiento terminado'); toast(on ? 'Solo tú tienes acceso' : 'Todo el equipo tiene acceso'); }
+function setMantenimiento(on) { put('meta', { id: 'mantenimiento', value: on, allow: mantPasan() }, on ? 'Mantenimiento activado' : 'Mantenimiento terminado'); toast(on ? 'Solo tú tienes acceso' : 'Todo el equipo tiene acceso'); }
 function mantenimientoPanel() {
   if (!isAdmin()) return '';
   const on = enMantenimiento();
@@ -91,7 +93,13 @@ function mantenimientoPanel() {
       <h3 class="sec-title">${ic('wrench')} Mantenimiento</h3>
       <p class="muted" style="margin-bottom:10px">${on ? `Activo: solo ${esc(ADMIN)} usa la app. El resto ve «${esc(MANT_MSG)}».` : 'Desactivado: todo el equipo usa la app.'}</p>
       <button class="btn ${on ? 'btn-a' : 'btn-bad'} full" onclick="setMantenimiento(${!on})">${on ? 'Dar acceso a todo el equipo' : 'Activar mantenimiento (solo yo)'}</button>
+      <p class="muted" style="margin:12px 0 6px">También entran durante el mantenimiento:</p>
+      <div class="row chips mant-pasan">${operators().filter(o => o.name !== ADMIN).map(o => `<button class="chip ${mantPasan().includes(o.name) ? 'on' : ''}" onclick="toggleMantPasa('${esc(o.name)}')">${esc(o.name)}</button>`).join('')}</div>
     </div>`;
+}
+function toggleMantPasa(name) {
+  const cur = mantPasan(), allow = cur.includes(name) ? cur.filter(n => n !== name) : [...cur, name];
+  put('meta', { id: 'mantenimiento', value: enMantenimiento(), allow }, `Mantenimiento: ${name} ${cur.includes(name) ? 'ya no entra' : 'puede entrar'}`);
 }
 
 // Pantalla de entrada (sustituye a toda la app hasta que alguien entra). Con la sesión recordada en este móvil solo se

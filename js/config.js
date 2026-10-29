@@ -59,6 +59,7 @@ const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections'
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
+const MANT_PASAN = [];   // quien entra también durante el mantenimiento (ADMIN lo elige en Ajustes)
 const MANT_MSG = 'USAR 242 EN FASE DE MANTENIMIENTO';
 // Base de datos compartida del equipo (Supabase, modo seguro). Va integrada en la app: nadie tiene que configurarla,
 // cada persona solo entra con su correo (dado de alta antes por un jefe en Ajustes → Miembros y permisos).
