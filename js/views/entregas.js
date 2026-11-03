@@ -214,5 +214,5 @@ function viewFuera() {
     ${ms.map(([m, gs]) => `<div class="panel fuera-grp"><div class="between sec-head"><button class="link-row" onclick="openMission('${m.id}')"><h3>${ic('radio', 'i-sm')} ${esc(m.title)}</h3></button><span class="tag info">${gs.length}</span></div>
       <p class="muted" style="margin:-4px 0 10px">Vuelve a su sitio al finalizar la actividad.</p>
       <div class="list">${gs.map(g => rowGear(g)).join('')}</div></div>`).join('')}
-    <button class="btn btn-g btn-sm full" onclick="go('entregas')">${ic('history')} Entregas con firma (todas, también las devueltas)</button>`;
+    <button class="btn btn-g btn-sm full" onclick="go('entregas')">${ic('history')} Historial de entregas con firma</button>`;
 }

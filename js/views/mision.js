@@ -6,7 +6,8 @@ const MTABS = [
   ['worksites', 'building', 'Worksites'], ['victimas', 'heart', 'Víctimas'], ['material', 'box', 'Material'],
   ['informes', 'file', 'Informes'], ['diario', 'history', 'Diario']
 ];
-const opLink = id => esc(get('operators', id)?.name || '—');
+const opLink = id => get('operators', id) ? esc(get('operators', id).name) : '<span class="muted">Sin asignar</span>';
+const noData = '<span class="muted">Sin indicar</span>';
 const textBlock = (title, text) => `<div><b class="lbl-sm">${title}</b><p class="pre">${esc(text) || '<span class="dim">—</span>'}</p></div>`;
 const stat = (n, text, cls = '') => `<div class="kpi ${cls}"><div><small>${text}</small><b>${n}</b></div></div>`;
 const phaseOf = m => { const ps = phasesFor(m); return ps[Math.max(0, Math.min(Math.floor(+m.phase) || 0, ps.length - 1))]; };
@@ -39,10 +40,10 @@ function viewMission(m) {
       ${m.objective ? `<p class="muted pre" style="margin-top:4px">${esc(m.objective)}</p>` : ''}
       <dl class="dl" style="margin-top:14px">
         <dt>Salida</dt><dd>${fmtDT(m.date)}</dd>
-        <dt>Ubicación</dt><dd>${m.location ? `<a href="${mapsUrl(m.location)}" target="_blank" rel="noopener" class="ext">${esc(m.location)} ↗</a>` : '—'}</dd>
-        <dt>Reunión</dt><dd>${esc(m.meeting) || '—'}</dd>
+        <dt>Ubicación</dt><dd>${m.location ? `<a href="${mapsUrl(m.location)}" target="_blank" rel="noopener" class="ext">${esc(m.location)} ↗</a>` : noData}</dd>
+        <dt>Reunión</dt><dd>${esc(m.meeting) || noData}</dd>
         <dt>Jefe</dt><dd>${opLink(m.chief)}</dd>
-        <dt>Radio</dt><dd>${esc(m.channel) || '—'}</dd>
+        <dt>Radio</dt><dd>${esc(m.channel) || noData}</dd>
       </dl>
       <div class="row">
         ${statusBtn}
@@ -168,7 +169,7 @@ function funcsPanel(m) {
     <div class="panel">
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('star')} Funciones clave</h3>
         <button class="btn btn-g btn-sm" onclick="funcsForm('${m.id}')">${ic('pencil')} Asignar</button></div>
-      <div class="grid g2">${FUNCS.map(([k, name, sub]) => `
+      <div class="grid g2 fn-list">${FUNCS.map(([k, name, sub]) => `
         <div class="who-row fn ${f[k] ? '' : 'empty-fn'}">${f[k] ? avatar(get('operators', f[k])?.name, 'sm') : `<span class="avatar sm off">?</span>`}
           <div><b>${name}</b><small>${f[k] ? opLink(f[k]) : esc(sub)}</small></div></div>`).join('')}</div>
     </div>`;
@@ -289,13 +290,13 @@ function sessionPanel(m) {
     <div class="panel">
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('clipboard')} Plan del ejercicio</h3>
         <button class="btn btn-g btn-sm" onclick="sessionForm('${m.id}')">${ic('pencil')} Editar</button></div>
-      <div class="stack">
-        ${textBlock('Objetivos', s.goals)}
-        ${textBlock('Instructores y evaluadores', s.instructors)}
-        ${textBlock('Supuesto: presentación, nudo y desenlace', s.scenario)}
-        ${textBlock('Medidas de seguridad del ejercicio', s.safety)}
-        ${textBlock('Duración prevista', s.duration)}
-      </div>
+      ${[s.goals, s.instructors, s.scenario, s.safety, s.duration].some(Boolean) ? `<div class="stack">
+        ${s.goals ? textBlock('Objetivos', s.goals) : ''}
+        ${s.instructors ? textBlock('Instructores y evaluadores', s.instructors) : ''}
+        ${s.scenario ? textBlock('Supuesto: presentación, nudo y desenlace', s.scenario) : ''}
+        ${s.safety ? textBlock('Medidas de seguridad del ejercicio', s.safety) : ''}
+        ${s.duration ? textBlock('Duración prevista', s.duration) : ''}
+      </div>` : emptyState('clipboard', 'Sin plan todavía', 'Objetivos, instructores, supuesto, medidas de seguridad y duración: pulsa «Editar».')}
     </div>`;
 }
 function sessionForm(mid) {

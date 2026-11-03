@@ -43,7 +43,7 @@ function missionCard(m) {
   return `
     <button class="item act-card" data-kind="${m.type === 'ejercicio' ? 'ejercicio' : 'intervencion'}" onclick="openMission('${m.id}')">
       <div><b>${esc(m.title)}</b><small>${mtypeName(m)}${m.scope === 'bic' ? ' de patrimonio (BIC)' : ''} · ${fmtDT(m.date)}${m.location ? ' · ' + esc(m.location) : ''}</small>
-        <small>${missionPeople(m).length} personas · ${worksitesOf(m.id).length} worksites · ${victimsOf(m.id).length} víctimas · fase: ${phaseOf(m).short}</small></div>
+        <small>${[[missionPeople(m).length, 'personas'], [worksitesOf(m.id).length, 'worksites'], [victimsOf(m.id).length, 'víctimas']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).concat('fase: ' + phaseOf(m).short).join(' · ')}</small></div>
       <span class="tag ${cls}">${label}</span>
     </button>`;
 }

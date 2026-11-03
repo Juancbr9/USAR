@@ -35,8 +35,8 @@ function viewPersonal() {
         <div class="list pers-list">${members.map(p => { const issues = readinessIssues(p.id), eb = epiBad(p.id), n = issues.length + (eb ? 1 : 0); return `
           <button class="item" onclick="openPerson('${p.id}')">
             <div class="who-row">${personPhoto(p)}<div><b>${esc(p.name)}</b><small>${esc([p.role, ...(p.funcs || [])].filter(Boolean).join(' · '))}</small>
-              <small>${docsOf(p.id).length} documentos${eb ? ` · ${eb} EPI por revisar` : ''}</small></div></div>
-            <span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : n ? 'warn' : 'ok'}">${n ? n + ' avisos' : 'Al día'}</span>
+              ${((d, x) => x ? `<small>${x}</small>` : '')(0, [docsOf(p.id).length ? docsOf(p.id).length + ' documentos' : '', eb ? `${eb} EPI por revisar` : ''].filter(Boolean).join(' · '))}</div></div>
+            <span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : n ? 'warn' : 'ok'}">${n ? n + (n === 1 ? ' aviso' : ' avisos') : 'Al día'}</span>
           </button>`; }).join('')}</div>
       </div>`; }).join('')}</div>
     ${(() => { const gone = allOperators().filter(o => o.active === false); return gone.length ? `
@@ -66,7 +66,7 @@ function viewPerson(o) {
         ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}
       </div>
       ${issues.length ? `<div class="stack" style="margin-top:12px">${issues.map(([cls, t]) => `<span class="tag ${cls}">${esc(t)}</span>`).join(' ')}</div>` : ''}
-      <div class="row" style="margin-top:12px">
+      <div class="row carne-acts" style="margin-top:12px">
         ${o.phone ? `<a class="btn btn-a" href="tel:${esc(o.phone.replace(/\s/g, ''))}">${ic('phone')} Llamar</a>
           <a class="btn btn-g" target="_blank" rel="noopener" href="https://wa.me/${esc(o.phone.replace(/\D/g, '').replace(/^(?!34)(\d{9})$/, '34$1'))}">${ic('chat')} WhatsApp</a>` : ''}
         <button class="btn btn-g" onclick="personForm('${o.id}')">${ic('pencil')} Editar datos</button>
@@ -230,7 +230,7 @@ function vencPanel() {
   const all = expiries(), shown = all.filter(x => win === 0 || daysTo(x.date) <= win), late = all.filter(x => daysTo(x.date) < 0).length;
   return `
     <div class="panel area-panel" id="venc" data-area="home">
-      <div class="between sec-head"><h3>${ic('clock')} Vencimientos</h3>${late ? `<span class="tag bad">${late} caducados</span>` : ''}</div>
+      <div class="between sec-head"><h3>${ic('clock')} Vencimientos</h3>${late ? `<span class="tag bad">${late} ${late === 1 ? 'caducado' : 'caducados'}</span>` : ''}</div>
       <div class="row chips">${[[30, '30 días'], [90, '3 meses'], [365, '1 año'], [0, 'Todo']].map(([d, l]) => `<button class="chip ${win === d ? 'on' : ''}" onclick="setPref({ vwin: ${d} })">${l}</button>`).join('')}</div>
       ${shown.length ? `<div class="list" style="margin-top:10px">${shown.map(x => {
       const n = daysTo(x.date), cls = n < 0 ? 'bad' : n <= 30 ? 'warn' : 'neutral';

@@ -76,7 +76,7 @@ function menuTree(count, active) {
   const curTab = menuTab(prefs.tab);
   const item = (id, icon, title, cls = '') => { const st = sectionStatus(id); return `
     <button class="dr-item ${cls} ${curTab === id ? 'on' : ''}" data-area="${areaOf(id)}" ${curTab === id ? 'aria-current="page"' : ''} onclick="go('${id}')">
-      ${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + ' avisos' : 'Todo en orden'}</small>` : ''}</span>
+      ${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + (count === 1 ? ' aviso' : ' avisos') : 'Todo en orden'}</small>` : ''}</span>
       ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${id === 'actividades' && active ? '<span class="live-dot"></span>' : ''}
       ${st && st[1] !== 'neutral' && st[1] !== 'ok' ? `<span class="dr-dot ${st[1]}" title="${esc(st[0])}"></span>` : ''}</button>`; };
   const head = (g, icon, title) => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
@@ -184,8 +184,8 @@ function viewAvisos() {
   const row = (onclick, title, sub, right = '', art = '') =>
     `<button class="item" onclick="${onclick}">${art ? '<div class="who-row">' + art : ''}<div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${art ? '</div>' : ''}${right}</button>`;
   const boxArt = b => `<span class="box-chip sm" style="--c:${colorOf(b)[1]}; --ink:${colorOf(b)[2]}">${esc(b.code)}</span>`;
-  const section = (title, cls, rows, area = 'log', foot = '') => rows.length ? `
-    <div class="panel area-panel" data-area="${area}"><div class="between sec-head"><h3><span class="area-chip">${AREAS[area].name}</span>${title}</h3><span class="tag ${cls}">${rows.length}</span></div>
+  const section = (title, cls, rows, area = 'log', foot = '', chip = AREAS[area].name) => rows.length ? `
+    <div class="panel area-panel" data-area="${area}"><div class="between sec-head"><h3><span class="area-chip">${chip}</span>${title}</h3><span class="tag ${cls}">${rows.length}</span></div>
     <div class="list">${rows.join('')}</div>${foot}</div>` : '';
   const where = g => whereIs(g) + (boxCode(g) ? ', caja ' + boxCode(g) : '');
   const active = list('missions').filter(m => m.status === 'active');
@@ -241,7 +241,7 @@ function viewAvisos() {
       ${kpi('box', 'Material operativo', [pct, '%'], `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
       ${kpi('wrench', 'En revisión', [a.review.length + a.broken.length], a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
       ${kpi('users', 'Personal al día', [alDia, '/' + ops.length], 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
-      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} caducados` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); document.getElementById('venc')?.scrollIntoView({ behavior: 'smooth' })")}
+      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} ${late === 1 ? 'caducado' : 'caducados'}` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); document.getElementById('venc')?.scrollIntoView({ behavior: 'smooth' })")}
     </div>
 
     ${total ? `<div class="grid g2">
@@ -252,8 +252,8 @@ function viewAvisos() {
       ${section('Stock bajo mínimo', 'bad', a.low.map(c => row(`findGo('cons', '${c.id}')`, c.name, `Quedan ${c.stock} ${c.unit}, mínimo ${c.min}`)), 'log',
         `<button class="btn btn-g full" style="margin-top:10px" onclick="pedidoForm()">${ic('share')} Preparar el pedido</button>`)}
       ${section('ITV: ¿la han pasado?', 'warn', a.itv.map(x => row(`itvForm('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`,
-        `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)))}
-      ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))))}
+        `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)), 'log', '', 'Vehículos')}
+      ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))), 'log', '', 'Vehículos')}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`, '', artMini(g))))}
