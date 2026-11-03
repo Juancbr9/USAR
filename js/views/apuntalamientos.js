@@ -212,7 +212,7 @@ const APU = [
     ojo: ['No tienen arriostramiento entre sí: poca resistencia lateral. Uso puntual y temporal hasta poner madera.', 'La fuerza del hidráulico (10 t) o del neumático (400 kg) puede dañar una estructura colapsada.'] },
 
   /* ---------- Verticales ---------- */
-  { id: 't', fam: 'vert', clase: 1, name: 'Apuntalamiento en T', ref: 'M6 · 3.2.1', mat: 'Madera 10×10 (FEMA)', calc: 'vert',
+  { id: 't', fam: 'vert', clase: 1, name: 'Apuntalamiento en T', ref: 'M6 · 3.2.1', mat: 'Madera 10×10 (FEMA)',
     uso: 'Para asegurar de inicio una zona peligrosa mientras se coloca un sistema que proteja más. Es unidimensional: poco estable y muy sensible a las cargas horizontales.',
     figs: [[g => {
       apuSlab(g, 0, 255, 120);
@@ -228,7 +228,7 @@ const APU = [
       'Colocar puntal y cumbrera centrados bajo la carga, meter la solera y ajustar con las cuñas.', 'Comprobar con el nivel y clavar un clavo que inmovilice las cuñas.', 'Clavar la media pletina entre solera y puntal.'],
     ojo: ['Si el puntal no está centrado bajo la carga, es más inestable.'] },
 
-  { id: 'fila', fam: 'vert', clase: 2, name: 'Filas de puntales', ref: 'M6 · 3.2.3', mat: 'Madera 10×10 (FEMA)', calc: 'vert',
+  { id: 'fila', fam: 'vert', clase: 2, name: 'Filas de puntales', ref: 'M6 · 3.2.3', mat: 'Madera 10×10 (FEMA)',
     uso: 'Para sostener vigas horizontales dañadas, colocado de forma transversal bajo ellas. Más estable y resistente que la T.',
     figs: [[g => {
       apuSlab(g, 0, 275, 330);
@@ -248,7 +248,7 @@ const APU = [
       'Si pasa de 2,4 m, clavar la riostra horizontal central.', 'Clavar las diagonales en X por ambos lados.', 'Medias pletinas en la solera; si hay réplicas, en las dos caras (salvo donde vayan diagonales).'],
     ojo: [] },
 
-  { id: 'dos', fam: 'vert', clase: 2, name: 'Vertical de dos puntales', ref: 'M6 · 3.2.5', mat: 'Madera 10×10 (FEMA)', calc: 'vert',
+  { id: 'dos', fam: 'vert', clase: 2, name: 'Vertical de dos puntales', ref: 'M6 · 3.2.5', mat: 'Madera 10×10 (FEMA)',
     uso: 'Conviene llevarlo prefabricado. Es el primer paso para construir un par de pares o tipo torre. La cumbrera va centrada en la zona dañada, transversal a las vigas.',
     figs: [[g => {
       apuSlab(g, 0, 305, 200);
@@ -266,7 +266,7 @@ const APU = [
       'Unir los puntales a la cumbrera con media pletina. Colocar centrado bajo la carga.', 'Meter la solera alineada y ajustar las cuñas. Nivel y clavos en las cuñas.', 'Medias pletinas en la solera y clavar la diagonal.'],
     ojo: [] },
 
-  { id: 'torre', fam: 'vert', clase: 3, name: 'Par de pares o tipo torre', ref: 'M6 · 3.2.7', mat: 'Madera 10×10 (FEMA)', calc: 'torre',
+  { id: 'torre', fam: 'vert', clase: 3, name: 'Par de pares o tipo torre', ref: 'M6 · 3.2.7', mat: 'Madera 10×10 (FEMA)',
     uso: 'Gran capacidad de carga, estabilidad y resistencia lateral. Para forjados de hormigón o de madera con daños importantes. Se hace uniendo dos sistemas verticales de dos puntales; su interior puede servir de refugio.',
     figs: [[g => {
       const ox = 60, oy = 40, H = 330;
@@ -294,7 +294,7 @@ const APU = [
       'Colocar los dos pares y sus soleras enfrentados y alineados, con las diagonales hacia fuera y en sentido inverso. Ajustar las cuñas.', 'Clavar las riostras horizontales de los laterales por ambos lados.', 'Clavar las diagonales de los laterales según la altura.'],
     ojo: ['En las pruebas, antes de romper cruje mucho. Lo primero que falla son las cuñas y cumbreras/soleras; después los puntales en las uniones con riostras.'] },
 
-  { id: 'vtablon', fam: 'vert', clase: 2, name: 'Vertical con tablón de obra', ref: 'M6 · 3.3', mat: 'Tablón de obra', calc: 'vert',
+  { id: 'vtablon', fam: 'vert', clase: 2, name: 'Vertical con tablón de obra', ref: 'M6 · 3.3', mat: 'Tablón de obra',
     uso: 'Con al menos dos tablones embridados o empernados por puntal. Un solo puntal (T) o varios arriostrados entre sí, según la zona.',
     figs: [[g => {
       apuSlab(g, 0, 195, 200);
@@ -313,7 +313,7 @@ const APU = [
       'Preparar un par de cuñas por tablón. Se puede unir la cumbrera al puntal con dos cuñas clavadas a los lados para llevarlo.', 'Colocar y ajustar con las cuñas.', 'Si hay varios puntales, arriostrarlos.'],
     ojo: [] },
 
-  { id: 'vobra', fam: 'vert', clase: 2, name: 'Vertical con puntales de obra', ref: 'M6 · 3.4', mat: 'Puntal de obra', calc: 'vert',
+  { id: 'vobra', fam: 'vert', clase: 2, name: 'Vertical con puntales de obra', ref: 'M6 · 3.4', mat: 'Puntal de obra',
     uso: 'Transitorio hasta poner un sistema mejor. En T, de dos puntales (también para puertas y ventanas) o en filas de muchos puntales alrededor de columnas o bajo vigas.',
     figs: [[g => {
       apuSlab(g, 0, 255, 330);
@@ -329,7 +329,7 @@ const APU = [
       'Dar la vuelta y clavar la cabeza a la cumbrera.', 'Colocar en su sitio y extender hasta el ajuste.', 'Si no es un paso, arriostrar de solera a cumbrera en X. Comprobar con el nivel.'],
     ojo: ['Solo puntual o temporal: no se pueden arriostrar los puntales entre sí.'] },
 
-  { id: 'vholm', fam: 'vert', clase: 1, name: 'Vertical con puntales HOLMATRO', ref: 'M6 · 3.5', mat: 'HOLMATRO', calc: 'vert',
+  { id: 'vholm', fam: 'vert', clase: 1, name: 'Vertical con puntales HOLMATRO', ref: 'M6 · 3.5', mat: 'HOLMATRO',
     uso: 'La T es ideal con puntales de rescate: no hay que hacer ni ajustar cuñas ni clavar pletinas. Varias T o una doble T sostienen una carga mientras se prepara la madera.',
     figs: [[g => {
       apuSlab(g, 0, 268, 300, 12);
@@ -346,7 +346,7 @@ const APU = [
     ojo: ['Con cabezales que no se clavan no se puede prefabricar en lugar seguro: más tiempo dentro.'] },
 
   /* ---------- Zampeados ---------- */
-  { id: 'zampeado', fam: 'zamp', name: 'Zampeado', alias: 'Llave (minería y obra pública) o entarimado', ref: 'M6 · 3.6', mat: 'Madera 10×10 o 15×15', calc: 'zamp',
+  { id: 'zampeado', fam: 'zamp', name: 'Zampeado', alias: 'Llave (minería y obra pública) o entarimado', ref: 'M6 · 3.6', mat: 'Madera 10×10 o 15×15',
     uso: 'Viguetas iguales en capas cruzadas. Fácil y rápido, avisa antes de romper (cruje) y es muy útil cuando no se sabe el peso. Necesita espacio y mucha madera. Sirve de base para cojines y gatos.',
     figs: [[g => {
       apuSlab(g, -5, 158, 150);
@@ -395,7 +395,7 @@ const APU = [
       'Meter el puntal en la caja y ajustar caja–carrera con cuñas.', 'Si hace falta, anclar la zapata a la pared con taladros.'],
     ojo: [] },
 
-  { id: 'solerafija', fam: 'lat', clase: 3, name: 'Lateral de solera fija', ref: 'M6 · 4.3', mat: 'Madera 10×10 (FEMA)', calc: 'lat',
+  { id: 'solerafija', fam: 'lat', clase: 3, name: 'Lateral de solera fija', ref: 'M6 · 4.3', mat: 'Madera 10×10 (FEMA)',
     uso: 'Para sostener muros y paredes en mal estado. Es un triángulo completo (zapata mural, solera y puntal) y se hace en grupos de dos o más arriostrados entre sí. Necesita el suelo junto a la pared limpio y lo más horizontal posible.',
     figs: [[g => apuLateral(g, apuLatParams()), 'Lateral de solera fija (las medidas cambian con la calculadora).']],
     parts: [['Zapata mural', 'Contra la pared; si está abombada, calzos y cuñas para que toque bien.'], ['Ejión superior', '5×10: 60 cm y 14 clavos (30° y 45°) o 75 cm y 20 clavos (60°).'], ['Pletinas 30×30×2', 'En las dos caras de cada unión.'],
@@ -490,7 +490,7 @@ const APU = [
     ojo: [] },
 
   /* ---------- Horizontales ---------- */
-  { id: 'horfema', fam: 'hor', clase: 2, name: 'Horizontal o acodalamiento', ref: 'M6 · 5.1', mat: 'Madera 10×10 (FEMA)', calc: 'hor',
+  { id: 'horfema', fam: 'hor', clase: 2, name: 'Horizontal o acodalamiento', ref: 'M6 · 5.1', mat: 'Madera 10×10 (FEMA)',
     uso: 'Apeo que aprovecha una estructura resistente cercana: los puntales horizontales o codales trabajan a compresión entre la pared dañada y otra sana (pasillos, edificios contiguos).',
     figs: [[g => {
       g.wall(-30, 0, 30, 310).wall(240, 0, 30, 310);
@@ -528,7 +528,7 @@ const APU = [
     pasos: ['Limpiar y medir.', 'Cortar los tablones (restando cuñas, unos 4 cm) y embridarlos.', 'Cortar las zapatas con sitio para los ejiones.', 'Clavar los ejiones en las zapatas y arriba y abajo del codal.', 'Colocar zapatas y codal y ajustar con cuñas.', 'Colocar tornapuntas y jabalcones y ajustarlos con cuñas.'],
     ojo: [] },
 
-  { id: 'horpuntales', fam: 'hor', clase: 2, name: 'Horizontal con puntales de obra o HOLMATRO', ref: 'M6 · 5.2 y 5.3', mat: 'Puntal de obra / HOLMATRO', calc: 'hor',
+  { id: 'horpuntales', fam: 'hor', clase: 2, name: 'Horizontal con puntales de obra o HOLMATRO', ref: 'M6 · 5.2 y 5.3', mat: 'Puntal de obra / HOLMATRO',
     uso: 'Para soportar un muro dañado llevando su carga a otro muro sano cercano. Se puede prefabricar fuera (placas clavadas a las zapatas, puntales recogidos) y extender en el sitio.',
     figs: [[g => {
       g.wall(-30, 0, 30, 300).wall(240, 0, 30, 300).rect(0, 10, 10, 280).rect(230, 10, 10, 280);
@@ -767,7 +767,7 @@ const apuGet = id => APU.find(t => t.id === id);
 /* ---------- Dibujos compartidos ---------- */
 // Lateral de solera fija con las medidas de la calculadora
 function apuLatParams() {
-  const h = Math.min(500, Math.max(80, +prefs.apuH || 200)), ang = [30, 45, 60].includes(+prefs.apuAng) ? +prefs.apuAng : 45;
+  const v = apuIn('solerafija'), h = Math.min(500, Math.max(80, +v.I || 200)), ang = [30, 45, 60].includes(+v.ang) ? +v.ang : 45;
   const a = ang * Math.PI / 180, ej = ang === 60 ? 75 : 60;
   return { h, ang, ej, puntal: h / Math.sin(a), solera: h / Math.tan(a) };
 }
@@ -876,57 +876,11 @@ function apuDetail(t) {
       ${t.parts ? `<ol class="apu-parts">${t.parts.map(([n, d]) => `<li><b>${esc(n)}</b>${d ? ` <span class="muted">${esc(d)}</span>` : ''}</li>`).join('')}</ol>` : ''}
       ${t.arcos ? `<button class="btn btn-a full" style="margin-top:12px" onclick="go('arcos')">${ic('wrench')} Calcular un arco: cuadro, cerchas y lista de cortes</button>` : ''}
     </div>
-    ${t.calc ? apuCalcPanel(t) : ''}
+    ${APU_CORTES[t.id] ? apuCortesPanel(t) : ''}
     ${t.datos?.length ? `<div class="panel"><h3 class="sec-title">${ic('list')} Datos clave</h3><dl class="dl apu-dl">${t.datos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>` : ''}
     ${t.pasos?.length ? `<div class="panel"><h3 class="sec-title">${ic('check')} ${t.fam === 'gen' && t.id === 'componentes' ? 'Equipos de apuntalamiento' : 'Montaje paso a paso'}</h3><ol class="apu-steps">${t.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}
     ${t.ojo?.length ? `<div class="callout warn">${t.ojo.map(o => `<p>${ic('alert', 'i-sm')} ${esc(o)}</p>`).join('')}</div>` : ''}
     <p class="muted apu-ref">Tema UME: ${esc(t.ref)}. Revisar todo apuntalamiento cada 12 h y siempre tras una réplica.</p>
     <div class="row apu-nav">${prev ? `<button class="btn btn-g" onclick="openApu('${prev.id}')">${ic('back', 'i-sm')} ${esc(prev.name)}</button>` : ''}
       ${next ? `<button class="btn btn-g" onclick="openApu('${next.id}')">${esc(next.name)} ${ic('chev', 'i-sm')}</button>` : ''}</div>`;
-}
-
-/* ---------- Calculadoras ---------- */
-const apuNum = v => { const n = parseFloat(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : null; };
-const apuCm = v => `${Math.round(v).toLocaleString('es-ES')} cm`;
-function apuCalcPanel(t) {
-  const field = (k, label, val, extra = '') => `<label class="lbl">${label}<input class="input" type="number" inputmode="decimal" value="${val ?? ''}" ${extra}
-    onchange="setPref({ ${k}: this.value })"></label>`;
-  let body = '';
-  if (t.calc === 'vert') {
-    const H = apuNum(prefs.apuAlt), tablon = t.mat === 'Tablón de obra', sc = tablon ? 7 : 10, cu = 4;
-    const p = H ? H - 2 * sc - cu : null;
-    body = `<div class="grid g2">${field('apuAlt', 'Altura del suelo al techo (cm)', prefs.apuAlt)}</div>
-      ${p ? `<dl class="dl apu-dl"><dt>Puntal</dt><dd><b>${apuCm(p)}</b> (${H} − ${sc} de solera − ${sc} de cumbrera − ${cu} de cuñas)</dd>
-        ${t.id === 't' && H > 330 ? '<dt>Ojo</dt><dd class="bad">Pasa de 3,30 m: la T no vale</dd>' : ''}
-        ${t.id === 'fila' && H > 240 ? '<dt>Riostra central</dt><dd>Sí, pasa de 2,4 m</dd>' : ''}
-        ${t.id === 'dos' ? `<dt>Carga (10×10)</dt><dd>${H <= 240 ? '7.200 kg' : H <= 300 ? '4.500 kg' : H <= 360 ? '3.100 kg' : 'Pasa de 3,6 m: solo como parte de una torre'}</dd>${H > 335 ? '<dt>Riostras horizontales</dt><dd>Dos, a 1/3 y 2/3</dd>' : ''}` : ''}
-        ${p > 250 && !tablon && t.mat?.startsWith('Madera') ? '<dt>Esbeltez</dt><dd>Un 10×10 de más de 2,50 m puede romper sin avisar</dd>' : ''}</dl>` : '<p class="muted">Mide la altura en varios puntos y usa la más baja.</p>'}`;
-  } else if (t.calc === 'torre') {
-    const H = apuNum(prefs.apuAlt), sep = apuNum(prefs.apuSep) || 120;
-    body = `<div class="grid g2">${field('apuAlt', 'Altura del sistema (cm)', prefs.apuAlt)}${field('apuSep', 'Separación entre puntales (cm)', prefs.apuSep ?? 120)}</div>
-      ${H ? `<dl class="dl apu-dl"><dt>Diagonales por lateral</dt><dd><b>${H < 180 ? 'Una' : H <= 330 ? 'Dos en K' : H <= 510 ? 'Tres' : '—'}</b></dd>
-        <dt>Altura máxima</dt><dd>${apuCm(Math.min(510, 4 * sep))} (4 × separación, máx. 5,1 m)</dd>
-        ${H > Math.min(510, 4 * sep) ? '<dt>Ojo</dt><dd class="bad">Demasiado alta para esa separación</dd>' : ''}${sep < 90 || sep > 120 ? '<dt>Separación</dt><dd class="bad">Entre 90 y 120 cm</dd>' : ''}</dl>` : ''}`;
-  } else if (t.calc === 'lat') {
-    const p = apuLatParams();
-    body = `<div class="grid g2">${field('apuH', 'Altura del punto de inserción (cm)', prefs.apuH ?? 200, 'min="80" max="500"')}
-        <label class="lbl">Ángulo<select class="input" onchange="setPref({ apuAng: this.value })">${[30, 45, 60].map(a => `<option value="${a}" ${p.ang === a ? 'selected' : ''}>${a}°</option>`).join('')}</select></label></div>
-      <dl class="dl apu-dl"><dt>Puntal (de vértice a vértice)</dt><dd><b>${apuCm(p.puntal)}</b></dd>
-        <dt>Solera</dt><dd><b>${apuCm(p.solera + p.ej)}</b> (${apuCm(p.solera)} + ${p.ej} del ejión)</dd>
-        <dt>Zapata mural</dt><dd><b>${apuCm(p.h + p.ej)}</b> (${apuCm(p.h)} + ${p.ej} del ejión)</dd>
-        <dt>Ejiones 5×10</dt><dd>${p.ej} cm con ${p.ang === 60 ? 20 : 14} clavos</dd>
-        ${p.h > 240 ? '<dt>Riostra intermedia</dt><dd>Sí, la inserción pasa de 2,4 m</dd>' : ''}</dl>`;
-  } else if (t.calc === 'zamp') {
-    const H = apuNum(prefs.apuAlt), w = apuNum(prefs.apuAncho);
-    body = `<div class="grid g2">${field('apuAlt', 'Altura a sostener (cm)', prefs.apuAlt)}${field('apuAncho', 'Ancho del zampeado (cm)', prefs.apuAncho)}</div>
-      ${H ? `<dl class="dl apu-dl"><dt>Ancho mínimo</dt><dd><b>${apuCm(H / 3)}</b> (altura/ancho ≤ 3)</dd>
-        <dt>Capas</dt><dd>${Math.ceil(H / 10)} de 10×10 o ${Math.ceil(H / 15)} de 15×15 (ajustar con cuñas)</dd>
-        ${w ? `<dt>Viguetas</dt><dd>De ${apuCm(w + 20)} (ancho + 10 cm por lado)</dd>${H / w > 3 ? '<dt>Ojo</dt><dd class="bad">Demasiado alto para ese ancho</dd>' : ''}` : ''}</dl>` : ''}`;
-  } else if (t.calc === 'hor') {
-    const D = apuNum(prefs.apuDist);
-    body = `<div class="grid g2">${field('apuDist', 'Distancia de pared a pared (cm)', prefs.apuDist)}</div>
-      ${D ? `<dl class="dl apu-dl"><dt>Codal</dt><dd><b>${apuCm(D - 20 - 8)}</b> (restando 2 zapatas de 10 y 2 × 4 de cuñas)</dd>
-        ${D - 20 > 240 ? '<dt>Ojo</dt><dd class="bad">Pasa de 2,4 m: lateral de triángulo</dd>' : ''}</dl>` : ''}`;
-  }
-  return `<div class="panel apu-calc"><h3 class="sec-title">${ic('calc')} Medidas</h3>${body}</div>`;
 }

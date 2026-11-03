@@ -355,7 +355,9 @@ function arcSvgAlzado(r) {
   s += rect(xL, yTop, xR, yC);
   if (r.cumbreraDoble) s += `<line x1="${X(xL)}" y1="${Y(yC - tcT / 2)}" x2="${X(xR)}" y2="${Y(yC - tcT / 2)}" stroke="var(--arc-wood-dark)" stroke-width="${sw}"/>`;
   const yIc = Ha + r.yIc;
-  s += rect(-a / 2, yC, a / 2, yIc);
+  // Pendolón con la cabeza a dos aguas (en punta) bajo la junta de clave
+  const pdb = r.piezas.find(p => p.code === 'PD')?.extra?.pendBaja || 0;
+  s += `<path d="${P([{ x: -a / 2, y: yC }, { x: a / 2, y: yC }, { x: a / 2, y: yIc - pdb }, { x: 0, y: yIc }, { x: -a / 2, y: yIc - pdb }])}" ${wood}/>`;
   r.jab.forEach(j => [1, -1].forEach(m => { s += bar({ x: m * j.F.x, y: Ha + j.F.y }, { x: m * j.P.x, y: Ha + j.P.y }, a); }));
   s += rect(-r.footSpan / 2 - 10, yC + 1, r.footSpan / 2 + 10, yC + 16, `fill="var(--arc-wood-light)" stroke="var(--arc-wood-dark)" stroke-width="${sw}"`);
   labels.push(['AT', r.footSpan / 2 + 8, yC + 8.5]);

@@ -48,24 +48,42 @@ with sync_playwright() as p:
         if not (box[0] > 0 and box[1] > 0): problems.append(f'{tid}: dibujo vacío')
         seen(tid); wide(tid)
 
+    # Lista de cortes en todos los tipos que se fabrican (menos los informativos y el arco, que tiene su calculadora)
+    sin = a.evaluate("APU.filter(t => !APU_CORTES[t.id]).map(t => t.id)"); assert sorted(sin) == ['arco', 'componentes', 'puntalobra'], sin
+    for tid in a.evaluate("Object.keys(APU_CORTES)"):
+        r = a.evaluate(f"(r => ({{ err: r.err || '', n: r.pz.length + r.ex.length, mal: r.pz.filter(p => !(p.l > 0) || !(p.q > 0) || !Number.isInteger(p.q)).map(p => p.c) }}))(apuCortes('{tid}'))")
+        if r['err'] or not r['n'] or r['mal']: problems.append(f'cortes de {tid}: {r}')
+        a.evaluate(f"openApu('{tid}')"); a.wait_for_timeout(40); seen(f'cortes {tid}'); wide(f'cortes {tid}')
+    # Marcar piezas cortadas
+    a.evaluate("openApu('dos')"); a.wait_for_timeout(100)
+    total = a.locator('.apu-calc .arc-cut').count(); assert total >= 5
+    a.locator('.apu-calc .arc-cut input').first.check(); a.wait_for_timeout(100)
+    assert a.evaluate("prefs.apuDone.dos.C") is True and a.locator('.apu-calc .arc-cut.done').count() == 1
+    a.evaluate("window.shareText = t => { window._shared = t; }"); a.click('.apu-calc button:has-text("Enviar los cortes")')
+    assert 'CORTES' in a.evaluate("window._shared") and 'Puntal' in a.evaluate("window._shared")
+    a.click('.apu-calc button:has-text("Quitar las marcas")'); a.wait_for_timeout(100); assert a.locator('.apu-calc .arc-cut.done').count() == 0
+    # HOLMATRO: combinación de extensiones (2,30 m − 20 de madera = 2.100 mm con el manual de 575 + 250 de recorrido)
+    a.evaluate("openApu('vholm'); apuSetIn('vholm', 'H', '230')"); a.wait_for_timeout(100)
+    assert 'SX 15' in a.inner_text('.apu-calc'), a.inner_text('.apu-calc')
+
     # T: medida del puntal con la altura
-    a.evaluate("openApu('t')"); a.fill('.apu-calc input', '250'); a.dispatch_event('.apu-calc input', 'change'); a.wait_for_timeout(100)
+    a.evaluate("openApu('t')"); a.fill('.apu-calc input >> nth=0', '250'); a.dispatch_event('.apu-calc input >> nth=0', 'change'); a.wait_for_timeout(100)
     assert '226 cm' in a.inner_text('.apu-calc'), a.inner_text('.apu-calc')
-    a.fill('.apu-calc input', '350'); a.dispatch_event('.apu-calc input', 'change'); a.wait_for_timeout(100)
+    a.fill('.apu-calc input >> nth=0', '350'); a.dispatch_event('.apu-calc input >> nth=0', 'change'); a.wait_for_timeout(100)
     assert 'la T no vale' in a.inner_text('.apu-calc')
     # Torre: diagonales según la altura
-    a.evaluate("openApu('torre'); setPref({ apuAlt: '300', apuSep: '120' })"); a.wait_for_timeout(100)
+    a.evaluate("openApu('torre'); apuSetIn('torre', 'H', '300')"); a.wait_for_timeout(100)
     assert 'Dos en K' in a.inner_text('.apu-calc')
     # Lateral de solera fija: el ejemplo del manual (inserción a 1,70 m y 30°: puntal 3,40 m y solera 2,94 m)
-    a.evaluate("openApu('solerafija'); setPref({ apuH: '170', apuAng: '30' })"); a.wait_for_timeout(100)
+    a.evaluate("openApu('solerafija'); apuSetIn('solerafija', 'I', '170'); apuSetIn('solerafija', 'ang', '30')"); a.wait_for_timeout(100)
     t = a.inner_text('.apu-calc'); assert '340 cm' in t and '294 cm' in t and '230 cm' in t, t
-    a.evaluate("setPref({ apuAng: '60' })"); a.wait_for_timeout(100)
+    a.evaluate("apuSetIn('solerafija', 'ang', '60')"); a.wait_for_timeout(100)
     t = a.inner_text('.apu-calc'); assert '196 cm' in t and '75 cm con 20 clavos' in t, t
     a.screenshot(path=f'{OUT}/apuntalamientos-lateral.png', full_page=True)
     # Zampeado y horizontal
-    a.evaluate("openApu('zampeado'); setPref({ apuAlt: '90', apuAncho: '20' })"); a.wait_for_timeout(100)
+    a.evaluate("openApu('zampeado'); apuSetIn('zampeado', 'H', '90'); apuSetIn('zampeado', 'w', '20')"); a.wait_for_timeout(100)
     assert 'Demasiado alto' in a.inner_text('.apu-calc')
-    a.evaluate("openApu('horfema'); setPref({ apuDist: '300' })"); a.wait_for_timeout(100)
+    a.evaluate("openApu('horfema'); apuSetIn('horfema', 'D', '300')"); a.wait_for_timeout(100)
     assert 'lateral de triángulo' in a.inner_text('.apu-calc')
 
     # Siguiente y anterior; volver a la lista

@@ -120,3 +120,13 @@ test('los números de los textos van con coma decimal', () => {
   const r = calc();
   assert.ok(!/\d\.\d/.test(r.piezas.map(p => p.donde + p.corte).join(' ')));
 });
+
+test('pendolón: cabeza a dos aguas con la pendiente del canto de las cerchas centrales (M8 p.7)', () => {
+  const r = calc();                                  // medio punto, dos cerchas por lado
+  const pd = pieza(r, 'PD');
+  assert.ok(/dos aguas/.test(pd.corte), pd.corte);
+  assert.ok(Math.abs(pd.extra.pendAng - 22.5) < 0.6, `pendiente ${pd.extra.pendAng}`);
+  assert.ok(Math.abs(pd.extra.pendBaja - 5 * Math.tan(22.5 * Math.PI / 180)) < 0.2, `baja ${pd.extra.pendBaja}`);
+  const ap = calc({ Hclave: 380, hq: null });        // apuntado: la punta es más aguda
+  assert.ok(pieza(ap, 'PD').extra.pendAng > pd.extra.pendAng);
+});
