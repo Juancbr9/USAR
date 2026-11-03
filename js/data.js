@@ -186,9 +186,11 @@ function normalize(data) {
    Los identificadores y referencias acaban dentro de onclick="...('id')", y los números se pintan tal cual:
    se aceptan solo con forma segura. Así una fila manipulada en la nube no puede ejecutar código en los móviles. */
 const SAFE_ID = /^[\w.:@-]{1,120}$/;
-const REF_KEYS = new Set(['id', 'box', 'mission', 'worksite', 'op', 'holder', 'chief', 'leader', 'driver', 'vehicle', 'owner', 'ws', 'key', 'loan']);
+const REF_KEYS = new Set(['id', 'box', 'mission', 'worksite', 'op', 'holder', 'chief', 'leader', 'driver', 'vehicle', 'owner', 'ws', 'key', 'loan', 'arc']);
 const REF_LISTS = new Set(['members', 'crew', 'people', 'gear', 'extra', 'who', 'boxes', 'trips', 'imgs', 'photos']);
-const NUM_KEYS = new Set(['n', 'num', 'qty', 'stock', 'min', 'weight', 'seats', 'tare', 'pos', 'len', 'wid', 'hei', 'volume', 'door', 'phase', 'priority', 'bar', 'litres', 'floors', 'basements', 'payload', 'kg', 'cap']);
+const NUM_KEYS = new Set(['n', 'num', 'qty', 'stock', 'min', 'weight', 'seats', 'tare', 'pos', 'len', 'wid', 'hei', 'volume', 'door', 'phase', 'priority', 'bar', 'litres', 'floors', 'basements', 'payload', 'kg', 'cap',
+  // medidas de los arcos (apuntalar arcos)
+  'Larr', 'Lsuelo', 'Hizq', 'Hder', 'Hclave', 'hq', 'fondo', 'tablonAncho', 'tablonGrueso', 'stockViga', 'stockTablon', 'holguraLateral', 'holguraArco', 'huecoCunas', 'sepMax', 'anchoCorrea', 'grosorCorrea']);
 function cleanValue(k, v) {
   if (v === null || v === undefined) return v;
   if (REF_KEYS.has(k) && typeof v !== 'object') return SAFE_ID.test(String(v)) || v === '' ? v : '';

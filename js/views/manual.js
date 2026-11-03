@@ -290,6 +290,16 @@ const MANUAL = [
     parts: [{ steps: ['Menú → Guía de campo. Busca por palabra (apuntalar, O₂, START…).', 'Toca un apartado para abrirlo; al abrir otro, el anterior se cierra.', 'Calculadoras: peso de una carga o losa, distancia de seguridad, aire del ERA y anclajes.'], img: ['guia', 'Fichas y calculadoras', []] }],
     example: 'Losa de 20 cm y 6 m²: unos 3.000 kg → elige cojines de al menos 3 t.', tips: [] },
 
+  { id: 'arcos', area: 'help', icon: 'wrench', title: 'Apuntalar arcos', go: 'arcos',
+    what: 'Con siete medidas del arco, la app calcula el cuadro (solera, puntales y cumbrera) y las cerchas a la medida: dibujo, lista de cortes con el rótulo de cada pieza, trazado de cada cercha sobre el tablón, cómo sacar las piezas de vuestras barras y el orden de montaje. Sigue el Manual de Campo USAR y los temas de apuntalamiento de la UME.',
+    parts: [
+      { h: 'Medir y crear el arco', steps: ['Menú → Apuntalar arcos → «Arco».', 'Mide A–G: luz en el arranque y a ras de suelo, altura del arranque a cada lado, altura de la clave, altura a ¼ de la luz (opcional, comprueba la forma) y fondo del muro. «¿Qué es cada medida?» lo explica con un dibujo.', 'Si el arco está en un worksite, elígelo: luego «Vigilar» lo añade a la vigilancia estructural (cada 12 h).', 'En «Madera y opciones» indica la sección de los puntales, el tablón de las cerchas, el largo de vuestras barras y si hay que dejar paso.'],
+        img: ['arcos', 'Ficha de un arco', [[1, 'Medidas y madera del arco.'], [2, 'Pórticos, puntales, cerchas y piezas que faltan por cortar.'], [3, 'Alzado, fondo, cortes, cerchas, plan de corte y montaje.']]] },
+      { h: 'Cortar y montar', steps: ['«Cortes»: cada pieza con su código, medida, ángulo de corte y rótulo. Márcala al cortarla.', '«Cerchas»: las ordenadas cada 10 cm desde el canto del tablón para trazar la curva; el canto de abajo queda recto.', '«Hoja de corte» la imprime y «Enviar» la manda por WhatsApp al equipo de corte.', '«Montaje»: el orden de colocación y las reglas de cada manual.'] }
+    ],
+    example: 'Arco de medio punto de 2,10 m de luz, arranque a 2,30 m y muro de 50 cm: 2 pórticos, 3 puntales y 4 cerchas por pórtico, puntales de 196 cm.',
+    tips: ['Si avisa de que la altura a ¼ no cuadra, el arco no es de medio punto ni rebajado: saca las cerchas con plantilla de cartón.', 'Desde la vigilancia del worksite se abre el arco con un toque.'] },
+
   { id: 'compartir', area: 'help', icon: 'cloud', title: 'Compartir datos, usuarios y copias', go: 'ajustes',
     what: 'La base de datos del equipo va integrada en la app: todos los móviles ven lo mismo en tiempo real, también fotos, documentos y cajas. Sin conexión se guarda y se envía al volver.',
     parts: [{ steps: ['Solo entra el personal dado de alta: RODRI añade el correo y el nombre de cada uno en Ajustes → Miembros y permisos.', 'Cada persona abre la app y crea su cuenta con ese correo; no hay que configurar nada.', 'RODRI exporta una copia de seguridad de vez en cuando (Ajustes → General → Administración; incluye las fotos).'], img: ['ajustes', 'Ajustes', []] }],
