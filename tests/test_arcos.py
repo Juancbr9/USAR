@@ -23,8 +23,9 @@ with sync_playwright() as p:
     wide = lambda where: a.evaluate("document.documentElement.scrollWidth") > 392 and problems.append(f'{where}: la página se sale de ancho')
     seen = lambda where: [problems.append(f'se ve «{x}» en {where}') for x in ['undefined', 'NaN', '[object Object]', 'Infinity'] if x in a.inner_text('#view')]
 
-    # Menú → Apuntalar arcos (sección suelta, como la guía)
-    sesion.menu(a, 'Apuntalar arcos')
+    # Menú → Apuntalamientos → «Apuntalamiento de arcos» → calculadora
+    sesion.menu(a, 'Apuntalamientos'); a.click('.apu-card:has-text("Apuntalamiento de arcos")'); a.wait_for_timeout(150)
+    a.click('#view button:has-text("Calcular un arco")'); a.wait_for_timeout(150)
     assert a.evaluate("prefs.tab") == 'arcos' and a.locator('#view h2:has-text("Apuntalar arcos")').count() == 1
     assert a.locator('.arc-guide svg').count() == 1, 'la lista explica qué medir'
     seen('lista vacía'); wide('lista vacía')

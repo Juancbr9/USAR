@@ -45,6 +45,7 @@ function viewArcos() {
   const arcs = list('arcs').sort((x, y) => (y.created || 0) - (x.created || 0));
   return `
     <div class="panel">
+      <button class="link" onclick="openApu('arco')">${ic('back', 'i-sm')} Apuntalamiento de arcos</button>
       <div class="between sec-head"><div><h2>Apuntalar arcos</h2>
         <p class="muted">Cuadro y cerchas a la medida del arco: dibujo, lista de cortes con rótulos, plantilla de cada cercha y montaje. Según el Manual de Campo USAR y los temas de apuntalamiento de la UME.</p></div>
         <button class="btn btn-a" onclick="arcForm()">${ic('plus')} Arco</button></div>

@@ -6,7 +6,7 @@ const VIEWS = {
   avisos: viewAvisos, contenedor: viewContenedor, revista: viewRevista,
   operaciones: viewOperaciones, ajustes: viewAjustes, guia: viewGuia, personal: viewPersonal, listas: viewListas, calendario: viewCalendario, manual: viewManual,
   vehiculos: viewVehiculos, actividades: viewActividades, revision: viewRevision, entregas: viewEntregas, fuera: viewFuera, epi: viewEpi,
-  arcos: viewArcos, maniobras: () => viewActs('maniobra'), convoy: () => viewActs('convoy')
+  arcos: viewArcos, apuntalamientos: viewApuntalamientos, maniobras: () => viewActs('maniobra'), convoy: () => viewActs('convoy')
 };
 
 document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = ic(el.dataset.icon, el.dataset.cls || 'i'); });

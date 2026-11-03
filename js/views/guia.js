@@ -101,7 +101,8 @@ const GUIDE = [
       ['Holmatro', '10 t por puntal. Extensiones: SX1 125 mm blanca · SX2 250 azul · SX5 500 amarilla · SX10 1000 verde · SX15 1500 roja']])}
     ${ul(['Prefabricar en zona segura. Medir dos veces, cortar una.', 'Revisar cada 12 h y siempre después de una réplica.', 'Holmatro: pocas extensiones, las cortas al final; dejar 10 cm para cambiar a madera.',
       'Arcos: cuadro (solera, puntales en los extremos y cumbrera) y cerchas a la medida del arco; puntal intermedio por cada 1,50 m de luz.'])}
-    <button class="btn btn-g" style="margin-top:12px" onclick="go('arcos')">${ic('wrench')} Apuntalar un arco: cortes y cerchas</button>`],
+    <div class="row" style="margin-top:12px"><button class="btn btn-a" onclick="go('apuntalamientos')">${ic('wrench')} Todos los apuntalamientos, con dibujo</button>
+      <button class="btn btn-g" onclick="go('arcos')">${ic('wrench')} Apuntalar un arco: cortes y cerchas</button></div>`],
 
   ['corte', 'wrench', 'Corte y perforación', () => ul([
     'Herramienta adecuada al material. Marca el corte con pintura. Protección auditiva y respiratoria.',
