@@ -274,6 +274,9 @@ with sync_playwright() as p:
     a.evaluate("setPref({ tab: 'avisos', vwin: 365 })"); a.wait_for_timeout(200); shot(a, 'vencimientos', '#venc')
     a.evaluate("setPref({ tab: 'listas' }); catalogEditor('docTypes')"); a.wait_for_timeout(200); shot(a, 'listas'); esc()
     a.evaluate("setPref({ tab: 'guia' })"); a.wait_for_timeout(300); shot(a, 'guia')
+    a.evaluate("setPref({ tab: 'arcos', arc: null, arcTab: 'alzado' }); arcExample()"); a.wait_for_timeout(300)
+    ann(a, 'arcos', [('#view .panel .row:has(button:has-text("Medidas"))', 'i'), ('#view .arc-kpis', 'i'), ('#view .arc-tabs', 'b', {'d': 30})], scroll='#view .arc-kpis', top=330)
+    a.evaluate("remove('arcs', prefs.arc); setPref({ arc: null })")
     a.evaluate("setPref({ tab: 'ajustes' })"); a.wait_for_timeout(200); shot(a, 'ajustes', '.panel:has-text("Pantalla y avisos")')
     # PC
     d = br.new_context(viewport={'width': 1280, 'height': 800}, device_scale_factor=1, locale='es-ES')

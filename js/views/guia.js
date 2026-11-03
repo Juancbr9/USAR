@@ -99,7 +99,9 @@ const GUIDE = [
       ['Inclinado', 'Perpendicular a la carga si está unida al suelo; si no, al terreno. Ejiones con 14 clavos. Riostras en X si > 1,2 m, en Z si menos'],
       ['Lateral', 'Ángulo de 30° a 60°. Triángulos cada ≤ 2,4 m, con freno'], ['Horizontal', 'Puntal ≤ 2,4 m, sistemas cada ≤ 2,4 m, riostras en cruz'],
       ['Holmatro', '10 t por puntal. Extensiones: SX1 125 mm blanca · SX2 250 azul · SX5 500 amarilla · SX10 1000 verde · SX15 1500 roja']])}
-    ${ul(['Prefabricar en zona segura. Medir dos veces, cortar una.', 'Revisar cada 12 h y siempre después de una réplica.', 'Holmatro: pocas extensiones, las cortas al final; dejar 10 cm para cambiar a madera.'])}`],
+    ${ul(['Prefabricar en zona segura. Medir dos veces, cortar una.', 'Revisar cada 12 h y siempre después de una réplica.', 'Holmatro: pocas extensiones, las cortas al final; dejar 10 cm para cambiar a madera.',
+      'Arcos: cuadro (solera, puntales en los extremos y cumbrera) y cerchas a la medida del arco; puntal intermedio por cada 1,50 m de luz.'])}
+    <button class="btn btn-g" style="margin-top:12px" onclick="go('arcos')">${ic('wrench')} Apuntalar un arco: cortes y cerchas</button>`],
 
   ['corte', 'wrench', 'Corte y perforación', () => ul([
     'Herramienta adecuada al material. Marca el corte con pintura. Protección auditiva y respiratoria.',

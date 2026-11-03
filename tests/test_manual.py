@@ -39,9 +39,9 @@ with sync_playwright() as p:
     # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Material)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
     assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['Actividades', 'Material', 'Equipo', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
-    # Vehículos y Guía de campo van sueltos, sin desplegar nada
+    # Vehículos, Guía de campo y Apuntalar arcos van sueltos, sin desplegar nada
     tops = [t.split('\n')[0] for t in a.locator('#drawer .dr-item:not(.sub)').all_inner_texts()]
-    assert tops == ['Inicio', 'Vehículos', 'Guía de campo'], tops
+    assert tops == ['Inicio', 'Vehículos', 'Guía de campo', 'Apuntalar arcos'], tops
     assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 1 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
     assert a.locator('#drawer .dr-item:has-text("Calendario")').count() == 0, 'Actividades está plegada'
     a.click('#drawer .dr-group-head:has-text("Actividades")')

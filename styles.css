@@ -1634,3 +1634,55 @@ img[data-img]:not([src]), img[data-img][src=""] { background: linear-gradient(10
 .fn-list > .fn { border: 0; border-radius: 0; padding: 10px 12px; border-top: 1px solid var(--line); margin: -1px 0 0; }
 .fn-list > .fn.empty-fn { border-style: solid; }
 @media (min-width: 700px) { .fn-list > .fn:nth-child(odd) { border-right: 1px solid var(--line); } }
+
+/* Apuntalar arcos: madera, muro y cuñas de los dibujos; cada pieza con su código */
+:root { --arc-wood: #c98a4b; --arc-wood-dark: #7a4a1f; --arc-wood-light: #ebc898; --arc-wall: #c9cdc4; --arc-wall-line: #9aa196; --arc-wedge: #f5b800; }
+:root[data-theme="dark"] { --arc-wood: #b5824f; --arc-wood-dark: #e4b47c; --arc-wood-light: #5e4227; --arc-wall: #2a332d; --arc-wall-line: #46524a; --arc-wedge: #d9a300; }
+.arc-fig { overflow-x: auto; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 10px; }
+.arc-fig svg { display: block; width: 100%; height: auto; min-width: 300px; }
+.arc-fig-fondo svg { height: min(520px, 65vh); width: auto; max-width: 100%; min-width: 0; margin: 0 auto; }
+.arc-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+.arc-legend b { font-family: var(--num); color: var(--ink); }
+.arc-wedge { color: var(--warn); font-weight: 700; }
+.arc-kpis { grid-template-columns: repeat(2, 1fr); margin: 12px 0; }
+@media (min-width: 640px) { .arc-kpis { grid-template-columns: repeat(4, 1fr); } }
+.arc-of { font-size: 15px; color: var(--muted); font-weight: 700; }
+.arc-q { margin: 0 0 10px; }
+.arc-warns { margin-bottom: 12px; }
+.arc-warns .item { align-items: flex-start; font-size: 15px; }
+.arc-ref { display: inline; color: var(--muted); white-space: nowrap; }
+.arc-tabs { margin-top: 4px; margin-bottom: 10px; }
+.arc-body > .muted { margin-bottom: 10px; }
+.arc-fam { margin: 16px 0 8px; font-size: 17px; }
+.arc-body > .arc-fam:first-of-type { margin-top: 6px; }
+.arc-cut { align-items: flex-start; }
+.arc-cut input { margin-top: 3px; }
+.arc-cut.done .grow { opacity: .62; }
+.arc-cut-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.arc-code { font: 800 18px var(--cond); min-width: 34px; }
+.arc-len { margin-left: auto; font: 800 17px var(--num); white-space: nowrap; }
+.arc-cut small { color: var(--muted); margin-top: 3px; font-weight: 500; }
+.arc-cut .arc-cut-how { color: var(--ink); }
+.arc-label { display: inline-block; margin-top: 6px; font: 700 13px var(--num); padding: 2px 7px; border: 1px dashed var(--arc-wood-dark); border-radius: 4px; background: var(--sunk); color: var(--ink); }
+.arc-extra { align-items: flex-start; }
+.arc-extra small { color: var(--muted); margin-top: 3px; }
+.arc-num { font-family: var(--num); text-align: right; white-space: nowrap; }
+.arc-cercha { display: grid; gap: 14px; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line); }
+@media (min-width: 760px) { .arc-cercha { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+.arc-dl { font-size: 14px; margin-bottom: 8px; }
+.arc-ord { max-width: 320px; }
+.arc-bars { display: grid; gap: 10px; margin-bottom: 8px; }
+.arc-bar { display: flex; height: 36px; border: 1px solid var(--ink); border-radius: 4px; overflow: hidden; background: repeating-linear-gradient(45deg, var(--sunk) 0 6px, var(--surface) 6px 12px); }
+.arc-bar span { background: var(--arc-wood-light); border-right: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; font: 700 12px var(--num); color: var(--ink); overflow: hidden; white-space: nowrap; min-width: 0; }
+.arc-steps li b { font-weight: 800; }
+.arc-ws { margin-top: 12px; flex-wrap: wrap; }
+.arc-guide svg { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.arc-guide .dl { font-size: 14px; }
+.arc-help { margin-top: 4px; }
+.arc-help summary { cursor: pointer; min-height: 44px; }
+@media print {
+  #print .arc-print { --arc-wood: #d9b48a; --arc-wood-dark: #5a3a1a; --arc-wood-light: #f1dcc0; --arc-wall: #e6e6e6; --arc-wall-line: #b3b3b3; --arc-wedge: #ffd24d;
+    --ink: #000; --muted: #444; --surface: #fff; --sunk: #fff; }
+  #print .arc-print-fig svg { width: 100%; max-height: 120mm; }
+  #print .arc-print table { font-size: 9pt; margin-bottom: 8px; }
+}

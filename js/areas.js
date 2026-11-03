@@ -6,6 +6,7 @@
 //   Vehículos (azul)      → flota, ITV y revista de salida
 //   Equipo (petróleo)     → personal y EPI
 //   Guía de campo (gris)  → consulta en la zona
+//   Apuntalar arcos       → cuadro y cerchas a la medida de un arco (lista de cortes y montaje)
 //   Ajustes (gris)        → ajustes, listas y manual de uso
 // Cuando hay una operación en curso, una barra fija lo recuerda en todas las pantallas.
 
@@ -17,7 +18,7 @@ const AREAS = {
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'ops', 'log', 'vehiculos', 'team', 'guia', 'help'];
+const MENU = ['avisos', 'ops', 'log', 'vehiculos', 'team', 'guia', 'arcos', 'help'];
 // [id, icono, título, descripción, área, grupo, oculta (no sale en el menú: se llega desde otra pantalla)]
 const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
@@ -43,6 +44,7 @@ const SECTIONS = [
   ['personal', 'users', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
   ['epi', 'hardhat', 'EPI', 'Qué lleva cada uno y la reserva', 'team'],
   ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help'],
+  ['arcos', 'wrench', 'Apuntalar arcos', 'Cuadro y cerchas a medida: lista de cortes, plantillas y montaje', 'help'],
   ['ajustes', 'grid', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
   ['listas', 'layers', 'Listas y opciones', 'Opciones de los desplegables: añade las vuestras', 'help'],
   ['manual', 'file', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help']

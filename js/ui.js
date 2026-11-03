@@ -122,7 +122,7 @@ function go(tab) {
   const sub = ALMACEN_TABS.includes(tab) && tab, afil = ACT_FILTER[tab];
   tab = sub ? 'contenedor' : afil || tab === 'operaciones' ? 'actividades' : HUB_TO[tab] || tab;
   toggleDrawer(false); haptic(8);
-  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}) });
+  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'arcos' ? { arc: null } : {}) });
   scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'otros' ? 'escalon' : sub); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
@@ -324,7 +324,9 @@ function renderSearch() {
     ...list('worksites').filter(w => hit(w.code, w.address, w.notes)).map(w =>
       ['Worksite', w.code, `${mget(w.mission)?.title || ''}${w.address ? ' · ' + w.address : ''}`, `openMission('${w.mission}', 'worksites'); setPref({ ws: '${w.id}' })`]),
     ...list('heritage').filter(h => hit(h.name, h.place, h.type)).map(h =>
-      ['Patrimonio', `${herCode(h)} ${h.name}`, `${mget(h.mission)?.title || ''} · ${herStatus(h.status)[0]}`, `openMission('${h.mission}', 'patrimonio'); heritageDetail('${h.id}')`])
+      ['Patrimonio', `${herCode(h)} ${h.name}`, `${mget(h.mission)?.title || ''} · ${herStatus(h.status)[0]}`, `openMission('${h.mission}', 'patrimonio'); heritageDetail('${h.id}')`]),
+    ...list('arcs').filter(x => hit(x.name, x.team)).map(x =>
+      ['Arco', x.name, ['Apuntalar arcos', x.team].filter(Boolean).join(' · '), `openArc('${x.id}')`])
   ];
   // El material y las cajas van primero, diciendo dónde están (lateral, hueco, caja o vehículo)
   const mat = findResults(q);
@@ -580,7 +582,7 @@ document.addEventListener('click', e => {
 
 /* ---------- Gesto «atrás» del móvil (o botón atrás): vuelve a la pantalla anterior de la app ---------- */
 // Cada cambio de pantalla deja una entrada en el historial del navegador; abrir una ventana, el menú o una foto, también.
-const navSnap = () => ({ tab: prefs.tab, mission: prefs.mission || null, mtab: prefs.mtab || null, person: prefs.person || null, ws: prefs.ws || null, move: prefs.move || null });
+const navSnap = () => ({ tab: prefs.tab, mission: prefs.mission || null, mtab: prefs.mtab || null, person: prefs.person || null, ws: prefs.ws || null, move: prefs.move || null, arc: prefs.arc || null });
 const navKey = s => JSON.stringify(s);
 let NAV_KEY = null, NAV_POP = false;
 function navTrack() {

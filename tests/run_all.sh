@@ -12,6 +12,9 @@ export MOCK_URL="http://127.0.0.1:$PORT_MOCK"
 echo "▶ Comprobando sintaxis"
 for f in qr.js sw.js js/*.js js/views/*.js; do node --check "$f"; done
 
+echo "▶ Cálculo de arcos"
+node --test tests/arcos.test.js
+
 python3 -m http.server "$PORT_APP" --bind 127.0.0.1 >/dev/null 2>&1 &
 APP_PID=$!
 trap 'kill $APP_PID ${MOCK_PID:-} 2>/dev/null || true' EXIT
@@ -63,6 +66,7 @@ run test_epi_reserva.py
 start_mock; run test_conflictos.py
 run test_dibujos_veh.py
 run test_funciones.py
+run test_arcos.py
 
 echo
 if [ $status -eq 0 ]; then echo "✓ Todas las pruebas pasaron"; else echo "✗ Alguna prueba falló"; fi
