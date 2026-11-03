@@ -47,6 +47,7 @@ function render() {
   if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
   document.body.classList.toggle('mision', !!document.querySelector('#view .mc'));
   if (document.querySelector('.cvi')) fitCells();
+  if (prefs.tab === 'apuntalamientos') apuKeepFocus();
   navTrack();
   if ($('search').value) renderSearch();
   updateWakeLock();
@@ -65,7 +66,7 @@ function renderNav() {
 // Menú por niveles (en el orden de MENU): Inicio, Actividades, Material, Vehículos, Equipo, Guía de campo y Ajustes.
 // Al tocar un área se despliegan sus secciones (un área abierta a la vez).
 const OPS_TABS = ['operaciones', 'intervenciones', 'ejercicios', 'maniobras', 'convoy'];
-const menuTab = tab => OPS_TABS.includes(tab) ? 'actividades' : ALMACEN_TABS.includes(tab) || tab === 'entregas' ? (tab === 'entregas' ? 'fuera' : 'contenedor') : tab;
+const menuTab = tab => tab === 'arcos' ? 'apuntalamientos' : OPS_TABS.includes(tab) ? 'actividades' : ALMACEN_TABS.includes(tab) || tab === 'entregas' ? (tab === 'entregas' ? 'fuera' : 'contenedor') : tab;
 const tabGroups = tab => { tab = menuTab(tab); const s = sectionOf(tab); return s && !MENU.includes(tab) && s[4] !== 'home' ? [s[4]] : []; };
 function menuOpen(g) { return (prefs.menuOpen ?? tabGroups(prefs.tab)).includes(g); }
 function toggleMenuGroup(g) {
@@ -122,7 +123,7 @@ function go(tab) {
   const sub = ALMACEN_TABS.includes(tab) && tab, afil = ACT_FILTER[tab];
   tab = sub ? 'contenedor' : afil || tab === 'operaciones' ? 'actividades' : HUB_TO[tab] || tab;
   toggleDrawer(false); haptic(8);
-  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'arcos' ? { arc: null } : {}) });
+  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'arcos' ? { arc: null } : {}), ...(tab === 'apuntalamientos' ? { apu: null } : {}) });
   scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'otros' ? 'escalon' : sub); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 

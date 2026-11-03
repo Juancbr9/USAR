@@ -290,10 +290,20 @@ const MANUAL = [
     parts: [{ steps: ['Menú → Guía de campo. Busca por palabra (apuntalar, O₂, START…).', 'Toca un apartado para abrirlo; al abrir otro, el anterior se cierra.', 'Calculadoras: peso de una carga o losa, distancia de seguridad, aire del ERA y anclajes.'], img: ['guia', 'Fichas y calculadoras', []] }],
     example: 'Losa de 20 cm y 6 m²: unos 3.000 kg → elige cojines de al menos 3 t.', tips: [] },
 
+  { id: 'apuntalamientos', area: 'help', icon: 'wrench', title: 'Apuntalamientos', go: 'apuntalamientos',
+    what: 'Todos los tipos de apuntalamiento de los temas de la UME (M6 «Apuntalamientos» y M8 «Técnicas específicas»), cada uno con su dibujo a escala y el nombre de cada pieza como en el manual, cuándo se usa, datos clave y montaje paso a paso.',
+    parts: [
+      { h: 'Buscar un tipo', steps: ['Menú → Apuntalamientos. Arriba, el buscador (torre, ejión, ventana, codal…) y los filtros: generalidades, verticales, zampeados, laterales, inclinados, horizontales, puertas y ventanas, especiales y patrimonio.', 'Toca un tipo para abrir su ficha. Abajo, las flechas pasan al anterior o al siguiente.'] },
+      { h: 'La ficha', steps: ['El dibujo lleva un número en cada pieza; debajo, la lista con su nombre (cumbrera o sopanda, solera o durmiente, ejión, freno o carrera, codal, tornapunta…) y para qué sirve.', 'En «Medidas» se escribe la altura (o la distancia, o el punto de inserción y el ángulo) y salen las piezas: largo del puntal, de la solera, de la zapata mural y de los ejiones, diagonales de la torre o capas del zampeado.',
+        '«Datos clave» y «Montaje paso a paso» resumen el tema; abajo, el apartado del tema de la UME.', 'En «Apuntalamiento de arcos», el botón abre la calculadora de cortes y cerchas.'] }
+    ],
+    example: 'Lateral de solera fija a 30° con el punto de inserción a 1,70 m: puntal de 340 cm de vértice a vértice, solera de 294 cm (+60 del ejión) y zapata mural de 170 cm (+60).',
+    tips: ['Los dibujos se ven también en modo oscuro; con el móvil en horizontal salen más grandes.', 'Todo apuntalamiento se revisa cada 12 h y siempre tras una réplica.'] },
+
   { id: 'arcos', area: 'help', icon: 'wrench', title: 'Apuntalar arcos', go: 'arcos',
     what: 'Con siete medidas del arco, la app calcula el cuadro (solera, puntales y cumbrera) y las cerchas a la medida: dibujo, lista de cortes con el rótulo de cada pieza, trazado de cada cercha sobre el tablón, cómo sacar las piezas de vuestras barras y el orden de montaje. Sigue el Manual de Campo USAR y los temas de apuntalamiento de la UME.',
     parts: [
-      { h: 'Medir y crear el arco', steps: ['Menú → Apuntalar arcos → «Arco».', 'Mide A–G: luz en el arranque y a ras de suelo, altura del arranque a cada lado, altura de la clave, altura a ¼ de la luz (opcional, comprueba la forma) y fondo del muro. «¿Qué es cada medida?» lo explica con un dibujo.', 'Si el arco está en un worksite, elígelo: luego «Vigilar» lo añade a la vigilancia estructural (cada 12 h).', 'En «Madera y opciones» indica la sección de los puntales, el tablón de las cerchas, el largo de vuestras barras y si hay que dejar paso.'],
+      { h: 'Medir y crear el arco', steps: ['Menú → Apuntalamientos → «Apuntalamiento de arcos» → «Calcular un arco» → «Arco».', 'Mide A–G: luz en el arranque y a ras de suelo, altura del arranque a cada lado, altura de la clave, altura a ¼ de la luz (opcional, comprueba la forma) y fondo del muro. «¿Qué es cada medida?» lo explica con un dibujo.', 'Si el arco está en un worksite, elígelo: luego «Vigilar» lo añade a la vigilancia estructural (cada 12 h).', 'En «Madera y opciones» indica la sección de los puntales, el tablón de las cerchas, el largo de vuestras barras y si hay que dejar paso.'],
         img: ['arcos', 'Ficha de un arco', [[1, 'Medidas y madera del arco.'], [2, 'Pórticos, puntales, cerchas y piezas que faltan por cortar.'], [3, 'Alzado, fondo, cortes, cerchas, plan de corte y montaje.']]] },
       { h: 'Cortar y montar', steps: ['«Cortes»: cada pieza con su código, medida, ángulo de corte y rótulo. Márcala al cortarla.', '«Cerchas»: las ordenadas cada 10 cm desde el canto del tablón para trazar la curva; el canto de abajo queda recto.', '«Hoja de corte» la imprime y «Enviar» la manda por WhatsApp al equipo de corte.', '«Montaje»: el orden de colocación y las reglas de cada manual.'] }
     ],

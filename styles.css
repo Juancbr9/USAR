@@ -1686,3 +1686,70 @@ img[data-img]:not([src]), img[data-img][src=""] { background: linear-gradient(10
   #print .arc-print-fig svg { width: 100%; max-height: 120mm; }
   #print .arc-print table { font-size: 9pt; margin-bottom: 8px; }
 }
+
+/* ==================== Apuntalamientos: tipos con su dibujo ==================== */
+.apu-svg { display: block; width: 100%; height: auto; font-family: var(--sans); }
+.apu-svg .aw { fill: var(--arc-wood); stroke: var(--arc-wood-dark); stroke-width: calc(var(--s) * 1.2px); stroke-linejoin: round; }
+.apu-svg .aw2 { fill: var(--arc-wood-light); stroke: var(--arc-wood-dark); stroke-width: calc(var(--s) * 1.1px); stroke-linejoin: round; }
+.apu-svg .back { opacity: .5; }
+.apu-svg .opt { opacity: .55; stroke-dasharray: calc(var(--s) * 4px) calc(var(--s) * 3px); }
+.apu-svg .ap { fill: #f3e2bd; fill-opacity: .92; stroke: var(--arc-wood-dark); stroke-width: calc(var(--s) * 1px); }
+.apu-svg .ap2 { fill: #f3e2bd; fill-opacity: .8; stroke: var(--arc-wood-dark); stroke-width: calc(var(--s) * 1px); }
+.apu-svg .anl { fill: var(--arc-wood-dark); }
+.apu-svg .ac { fill: var(--arc-wedge); stroke: var(--arc-wood-dark); stroke-width: calc(var(--s) * .9px); }
+.apu-svg .am { fill: #9aa4ad; stroke: #49525a; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .am2 { fill: #c3cad0; stroke: #49525a; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .am3 { fill: #6c757d; stroke: #343a40; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .amh { fill: #49525a; }
+.apu-svg .amt { stroke: #343a40; stroke-width: calc(var(--s) * 2.4px); stroke-linecap: round; }
+.apu-svg .ahol { fill: #c8102e; stroke: #6d0a1a; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .axg { fill: #2e9d4f; stroke: #1b5e2f; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .axb { fill: #2d6fd2; stroke: #1a417d; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .axw { fill: #f4f4f4; stroke: #777; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .aes { fill: #f5b800; stroke: #8a6800; stroke-width: calc(var(--s) * .8px); }
+.apu-svg .acab { stroke: var(--ink); stroke-width: calc(var(--s) * 1.6px); stroke-dasharray: calc(var(--s) * 6px) calc(var(--s) * 3px); }
+.apu-svg .aload { fill: #b9bdb5; stroke: #6f746c; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .adeb { fill: #a99a86; stroke: #6f6252; stroke-width: calc(var(--s) * 1px); }
+.apu-svg .awall { fill: var(--arc-wall); }
+.apu-svg .ahatch { stroke: none; }
+.apu-svg .ahl { stroke: var(--arc-wall-line); stroke-width: calc(var(--s) * 1.4px); }
+.apu-svg .ahole { fill: var(--sunk); stroke: var(--ink); stroke-width: calc(var(--s) * 1.2px); }
+.apu-svg .agr { stroke: var(--ink); stroke-width: calc(var(--s) * 2.4px); }
+.apu-svg .aln { stroke: var(--arc-wood-dark); stroke-width: calc(var(--s) * 1px); }
+.apu-svg .ald { stroke: var(--ink); stroke-width: calc(var(--s) * 1px); opacity: .75; }
+.apu-svg .anb { fill: var(--ink); }
+.apu-svg .ant { fill: var(--surface); font-family: var(--cond); font-weight: 800; text-anchor: middle; }
+.apu-svg .atx, .apu-svg .adt { fill: var(--ink); font-weight: 600; }
+.apu-svg .adm { stroke: var(--ink); stroke-width: calc(var(--s) * 1px); fill: none; }
+.apu-svg .amk { fill: var(--ink); }
+:root[data-theme="dark"] .apu-svg .ap, :root[data-theme="dark"] .apu-svg .ap2 { fill: #8a7552; }
+:root[data-theme="dark"] .apu-svg .aload { fill: #565b55; stroke: #8b9187; }
+:root[data-theme="dark"] .apu-svg .adeb { fill: #5d5246; stroke: #8f8070; }
+.apu-fam-h { font: 800 17px var(--cond); text-transform: uppercase; letter-spacing: .4px; margin: 18px 2px 8px; color: var(--muted); }
+.apu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.apu-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); text-align: left; box-shadow: var(--sh-1); }
+.apu-card:active { transform: scale(.98); }
+@media (hover: hover) and (pointer: fine) { .apu-card:hover { border-color: var(--line-2); } }
+.apu-thumb { display: grid; place-items: center; height: 120px; background: var(--sunk); border-radius: 8px; padding: 6px; overflow: hidden; }
+.apu-thumb .apu-svg { width: 100%; height: 100%; }
+.apu-thumb .apu-nums { display: none; }
+.apu-card-t b { display: block; font-size: 15px; line-height: 1.25; }
+.apu-card-t small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.apu-fig { margin: 12px 0 4px; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px; }
+.apu-fig .apu-svg { max-height: 70vh; }
+.apu-fig figcaption { font-size: 13px; color: var(--muted); text-align: center; margin-top: 6px; }
+.apu-parts { margin: 12px 0 0; padding-left: 0; list-style: none; counter-reset: apu; display: grid; gap: 6px; }
+.apu-parts li { counter-increment: apu; display: block; padding-left: 34px; position: relative; font-size: 15px; line-height: 1.35; }
+.apu-parts li::before { content: counter(apu); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--surface); font: 800 13px/24px var(--cond); text-align: center; }
+.apu-parts .muted { font-size: 14px; }
+.apu-dl dd .bad, .apu-dl dd.bad { color: var(--bad); font-weight: 700; }
+.apu-steps { padding-left: 22px; display: grid; gap: 6px; }
+.apu-ref { font-size: 13px; margin: 4px 2px 0; }
+.apu-nav { justify-content: space-between; margin-top: 12px; }
+.apu-nav .btn { flex: 1 1 160px; white-space: normal; }
+/* Datos clave de los apuntalamientos: cada dato encima de su valor (los valores son largos) */
+.apu-dl { grid-template-columns: 1fr; gap: 2px; }
+.apu-dl dt { font-weight: 700; color: var(--ink); margin-top: 8px; font-size: 14px; }
+.apu-dl dt:first-child { margin-top: 0; }
+.apu-dl dd { color: var(--ink); font-weight: 400; }
+@media (min-width: 700px) { .apu-dl { grid-template-columns: minmax(180px, 30%) 1fr; gap: 8px 16px; } .apu-dl dt { margin-top: 0; } }
