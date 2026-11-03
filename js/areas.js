@@ -66,7 +66,7 @@ function sectionStatus(id) {
       const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
       return last && t(last) ? [`Última: ${fmtDate(new Date(t(last)).toISOString().slice(0, 10))}`, 'ok'] : ['Sin revistas', 'neutral']; }
     case 'vehiculos': return [`${list('vehicles').length} vehículos`, 'neutral'];
-    case 'personal': { const n = operators().reduce((s, o) => s + readinessIssues(o.id).length, 0); return n ? [`${n} avisos`, 'warn'] : [`${operators().length} personas`, 'ok']; }
+    case 'personal': { const n = operators().reduce((s, o) => s + readinessIssues(o.id).length, 0); return n ? [`${n} ${n === 1 ? 'aviso' : 'avisos'}`, 'warn'] : [`${operators().length} personas`, 'ok']; }
     case 'calendario': { const next = list('events').filter(e => (e.start || '') >= localNow()).sort((x, y) => x.start.localeCompare(y.start))[0];
       return next ? [`Próximo: ${fmtDT(next.start)}`, 'info'] : ['Nada programado', 'neutral']; }
     default: return null;

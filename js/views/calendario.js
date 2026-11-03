@@ -61,9 +61,10 @@ function viewCalendario() {
     </div>
     <div class="panel">
       <h3 class="sec-title">${ic('users')} Asistencia y horas de formación (${now.getFullYear()})</h3>
-      <div class="list">${operators().map(o => { const s = trainingStats(o.id); return `
+      ${operators().some(o => trainingStats(o.id).called) ? `<div class="list">${operators().map(o => { const s = trainingStats(o.id); return `
         <div class="item"><div class="who-row">${avatar(o.name, 'sm')}<div><b>${esc(o.name)}</b><small>${s.attended}/${s.called} convocatorias · ${s.hours.toLocaleString('es-ES', { maximumFractionDigits: 1 })} h de formación</small></div></div>
-          <span class="tag ${!s.called ? 'neutral' : s.attended / s.called >= .75 ? 'ok' : s.attended / s.called >= .5 ? 'warn' : 'bad'}">${s.called ? Math.round(s.attended / s.called * 100) + ' %' : '—'}</span></div>`; }).join('')}</div>
+          ${s.called ? `<span class="tag ${s.attended / s.called >= .75 ? 'ok' : s.attended / s.called >= .5 ? 'warn' : 'bad'}">${Math.round(s.attended / s.called * 100)} %</span>` : ''}</div>`; }).join('')}</div>`
+        : emptyState('users', 'Sin convocatorias este año', 'Al convocar un evento y marcar quién asiste, aquí sale el porcentaje y las horas de formación de cada uno.')}
     </div>`;
 }
 

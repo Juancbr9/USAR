@@ -1610,3 +1610,27 @@ img[data-img]:not([src]), img[data-img][src=""] { background: linear-gradient(10
 :root[data-sun] .ring small { color: #fff; }
 /* Mantenimiento (solo RODRI): arriba en Inicio y en Ajustes, con su color mientras está activo */
 .mant-admin.on { border-color: var(--warn, #a86f00); box-shadow: inset 0 4px 0 #e0a100; }
+
+/* ==================== PULIDO v3 ==================== */
+/* Listas agrupadas: las filas de una lista van juntas en un solo bloque, separadas por una línea fina
+   (antes, una tarjeta con borde por fila dentro de otra tarjeta: mucho ruido). */
+.list:has(> .item:not(.check)) { gap: 0; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); overflow: hidden; }
+.list > .item:not(.check) { border: 0; border-radius: 0; box-shadow: none; padding: 12px 14px; min-height: 56px; outline-offset: -3px; }
+.list > * + .item:not(.check) { border-top: 1px solid var(--line); }
+.list > .item.on { box-shadow: inset 4px 0 0 var(--yellow); background: color-mix(in srgb, var(--yellow) 7%, var(--surface)); }
+.list > .item.over { box-shadow: inset 4px 0 0 var(--bad); }
+.list > .item:not(.check):active { transform: none; background: var(--sunk); }
+@media (hover: hover) and (pointer: fine) { .list > button.item:hover, .list > a.item:hover { transform: none; box-shadow: none; background: var(--sunk); } }
+:root[data-sun] .list:has(> .item:not(.check)) { border-width: 2px; }
+:root[data-sun] .list > * + .item:not(.check) { border-top-width: 2px; }
+/* EPI: en el móvil, el nombre entero (sin la inicial delante) */
+@media (max-width: 480px) { .epi-tbl { grid-template-columns: minmax(96px, 1.3fr) repeat(var(--cols), minmax(0, 1fr)); } .epi-who .avatar, .epi-who .avatar-img { display: none; } .epi-who b { font-size: 13px; } }
+/* Un botón a todo lo ancho nunca se sale: si el texto no cabe, pasa a dos líneas */
+.btn.full { white-space: normal; text-align: center; line-height: 1.25; }
+/* Ficha de persona: los botones del carné, del mismo ancho */
+.carne-acts > .btn { flex: 1 1 150px; }
+/* Funciones clave de la operación: filas juntas, como el resto de listas */
+.fn-list { gap: 0; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.fn-list > .fn { border: 0; border-radius: 0; padding: 10px 12px; border-top: 1px solid var(--line); margin: -1px 0 0; }
+.fn-list > .fn.empty-fn { border-style: solid; }
+@media (min-width: 700px) { .fn-list > .fn:nth-child(odd) { border-right: 1px solid var(--line); } }
