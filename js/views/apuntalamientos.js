@@ -35,6 +35,8 @@ function apuFig(W, H, draw, alt) {
       return g;
     },
     tri(pts) { return g.poly(pts, 'ap'); },
+    // Agrupa lo que dibuja fn (p. ej. lo ya montado, apagado, en el montaje paso a paso)
+    grp(c, fn) { out.push(`<g class="${c}">`); fn(g); out.push('</g>'); return g; },
     line(x1, y1, x2, y2, c = 'aln') { fit(x1, y1); fit(x2, y2); out.push(`<line class="${c}" x1="${F(x1)}" y1="${Y(y1)}" x2="${F(x2)}" y2="${Y(y2)}"/>`); return g; },
     circle(x, y, r, c = 'am') { fit(x, y, r); out.push(`<circle class="${c}" cx="${F(x)}" cy="${Y(y)}" r="${F(r)}"/>`); return g; },
     wall(x, y, w, h) { return g.rect(x, y, w, h, 'awall').rect(x, y, w, h, `ahatch" fill="url(#${id})`); },
@@ -877,8 +879,9 @@ function apuDetail(t) {
       ${t.arcos ? `<button class="btn btn-a full" style="margin-top:12px" onclick="go('arcos')">${ic('wrench')} Calcular un arco: cuadro, cerchas y lista de cortes</button>` : ''}
     </div>
     ${APU_CORTES[t.id] ? apuCortesPanel(t) : ''}
+    ${APU_MONTAJE[t.id] ? apuMontajePanel(t) : ''}
     ${t.datos?.length ? `<div class="panel"><h3 class="sec-title">${ic('list')} Datos clave</h3><dl class="dl apu-dl">${t.datos.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div>` : ''}
-    ${t.pasos?.length ? `<div class="panel"><h3 class="sec-title">${ic('check')} ${t.fam === 'gen' && t.id === 'componentes' ? 'Equipos de apuntalamiento' : 'Montaje paso a paso'}</h3><ol class="apu-steps">${t.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}
+    ${t.pasos?.length ? `<div class="panel"><h3 class="sec-title">${ic('check')} ${t.id === 'componentes' ? 'Equipos de apuntalamiento' : APU_MONTAJE[t.id] ? 'Pasos del manual' : 'Montaje paso a paso'}</h3><ol class="apu-steps">${t.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>` : ''}
     ${t.ojo?.length ? `<div class="callout warn">${t.ojo.map(o => `<p>${ic('alert', 'i-sm')} ${esc(o)}</p>`).join('')}</div>` : ''}
     <p class="muted apu-ref">Tema UME: ${esc(t.ref)}. Revisar todo apuntalamiento cada 12 h y siempre tras una réplica.</p>
     <div class="row apu-nav">${prev ? `<button class="btn btn-g" onclick="openApu('${prev.id}')">${ic('back', 'i-sm')} ${esc(prev.name)}</button>` : ''}

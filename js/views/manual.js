@@ -291,12 +291,13 @@ const MANUAL = [
     example: 'Losa de 20 cm y 6 m²: unos 3.000 kg → elige cojines de al menos 3 t.', tips: [] },
 
   { id: 'apuntalamientos', area: 'help', icon: 'wrench', title: 'Apuntalamientos', go: 'apuntalamientos',
-    what: 'Todos los tipos de apuntalamiento de los temas de la UME (M6 «Apuntalamientos» y M8 «Técnicas específicas»), cada uno con su dibujo a escala y el nombre de cada pieza como en el manual, cuándo se usa, datos clave y montaje paso a paso.',
+    what: 'Todos los tipos de apuntalamiento de los temas de la UME (M6 «Apuntalamientos» y M8 «Técnicas específicas»), cada uno con su dibujo a escala y el nombre de cada pieza como en el manual, cuándo se usa, datos clave, lista de cortes y montaje paso a paso con tus medidas.',
     parts: [
       { h: 'Buscar un tipo', steps: ['Menú → Apuntalamientos. Arriba, el buscador (torre, ejión, ventana, codal…) y los filtros: generalidades, verticales, zampeados, laterales, inclinados, horizontales, puertas y ventanas, especiales y patrimonio.', 'Toca un tipo para abrir su ficha. Abajo, las flechas pasan al anterior o al siguiente.'] },
       { h: 'La ficha', steps: ['El dibujo lleva un número en cada pieza; debajo, la lista con su nombre (cumbrera o sopanda, solera o durmiente, ejión, freno o carrera, codal, tornapunta…) y para qué sirve.', 'En «Medidas y cortes» se escriben las medidas del sitio (altura, ancho, punto de inserción y ángulo, inclinación de la carga…) y sale la lista de cortes completa: cada pieza con su código, cantidad, largo, cómo se corta (ángulos de los encuentros, biseles) y su rótulo; además pletinas, cuñas, clavos, bridas, anclajes y extensiones HOLMATRO, y cuántas barras de madera hay que cortar.',
         'Marca cada pieza al cortarla; «Enviar los cortes» lo manda por WhatsApp y «Hoja de corte» la imprime.',
-        '«Datos clave» y «Montaje paso a paso» resumen el tema; abajo, el apartado del tema de la UME.', 'En «Apuntalamiento de arcos», el botón abre la calculadora de cortes y cerchas.'] }
+        'En «Montaje con tus medidas» sale el montaje paso a paso con esas mismas medidas: en cada paso, el dibujo a escala con lo ya montado en gris, lo que se pone en naranja y las cotas exactas (a qué altura y a qué distancia va cada pieza). «Siguiente» y «Anterior» pasan de paso, los números saltan a uno y «Imprimir» saca todos los pasos en papel.',
+        '«Datos clave» y «Pasos del manual» resumen el tema; abajo, el apartado del tema de la UME.', 'En «Apuntalamiento de arcos», el botón abre la calculadora de cortes y cerchas.'] }
     ],
     example: 'Lateral de solera fija a 30° con el punto de inserción a 1,70 m: puntal de 340 cm de vértice a vértice, solera de 294 cm (+60 del ejión) y zapata mural de 170 cm (+60).',
     tips: ['Los dibujos se ven también en modo oscuro; con el móvil en horizontal salen más grandes.', 'Todo apuntalamiento se revisa cada 12 h y siempre tras una réplica.'] },
