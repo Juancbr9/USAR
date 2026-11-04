@@ -61,7 +61,7 @@ function catalogEditor(key) {
   const own = catalog(key).filter(l => !defs.includes(l));
   openModal(name, `
     <form id="optForm" class="row nowrap" style="margin-bottom:14px">
-      <input class="input" name="label" placeholder="Nueva opción" autocomplete="off" required>
+      <input class="input" name="label" placeholder="Nueva opción…" autocomplete="off" required>
       <button class="btn btn-a">${ic('plus')} Añadir</button>
     </form>
     ${own.length ? `<h3 class="sub" style="margin-top:0">Propias</h3><div class="list">${own.map(l => `

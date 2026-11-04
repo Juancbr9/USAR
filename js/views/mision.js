@@ -273,7 +273,7 @@ function tabDiario(m) {
     <div class="panel">
       <h3 class="sec-title">${ic('history')} Diario de operaciones</h3>
       <form class="row nowrap" style="margin-bottom:10px" onsubmit="event.preventDefault(); addEntry('${m.id}', this.t)">
-        <span class="dictate-wrap grow"><input class="input" name="t" aria-label="Nueva anotación del diario" placeholder="Ej: 10:15 llegada a zona, se divide en 2 sectores" autocomplete="off">${micButton()}</span>
+        <span class="dictate-wrap grow"><input class="input" name="t" aria-label="Nueva anotación del diario" placeholder="Ej.: 10:15 llegada a zona, se divide en 2 sectores…" autocomplete="off">${micButton()}</span>
         <button class="btn btn-a" aria-label="Añadir">${ic('plus')}</button>
       </form>
       <div class="row chips" style="margin-bottom:12px">${quick.map(q => `<button class="chip" data-t="${esc(q)}" onclick="addEntry('${m.id}', null, this.dataset.t)">${esc(q)}</button>`).join('')}<button class="chip" onclick="catalogEditor('diary')">${ic('pencil', 'i-sm')} Editar</button></div>

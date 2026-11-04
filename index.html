@@ -10,7 +10,7 @@
 </script>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org; media-src 'self' data: blob:; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#22382A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,6 +29,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="skip" href="#view" onclick="event.preventDefault(); $('view').focus()">Saltar al contenido</a>
 <div id="boot" class="boot" aria-live="polite"><img src="img/logo.webp" width="120" height="120" alt=""><span class="boot-bar"><i></i></span><small>Cargando USAR 242…</small></div>
 
 <header class="topbar">
@@ -55,7 +56,7 @@
 
 <div class="wrap">
   <div id="results" class="panel hidden" style="margin-top:16px"></div>
-  <main id="view"></main>
+  <main id="view" tabindex="-1"></main>
 </div>
 
 <div id="modal" class="modal hidden" onclick="if (event.target === this) closeModal()">
@@ -103,6 +104,7 @@
 <script src="js/views/arcos.js"></script>
 <script src="js/views/apuntalamientos.js"></script>
 <script src="js/views/apucortes.js"></script>
+<script src="js/views/apuguia.js"></script>
 <script src="js/views/apumontaje.js"></script>
 <script src="js/views/registros.js"></script>
 <script src="js/views/exportar.js"></script>

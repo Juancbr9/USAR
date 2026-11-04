@@ -50,9 +50,9 @@ with sync_playwright() as p:
     a.evaluate("clearSearch()")
 
     # Pestañas
-    for tab in ['Fondo', 'Cortes', 'Cerchas', 'Plan de corte', 'Montaje']:
+    for tab in ['Fondo', 'Cortes', 'Camones', 'Plan de corte', 'Montaje']:
         a.click(f'.arc-tabs .tab:has-text("{tab}")'); a.wait_for_timeout(150)
-        assert a.evaluate("prefs.arcTab") == {'Fondo': 'fondo', 'Cortes': 'cortes', 'Cerchas': 'cerchas', 'Plan de corte': 'plan', 'Montaje': 'montaje'}[tab]
+        assert a.evaluate("prefs.arcTab") == {'Fondo': 'fondo', 'Cortes': 'cortes', 'Camones': 'cerchas', 'Plan de corte': 'plan', 'Montaje': 'montaje'}[tab]
         seen(tab); wide(tab)
         a.screenshot(path=f'{OUT}/arcos-{tab.split()[0].lower()}.png', full_page=True)
 
@@ -61,15 +61,20 @@ with sync_playwright() as p:
     assert a.locator('.arc-cut').count() >= 10
     p = a.locator('.arc-cut:has(.arc-code:text-is("P"))')
     assert '196 cm × 4' in p.inner_text() and 'PUNTAL 196 cm · Equipo 2' in p.inner_text(), p.inner_text()
-    assert 'CERCHA 81 cm · Equipo 2' in a.inner_text('#view')
+    assert 'CAMÓN 81 cm · Equipo 2' in a.inner_text('#view')
+    # Guía de corte de las piezas de escuadría: pendolón a dos aguas y jabalcones de cercha, con su dibujo
+    assert a.locator('.arc-guia').count() >= 5 and a.locator('.arc-guia svg').count() >= 5
+    a.evaluate("document.querySelectorAll('.arc-guia').forEach(d => d.open = true)"); a.wait_for_timeout(100)
+    g = a.inner_text('#view'); assert 'dos cortes que se juntan' in g and 'fuera de escuadra' in g and 'Junta 1 de los camones'.lower() in g.lower(), g[:400]
+    a.evaluate("document.querySelectorAll('.arc-guia').forEach(d => d.open = false)")
     pend = int(a.locator('.arc-kpis .kpi b').nth(3).inner_text().split('/')[0])
     p.locator('input').check(); a.wait_for_timeout(200)
     assert a.evaluate(f"get('arcs', '{aid}').done.P") is True
     assert int(a.locator('.arc-kpis .kpi b').nth(3).inner_text().split('/')[0]) == pend - 4
     assert a.locator('.arc-cut.done').count() == 1
 
-    # Cerchas: borde recto, ⅓ del tablón y ordenadas cada 10 cm
-    a.click('.arc-tabs .tab:has-text("Cerchas")'); a.wait_for_timeout(150)
+    # Camones (las piezas de la cercha): borde recto, ⅓ del tablón y ordenadas cada 10 cm
+    a.click('.arc-tabs .tab:has-text("Camones")'); a.wait_for_timeout(150)
     assert a.locator('.arc-cercha').count() == 1 and a.locator('.arc-ord tr').count() >= 9
     assert '22,5° fuera de escuadra' in a.inner_text('#view')
 
@@ -89,7 +94,7 @@ with sync_playwright() as p:
     a.click('#view button:has-text("Enviar")'); sh = a.evaluate("window._shared")
     assert 'APUNTALAMIENTO DE ARCO' in sh and 'Arco del pasillo' in sh and 'CORTES' in sh, sh[:300]
     a.click('#view button:has-text("Hoja de corte")'); pr = a.evaluate("window._printed")
-    assert 'Lista de cortes' in pr and 'Cercha CE1' in pr, pr[:300]
+    assert 'Lista de cortes' in pr and 'Camón CE1' in pr, pr[:300]
 
     # Unirlo a un worksite y a su vigilancia estructural
     a.evaluate("""(() => { stamp('missions', { id: 'M-ARC', title: 'Sismo', type: 'ejercicio', status: 'active', startedAt: Date.now(), teams: [], vehicles: [], gear: [] });
@@ -124,7 +129,7 @@ with sync_playwright() as p:
     a.evaluate("""put('arcs', { id: 'AR-GRANDE', name: 'Portada', Larr: 400, Lsuelo: 400, Hizq: 230, Hder: 230, Hclave: 470, fondo: 150, seccion: '15x15', tablonAncho: 20, tablonGrueso: 5,
       stockViga: 500, stockTablon: 400, correas: true, cumbreraDoble: true, created: Date.now(), done: {} })""")
     a.evaluate("openArc('AR-GRANDE')"); a.wait_for_timeout(200)
-    for tab in ['Alzado', 'Fondo', 'Cortes', 'Cerchas', 'Plan de corte']:
+    for tab in ['Alzado', 'Fondo', 'Cortes', 'Camones', 'Plan de corte']:
         a.click(f'.arc-tabs .tab:has-text("{tab}")'); a.wait_for_timeout(120); seen('grande ' + tab); wide('grande ' + tab)
     assert 'Apuntado' in a.inner_text('#view') and a.locator('.arc-kpis .kpi b').nth(1).inner_text() == '5'
     a.click('.arc-tabs .tab:has-text("Alzado")'); a.screenshot(path=f'{OUT}/arcos-grande-noche.png', full_page=True)

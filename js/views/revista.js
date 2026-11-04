@@ -86,7 +86,7 @@ function revRow(g, r) {
           <button class="seg ${mk && !['ok', 'bad'].includes(mk) ? 'on' : ''}" aria-label="Otra situación: taller, otro sitio, de baja o no se revista" onclick="markMore('${g.id}')">${ic('dots', 'i-lg')}</button>
         </div>
       </div>
-      ${mk === 'bad' || (mk && !['ok', 'skip'].includes(mk)) ? `<input class="input" placeholder="${mk === 'bad' ? '¿Qué le pasa?' : 'Nota (opcional)'}" aria-label="Nota" value="${esc(r.note)}" oninput="markNote('${g.id}', this.value)">` : ''}
+      ${mk === 'bad' || (mk && !['ok', 'skip'].includes(mk)) ? `<input class="input" placeholder="${mk === 'bad' ? '¿Qué le pasa?…' : 'Nota (opcional)…'}" aria-label="Nota" value="${esc(r.note)}" oninput="markNote('${g.id}', this.value)">` : ''}
     </div>`;
 }
 

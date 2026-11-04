@@ -700,7 +700,7 @@ const APU = [
 
   /* ---------- Patrimonio (M8) ---------- */
   { id: 'arco', fam: 'pat', name: 'Apuntalamiento de arcos', ref: 'M8 · 2', mat: 'Madera / HOLMATRO', arcos: true,
-    uso: 'Primero se ve si el arco está dañado o intacto. Si no lo está: se prepara el cuadro (solera, puntales y cumbrera bajo la parte recta) y sobre él las cerchas, a la medida del arco con una plantilla, sostenidas por tres puntales.',
+    uso: 'Primero se ve si el arco está dañado o intacto. Si no lo está: se prepara el cuadro (solera, puntales y cumbrera bajo la parte recta) y sobre él la cercha (todo el arco de arriba, hecha de camones), a la medida del arco con una plantilla, sostenida por tres puntales.',
     figs: [[g => {
       const r = 100, cx = 150, ya = 200;
       g.wall(0, 0, 300, 330);
@@ -717,12 +717,12 @@ const APU = [
       g.plate(140, 186, 20, 18, 'ap2').plate(45, 180, 22, 22, 'ap2').plate(233, 180, 22, 22, 'ap2');
       g.ground(0, 300);
       g.n(1, 150, 5, 150, -24).n(2, 60, 100, 30, 100).n(3, 150, 195, 110, 168).n(4, 78, 174, 30, 172).n(5, 150, 250, 112, 250).n(6, 190, 248, 225, 240).n(7, 230, 245, 268, 260).n(8, 245, 190, 270, 200).n(9, 240, 12, 268, 30);
-    }, 'Arco de medio punto: el cuadro (de solera a cumbrera) y las cerchas.']],
-    parts: [['Solera', 'Base de todo, asentada y nivelada.'], ['Puntales o pies derechos', 'En los extremos; uno intermedio por cada 1,50 m de luz.'], ['Cumbrera', 'Cierra el cuadro; a partir de aquí, las cerchas.'], ['Jabalcones', 'En cada puntal lateral.'],
-      ['Pendolón', 'Pieza central de la cumbrera hacia la clave.'], ['Puntales de las cerchas', 'Uno vertical y dos inclinados desde el centro de la cumbrera, ajustados con cuñas.'], ['Cerchas', 'Con el perfil del arco, de tablón de 20×5 (se respeta un tercio del tablón).'], ['Pletinas de contrachapado', 'En las uniones (mejor con pistola de clavos, sin golpes).'], ['Cuñas', 'Bajo los puntales.']],
+    }, 'Arco de medio punto: el cuadro (de solera a cumbrera) y la cercha, formada por camones.']],
+    parts: [['Solera', 'Base de todo, asentada y nivelada.'], ['Puntales o pies derechos', 'En los extremos; uno intermedio por cada 1,50 m de luz.'], ['Cumbrera', 'Cierra el cuadro; a partir de aquí, la cercha.'], ['Jabalcones', 'En cada puntal lateral.'],
+      ['Pendolón', 'Pieza central de la cumbrera hacia la clave.'], ['Puntales de la cercha', 'Uno vertical y dos inclinados desde el centro de la cumbrera, ajustados con cuñas.'], ['Camones', 'Cada pieza curva de la cercha, con el perfil del arco, de tablón de 20×5 (se respeta un tercio del tablón).'], ['Pletinas de contrachapado', 'En las uniones (mejor con pistola de clavos, sin golpes).'], ['Cuñas', 'Bajo los puntales.']],
     datos: [['Puntal intermedio', 'Uno por cada 1,50 m de luz'], ['División', 'Lo ideal: ángulo central a 90° y los demás a 45°'], ['HOLMATRO', 'Solo urgente (rescate) y con solera y cumbrera; mejor mecánicos que hidráulicos. Retirarlo al poner madera']],
     pasos: ['Valorar el arco. Si está intacto, montar el cuadro: solera, puntales en los extremos y cumbrera, con jabalcones.', 'Dividir el arco: horizontal entre las bases y su mediatriz da el centro; las mediatrices de cada mitad, los cuartos.',
-      'Copiar el perfil de cada tramo en cartón (plantilla) o con un peine copiador si está deformado, y pasarlo al tablón.', 'Cortar las cerchas con motosierra siguiendo el trazo despacio.', 'Colocar las cerchas con sus tres puntales y ajustar con cuñas; rellenar todos los huecos (también junto al pendolón).'],
+      'Copiar el perfil de cada tramo en cartón (plantilla) o con un peine copiador si está deformado, y pasarlo al tablón.', 'Cortar los camones con motosierra siguiendo el trazo despacio.', 'Colocar la cercha con sus tres puntales y ajustar con cuñas; rellenar todos los huecos (también junto al pendolón).'],
     ojo: ['Además de funcional, el apuntalamiento de un bien cultural tiene que ser estético.'] },
 
   { id: 'columna', fam: 'pat', name: 'Protección y estabilización de columnas', ref: 'M8 · 4.2 y 5', mat: 'Madera y eslingas',
@@ -876,7 +876,7 @@ function apuDetail(t) {
       <p>${esc(t.uso)}</p>
       ${t.figs.map((f, k) => `<figure class="apu-fig">${apuFig(...apuFigArgs(t, k))}<figcaption>${esc(f[1])}</figcaption></figure>`).join('')}
       ${t.parts ? `<ol class="apu-parts">${t.parts.map(([n, d]) => `<li><b>${esc(n)}</b>${d ? ` <span class="muted">${esc(d)}</span>` : ''}</li>`).join('')}</ol>` : ''}
-      ${t.arcos ? `<button class="btn btn-a full" style="margin-top:12px" onclick="go('arcos')">${ic('wrench')} Calcular un arco: cuadro, cerchas y lista de cortes</button>` : ''}
+      ${t.arcos ? `<button class="btn btn-a full" style="margin-top:12px" onclick="go('arcos')">${ic('wrench')} Calcular un arco: cuadro, cercha, camones y lista de cortes</button>` : ''}
     </div>
     ${APU_CORTES[t.id] ? apuCortesPanel(t) : ''}
     ${APU_MONTAJE[t.id] ? apuMontajePanel(t) : ''}

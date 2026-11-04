@@ -48,7 +48,7 @@ function qualsEditor(op) {
     <div class="list" style="margin-bottom:14px">${qs.map((q, i) => `<div class="item"><div><b>${esc(q.name)}</b><small>${q.expires ? 'Caduca ' + fmtDate(q.expires) : 'Sin caducidad'}</small></div>
       <div class="row">${dueTag(q.expires)}<button class="link bad" onclick="const r = readiness('${op}'); put('readiness', { ...r, quals: r.quals.filter((_, j) => j !== ${i}) }); qualsEditor('${op}')">Quitar</button></div></div>`).join('') || '<p class="muted">Ninguna todavía.</p>'}</div>
     <form id="qualForm" class="form">
-      <label class="lbl wide">Curso o titulación<input class="input" name="name" list="qualList" required placeholder="Ej: Rescatador USAR, espacios confinados, conductor C"></label>
+      <label class="lbl wide">Curso o titulación<input class="input" name="name" list="qualList" required placeholder="Ej.: rescatador USAR, espacios confinados, conductor C…"></label>
       <datalist id="qualList">${catalog('quals').map(x => `<option value="${esc(x)}">`).join('')}</datalist>
       <label class="lbl">Caduca<input class="input" type="date" name="expires"></label>
       <button class="btn btn-a">${ic('plus')} Añadir</button>

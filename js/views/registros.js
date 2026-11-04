@@ -182,7 +182,7 @@ function commsPanel(m) {
         <p class="muted">Canales y teléfonos de la operación (como el ICS 205).</p></div>
         <button class="btn btn-a btn-sm" onclick="commForm('${m.id}')">${ic('plus')} Canal</button></div>
       ${cs.length ? `<table class="ref"><tr><th>Función</th><th>Canal / frecuencia</th><th>Quién</th></tr>
-        ${cs.map((c, i) => `<tr onclick="commForm('${m.id}', ${i})" style="cursor:pointer"><td><b>${esc(c.func)}</b></td><td>${esc(c.channel)}${c.notes ? `<br><small class="muted">${esc(c.notes)}</small>` : ''}</td><td>${esc(c.who)}</td></tr>`).join('')}</table>`
+        ${cs.map((c, i) => `<tr onclick="commForm('${m.id}', ${i})" role="button" tabindex="0" aria-label="Editar el canal ${esc(c.func)}" style="cursor:pointer"><td><b>${esc(c.func)}</b></td><td>${esc(c.channel)}${c.notes ? `<br><small class="muted">${esc(c.notes)}</small>` : ''}</td><td>${esc(c.who)}</td></tr>`).join('')}</table>`
         : `<p class="muted">Añade al menos el canal de mando y el táctico. Canal principal: ${esc(m.channel || 'sin definir')}.</p>`}
     </div>`;
 }

@@ -1,6 +1,6 @@
 'use strict';
 /*
- * USAR 242 · Apuntalamiento de arcos con madera (cuadro + cerchas): geometría, lista de cortes y avisos.
+ * USAR 242 · Apuntalamiento de arcos con madera (cuadro + cercha de camones): geometría, lista de cortes y avisos.
  * Cálculo puro, sin pantalla: unidades en centímetros y grados. En el navegador queda como `ARCO`;
  * en Node se carga con require('../js/arcos.js') (pruebas en tests/arcos.test.js).
  *
@@ -30,7 +30,7 @@
     alturaRiostraH: 180,      // MC p.93/95: riostra horizontal central si h > 1,8 m
     alturaDosRiostrasH: 335,  // MC p.94: dos riostras horizontales por encima de 3,35 m
     alturaMax10x10: 330,      // MC p.91 / M6 p.20: 3,3 m con 10x10
-    tercioTablon: 1 / 3,      // M8 p.8: respetar 1/3 del tablón en las cerchas
+    tercioTablon: 1 / 3,      // M8 p.8: respetar 1/3 del tablón en los camones
     holguraLateral: 4,        // MC p.111 / M6 p.68: 4 cm menor que el hueco
     huecoCunas: 4,            // M6 p.20-21: restar 4 cm con cuñas de 5x10
     cuerdaMaxCamon: 120,      // criterio propio: tramo sin apoyo ≤ separación de puntales
@@ -103,13 +103,13 @@
   function calcular(inp) {
     const W = [], warn = (nivel, txt, ref) => W.push({ nivel, txt, ref });
     const sec = SECCIONES[inp.seccion] || SECCIONES['10x10'];
-    const gArco = num(inp.holguraArco, 2);           // entre cercha e intradós (calzos)
+    const gArco = num(inp.holguraArco, 2);           // entre camones e intradós (calzos)
     const gLat = num(inp.holguraLateral, REGLAS.holguraLateral);
     const gapW = num(inp.huecoCunas, REGLAS.huecoCunas);
     const Ha = (inp.Hizq + inp.Hder) / 2, Hmin = Math.min(inp.Hizq, inp.Hder);
     const L = inp.Larr, f = inp.Hclave - Ha;
     if (!(L > 30) || !(f > 5) || !(Hmin > 50) || !(inp.fondo > 0)) return { error: 'Revisa las medidas: la clave tiene que estar por encima del arranque y la luz, el arranque y el fondo tienen que ser mayores que cero.' };
-    if (!(inp.tablonAncho >= 10 && inp.tablonAncho <= 60) || !(inp.tablonGrueso > 0) || !(inp.stockViga >= 100) || !(inp.stockTablon >= 100)) return { error: 'Revisa la madera: el tablón de las cerchas entre 10 y 60 cm de ancho, con grueso, y las barras de al menos 100 cm.' };
+    if (!(inp.tablonAncho >= 10 && inp.tablonAncho <= 60) || !(inp.tablonGrueso > 0) || !(inp.stockViga >= 100) || !(inp.stockTablon >= 100)) return { error: 'Revisa la madera: el tablón de los camones entre 10 y 60 cm de ancho, con grueso, y las barras de al menos 100 cm.' };
     const A = arco(L, f);
     const tCorr = inp.correas ? num(inp.grosorCorrea, 2.5) : 0;
     const Ro = A.R - gArco - tCorr;
@@ -123,10 +123,10 @@
     if (inp.hq) {
       const pred = Ha + yAt(A, A.R, -L / 4);
       checkQ = { medido: inp.hq, previsto: r1(pred), dif: r1(inp.hq - pred) };
-      if (Math.abs(inp.hq - pred) > 3) warn('alto', `La altura a ¼ de la luz (${inp.hq} cm) no cuadra con un arco de circunferencia (saldría ${c1(pred)} cm). Puede ser carpanel, elíptico o estar deformado: el cuadro vale, pero saca las cerchas con plantilla de cartón o peine copiador.`, 'M8 p.9, 11');
+      if (Math.abs(inp.hq - pred) > 3) warn('alto', `La altura a ¼ de la luz (${inp.hq} cm) no cuadra con un arco de circunferencia (saldría ${c1(pred)} cm). Puede ser carpanel, elíptico o estar deformado: el cuadro vale, pero saca los camones con plantilla de cartón o peine copiador.`, 'M8 p.9, 11');
     }
 
-    /* ---- división del arco en cerchas (M8; «camones» en el MC) ---- */
+    /* ---- división de la cercha (todo el arco) en camones ---- */
     let sol = null;
     for (let n = 1; n <= 8 && !sol; n++) {
       const th = A.span / n; let ok = true, worst = 1e9, maxLen = 0;
@@ -137,7 +137,7 @@
       }
       if (worst >= cantoMin - 0.05 && maxLen <= REGLAS.cuerdaMaxCamon + 5) sol = { n, th };
     }
-    if (!sol) { sol = { n: 8, th: A.span / 8 }; warn('alto', `Con tablón de ${Wb} cm no se respeta el tercio del tablón en las cerchas. Usa tablón más ancho.`, 'M8 p.8'); }
+    if (!sol) { sol = { n: 8, th: A.span / 8 }; warn('alto', `Con tablón de ${Wb} cm no se respeta el tercio del tablón en los camones. Usa tablón más ancho.`, 'M8 p.8'); }
     const n = sol.n, th = sol.th;
     const camones = [];
     for (let k = 0; k < n; k++) {
@@ -149,7 +149,7 @@
     const tipos = [];
     camones.forEach(c => { let t = tipos.find(x => x.sig === sig(c)); if (!t) { t = { sig: sig(c), ref: c, ks: [] }; tipos.push(t); } t.ks.push(c.k); });
     tipos.forEach((t, i) => { t.code = 'CE' + (i + 1); t.ks.forEach(k => camones[k].code = t.code); });
-    if (n > 2) warn('info', `Arco grande: salen ${2 * n} cerchas por pórtico y ${n - 1} jabalcones por lado. El manual pone como ideal 90° en el centro y 45° en los demás, pero admite más divisiones según la longitud del arco.`, 'M8 p.8');
+    if (n > 2) warn('info', `Arco grande: salen ${2 * n} camones por cercha y ${n - 1} jabalcones por lado. El manual pone como ideal 90° en el centro y 45° en los demás, pero admite más divisiones según la longitud del arco.`, 'M8 p.8');
 
     /* ---- cuadro ---- */
     const paso = !!inp.paso;
@@ -189,7 +189,7 @@
       const dir = { x: (P.x - F.x) / Lc, y: (P.y - F.y) / Lc }, nr = { x: Math.cos(ang), y: Math.sin(ang) };
       const offTop = Math.acos(Math.min(1, Math.abs(dot(dir, nr)))) * R2D, offBot = 90 - alpha * R2D;
       const bruto = Lc + (sec.a / 2) * Math.tan(offTop * D2R) + (sec.a / 2) * Math.tan(Math.abs(offBot) * D2R);
-      jab.push({ k, P, F, Lc, alpha: alpha * R2D, offTop, offBot, bruto, foot: fp });
+      jab.push({ k, P, F, Lc, alpha: alpha * R2D, offTop, offBot, bruto, foot: fp, angJ: ang * R2D + 90 });
       xEdge -= fp;
       if (alpha * R2D < 30) warn('medio', `El jabalcón de cercha a la junta ${k} queda muy tumbado (${Math.round(alpha * R2D)}°). Considera un montante vertical bajo esa junta.`);
     }
@@ -213,22 +213,22 @@
     /* ---- lista de cortes ---- */
     const piezas = [];
     const add = o => piezas.push(Object.assign({ fam: 'viga' }, o));
-    add({ code: 'S', nombre: 'Solera', corto: 'SOLERA', seccion: sec.solera, largo: lSol, cant: nf, donde: 'En el suelo, entre jambas, asentada y a nivel. Par de cuñas en un extremo para ajustarla.', corte: 'Escuadra' });
-    add({ code: 'P', nombre: 'Puntal lateral (pie derecho)', corto: 'PUNTAL', seccion: sec.nombre, largo: Hp, cant: nf * 2, donde: `Uno contra cada jamba, de solera a cumbrera, con un par de cuñas debajo (${gapW} cm restados).`, corte: 'Escuadra' });
-    if (nInter) add({ code: 'PI', nombre: 'Puntal intermedio', corto: 'PUNTAL INT.', seccion: sec.nombre, largo: Hp, cant: nf * nInter, donde: nInter === 1 ? 'En el centro, bajo el pendolón. Cuñas debajo.' : `${nInter} puntales repartidos a ${c1(vano)} cm entre ejes. Cuñas debajo.`, corte: 'Escuadra' });
-    add({ code: 'C', nombre: cumbreraDoble ? 'Cumbrera (doble)' : 'Cumbrera o sopanda', corto: 'CUMBRERA', seccion: sec.cumbrera, largo: lCumb, cant: nf * (cumbreraDoble ? 2 : 1), donde: `Sobre los puntales; su cara superior en la línea de arranque (${c1(yCum)} cm del suelo).${cumbreraDoble ? ' Dos piezas superpuestas y clavadas.' : ''} Par de cuñas en el extremo contrario al de la solera.`, corte: 'Escuadra' });
-    add({ code: 'J', nombre: 'Jabalcón de cuadro', corto: 'JABALCÓN', seccion: sec.nombre, largo: rUp(kneeD * Math.SQRT2 + sec.a), cant: nf * 2, donde: `De cada puntal lateral a la cumbrera a 45°: arranca ${kneeD} cm por debajo de la cumbrera y llega ${kneeD} cm hacia el centro.`, corte: 'Inglete 45° en los dos extremos (medida en la arista larga)' });
-    // Cabeza del pendolón (M8 p.7 y 13): los cantos interiores de las dos cerchas centrales son rectos y suben hacia la clave,
-    // así que se juntan en punta; el pendolón se corta a dos aguas con esa pendiente para apoyar en las dos cerchas a la vez.
+    add({ code: 'S', nombre: 'Solera', corto: 'SOLERA', seccion: sec.solera, largo: lSol, cant: nf, donde: 'En el suelo, entre jambas, asentada y a nivel. Par de cuñas en un extremo para ajustarla.', corte: 'Escuadra', geo: { ang: 0, ends: [{ s: 90, on: 'Jamba' }, { s: 90, on: 'Cuñas y jamba' }] } });
+    add({ code: 'P', nombre: 'Puntal lateral (pie derecho)', corto: 'PUNTAL', seccion: sec.nombre, largo: Hp, cant: nf * 2, donde: `Uno contra cada jamba, de solera a cumbrera, con un par de cuñas debajo (${gapW} cm restados).`, corte: 'Escuadra', geo: { ang: 90, ends: [{ s: 0, on: 'Solera (sobre las cuñas)' }, { s: 0, on: 'Cumbrera' }] } });
+    if (nInter) add({ code: 'PI', nombre: 'Puntal intermedio', corto: 'PUNTAL INT.', seccion: sec.nombre, largo: Hp, cant: nf * nInter, donde: nInter === 1 ? 'En el centro, bajo el pendolón. Cuñas debajo.' : `${nInter} puntales repartidos a ${c1(vano)} cm entre ejes. Cuñas debajo.`, corte: 'Escuadra', geo: { ang: 90, ends: [{ s: 0, on: 'Solera (sobre las cuñas)' }, { s: 0, on: 'Cumbrera' }] } });
+    add({ code: 'C', nombre: cumbreraDoble ? 'Cumbrera (doble)' : 'Cumbrera o sopanda', corto: 'CUMBRERA', seccion: sec.cumbrera, largo: lCumb, cant: nf * (cumbreraDoble ? 2 : 1), donde: `Sobre los puntales; su cara superior en la línea de arranque (${c1(yCum)} cm del suelo).${cumbreraDoble ? ' Dos piezas superpuestas y clavadas.' : ''} Par de cuñas en el extremo contrario al de la solera.`, corte: 'Escuadra', geo: { ang: 0, ends: [{ s: 90, on: 'Cuñas y jamba' }, { s: 90, on: 'Jamba' }] } });
+    add({ code: 'J', nombre: 'Jabalcón de cuadro', corto: 'JABALCÓN', seccion: sec.nombre, largo: rUp(kneeD * Math.SQRT2 + sec.a), cant: nf * 2, donde: `De cada puntal lateral a la cumbrera a 45°: arranca ${kneeD} cm por debajo de la cumbrera y llega ${kneeD} cm hacia el centro.`, corte: 'Inglete 45° en los dos extremos (medida en la arista larga)', geo: { ang: 45, ends: [{ s: 90, on: 'Puntal lateral' }, { s: 0, on: 'Cumbrera' }] } });
+    // Cabeza del pendolón (M8 p.7 y 13): los cantos interiores de los dos camones centrales son rectos y suben hacia la clave,
+    // así que se juntan en punta; el pendolón se corta a dos aguas con esa pendiente para apoyar en los dos camones a la vez.
     const cK = camones[n - 1], pendAng = Math.atan2(cK.pK.y - cK.pS.y, cK.pK.x - cK.pS.x) * R2D, pendBaja = (sec.a / 2) * Math.tan(pendAng * D2R);
-    add({ code: 'PD', nombre: 'Pendolón', corto: 'PENDOLÓN', seccion: sec.nombre, largo: lPend, cant: nf, donde: 'Vertical, del centro de la cumbrera a la junta de clave de las cerchas; los pies de los jabalcones de cercha apoyan contra él.',
+    add({ code: 'PD', nombre: 'Pendolón', corto: 'PENDOLÓN', seccion: sec.nombre, largo: lPend, cant: nf, donde: 'Vertical, del centro de la cumbrera a la junta de clave de los camones; los pies de los jabalcones de cercha apoyan contra él.',
       corte: `Abajo escuadra. Arriba a dos aguas (en punta): dos cortes de ${c1(pendAng)}° desde la horizontal que se juntan en el centro; cada canto queda ${c1(pendBaja)} cm más bajo que la punta. Largo medido hasta la punta.`,
-      extra: { pendAng, pendBaja } });
-    jab.forEach((j, i) => add({ code: 'JC' + (i + 1), nombre: 'Jabalcón de cercha', corto: 'JAB. CERCHA', seccion: sec.nombre, largo: rUp(j.bruto), cant: nf * 2, donde: `Del centro de la cumbrera (pie a ${c1(Math.abs(j.F.x))} cm del eje) a la junta ${j.k} de las cerchas. Inclinación ${Math.round(j.alpha)}°.`, corte: `Abajo ${c1(Math.abs(j.offBot))}° fuera de escuadra (apoya a nivel); arriba ${c1(j.offTop)}° fuera de escuadra. A eje: ${c1(j.Lc)} cm.`, extra: j }));
-    add({ code: 'TA', nombre: 'Taco', corto: 'TACO', seccion: sec.nombre, largo: 15, cant: nf * 2, donde: 'Sobre la solera, por la cara interior de cada puntal lateral, encerrando las cuñas: 3 clavos en horizontal al puntal y 2 en diagonal a la solera.', corte: 'Escuadra', ref: 'M6 p.68' });
+      extra: { pendAng, pendBaja }, geo: { ang: 90, ends: [{ s: 0, on: 'Cumbrera' }, { s: pendAng, s2: 180 - pendAng, on: 'Los dos camones de la clave' }] } });
+    jab.forEach((j, i) => add({ code: 'JC' + (i + 1), nombre: 'Jabalcón de cercha', corto: 'JAB. CERCHA', seccion: sec.nombre, largo: rUp(j.bruto), cant: nf * 2, donde: `Del centro de la cumbrera (pie a ${c1(Math.abs(j.F.x))} cm del eje) a la junta ${j.k} de los camones. Inclinación ${Math.round(j.alpha)}°.`, corte: `Abajo ${c1(Math.abs(j.offBot))}° fuera de escuadra (apoya a nivel); arriba ${c1(j.offTop)}° fuera de escuadra. A eje: ${c1(j.Lc)} cm.`, extra: j, geo: { ang: 180 - j.alpha, ends: [{ s: 0, on: 'Cumbrera (contra el pendolón)' }, { s: j.angJ, on: `Junta ${j.k} de los camones` }] } }));
+    add({ code: 'TA', nombre: 'Taco', corto: 'TACO', seccion: sec.nombre, largo: 15, cant: nf * 2, donde: 'Sobre la solera, por la cara interior de cada puntal lateral, encerrando las cuñas: 3 clavos en horizontal al puntal y 2 en diagonal a la solera.', corte: 'Escuadra', ref: 'M6 p.68', geo: { ang: 0, ends: [{ s: 90, on: 'Puntal lateral' }, { s: 90, on: '' }] } });
     tipos.forEach(t => {
       const c = t.ref;
-      add({ fam: 'tablon', code: t.code, nombre: 'Cercha', corto: 'CERCHA', seccion: `tablón ${Wb}×${coma(inp.tablonGrueso)}`, largo: rUp(c.len + 4), cant: nf * t.ks.length * 2, donde: `Tramo curvo del arco (${t.ks.length * 2} por pórtico; «camón» en el Manual de Campo). Borde interior recto (canto del tablón), exterior curvo. Canto en los extremos ${c1(c.cantoExtremo)} cm (mínimo ⅓ = ${c1(cantoMin)}).`, corte: `Lado arranque: ${c.endS === 'h' ? 'a nivel, ' : ''}${c1(c.cutS)}° fuera de escuadra. Lado clave: ${c.endK === 'v' ? 'a plomo, ' : ''}${c1(c.cutK)}° fuera de escuadra. Curva con ordenadas o plantilla.`, camon: c });
+      add({ fam: 'tablon', code: t.code, nombre: 'Camón', corto: 'CAMÓN', seccion: `tablón ${Wb}×${coma(inp.tablonGrueso)}`, largo: rUp(c.len + 4), cant: nf * t.ks.length * 2, donde: `Cada una de las piezas curvas que forman la cercha (${t.ks.length * 2} de este tipo por pórtico). Borde interior recto (canto del tablón), exterior curvo. Canto en los extremos ${c1(c.cantoExtremo)} cm (mínimo ⅓ = ${c1(cantoMin)}).`, corte: `Lado arranque: ${c.endS === 'h' ? 'a nivel, ' : ''}${c1(c.cutS)}° fuera de escuadra. Lado clave: ${c.endK === 'v' ? 'a plomo, ' : ''}${c1(c.cutK)}° fuera de escuadra. Curva con ordenadas o plantilla.`, camon: c });
     });
     const fr = inp.riostra || 'tabla 15×2,5';
     const hv = yCum - sec.ts / 2 - tcTot / 2;
@@ -251,18 +251,18 @@
       while (ldiag > REGLAS.riostraCompMax && tramosD < 6) { tramosD++; ldiag = Math.hypot(sep, Hp / tramosD); }
       add({ fam: 'riostra', code: 'RD', nombre: 'Riostra diagonal longitudinal', corto: 'RIOSTRA D', seccion: fr, largo: rUp(ldiag + 15), cant: (nf - 1) * 2 * tramosD, donde: `Entre pórticos, en la cara interior de los puntales de cada lado${tramosD > 1 ? `, en ${tramosD} tramos en zigzag por vano (máx. 2,25 m cada uno)` : ''}.`, corte: 'Presentar y marcar' });
     }
-    add({ fam: 'riostra', code: 'AT', nombre: 'Tabla de atado de cercha', corto: 'ATADO CERCHA', seccion: fr, largo: rUp(footSpan + 20), cant: nf * 2, donde: 'Pieza bajo las cerchas, justo encima de la cumbrera, clavada por las dos caras a los pies de pendolón y jabalcones para que no se desplacen.', corte: 'Escuadra', ref: 'M8 p.10' });
+    add({ fam: 'riostra', code: 'AT', nombre: 'Tabla de atado de cercha', corto: 'ATADO CERCHA', seccion: fr, largo: rUp(footSpan + 20), cant: nf * 2, donde: 'Pieza bajo los camones, justo encima de la cumbrera, clavada por las dos caras a los pies de pendolón y jabalcones para que no se desplacen.', corte: 'Escuadra', ref: 'M8 p.10' });
     let nCorr = 0;
     if (inp.correas && nf >= 2) {
       nCorr = 4 * n - 1;
-      add({ fam: 'riostra', code: 'CR', nombre: 'Correa (tabla de reparto)', corto: 'CORREA', seccion: `tabla ${num(inp.anchoCorrea, 15)}×${coma(tCorr)}`, largo: rDn(e - 2), cant: nCorr, donde: 'Atravesadas sobre las cerchas de todos los pórticos: en cada junta y en el centro de cada camón. Reparten la carga por todo el fondo del intradós.', corte: 'Escuadra' });
+      add({ fam: 'riostra', code: 'CR', nombre: 'Correa (tabla de reparto)', corto: 'CORREA', seccion: `tabla ${num(inp.anchoCorrea, 15)}×${coma(tCorr)}`, largo: rDn(e - 2), cant: nCorr, donde: 'Atravesadas sobre los camones de todos los pórticos: en cada junta y en el centro de cada camón. Reparten la carga por todo el fondo del intradós.', corte: 'Escuadra' });
     }
 
     /* ---- pletinas, cuñas, calzos y clavos ---- */
     const postsPF = 2 + nInter;
     const pletinas = [
-      { code: 'T1', nombre: 'Pletina 30×30', cant: nf * ((2 * n - 1) * 2 + 2), donde: 'Juntas entre cerchas y nudo pendolón-cumbrera, por las dos caras.', clavos: REGLAS.clavos.pletina },
-      { code: 'T2', nombre: 'Media pletina 15×30', cant: nf * (postsPF * 2 + nInter * 2 + 4), donde: 'Unión solera/puntal por las dos caras (clavar después de acuñar), puntal intermedio/cumbrera y apoyo de las cerchas en la cumbrera.', clavos: REGLAS.clavos.media },
+      { code: 'T1', nombre: 'Pletina 30×30', cant: nf * ((2 * n - 1) * 2 + 2), donde: 'Juntas entre camones y nudo pendolón-cumbrera, por las dos caras.', clavos: REGLAS.clavos.pletina },
+      { code: 'T2', nombre: 'Media pletina 15×30', cant: nf * (postsPF * 2 + nInter * 2 + 4), donde: 'Unión solera/puntal por las dos caras (clavar después de acuñar), puntal intermedio/cumbrera y apoyo de los camones en la cumbrera.', clavos: REGLAS.clavos.media },
       { code: 'T3', nombre: 'Media pletina triangular (lados de 30)', cant: nf * 4, donde: 'Esquinas puntal lateral/cumbrera, por las dos caras.', clavos: REGLAS.clavos.triangular }
     ];
     const sq30 = pletinas[0].cant + pletinas[1].cant / 2 + pletinas[2].cant / 2;
@@ -292,7 +292,7 @@
       if (!p.largas.length) return;
       const cods = [...new Set(p.largas.map(x => x.code))];
       const estruct = cods.some(c => /^(S|C|P|PI|PD|JC\d*|J|CE\d+)$/.test(c));
-      warn('alto', `Hay ${p.largas.length} pieza(s) de ${p.sec} más largas que vuestras barras de ${p.stock} cm (${cods.join(', ')}). ` + (estruct ? 'Soleras, cumbreras, puntales y cerchas no se empalman: consigue piezas más largas.' : 'Las riostras pueden ir en dos tramos solapados y clavados a un puntal.'));
+      warn('alto', `Hay ${p.largas.length} pieza(s) de ${p.sec} más largas que vuestras barras de ${p.stock} cm (${cods.join(', ')}). ` + (estruct ? 'Soleras, cumbreras, puntales y camones no se empalman: consigue piezas más largas.' : 'Las riostras pueden ir en dos tramos solapados y clavados a un puntal.'));
     });
 
     // capacidad orientativa (M6 p.23: sistema de dos puntales 10x10, FEMA/USACE)

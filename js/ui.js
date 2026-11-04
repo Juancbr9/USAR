@@ -401,7 +401,7 @@ function openForm(title, fields, onSave, extra = '') {
     const attrs = `name="${f.k}" class="input" ${f.required ? 'required' : ''} ${f.catalog ? `data-catalog="${f.catalog}"` : ''}`;
     if (f.type === 'checks') return (f.filter ? `<input class="input" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.label)}" oninput="const q = fold(this.value); this.nextElementSibling.querySelectorAll('.check-row').forEach(r => r.hidden = q && !fold(r.textContent).includes(q))">` : '') + `<div class="checks${f.filter ? ' scroll' : ''}">${f.options.map(([v, l, max]) => `
       <label class="check-row"><input type="checkbox" name="${f.k}" value="${esc(v)}" ${(f.value || []).includes(v) ? 'checked' : ''}><span>${esc(l)}</span>${max > 1 ? `<input class="input sm qty-in" type="number" name="${f.k}__q_${esc(v)}" min="1" max="${max}" value="${Math.min(max, f.qty?.[v] || max)}" inputmode="numeric" aria-label="Unidades de ${esc(l)}" onclick="event.stopPropagation()">` : ''}</label>`).join('')}
-      ${f.catalog ? `<input class="input sm check-new" name="${f.k}__new" aria-label="Añadir otra opción" placeholder="➕ Otra (separa con comas)" autocomplete="off">` : ''}</div>`;
+      ${f.catalog ? `<input class="input sm check-new" name="${f.k}__new" aria-label="Añadir otra opción" placeholder="➕ Otra (separa con comas)…" autocomplete="off">` : ''}</div>`;
     if (f.options) return `<select ${attrs} ${f.catalog ? 'onchange="catalogNew(this)"' : ''}>${f.options.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(f.value ?? '') ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     if (f.type === 'textarea') return `<span class="dictate-wrap"><textarea ${attrs} rows="${f.rows || 4}" placeholder="${esc(f.placeholder)}">${esc(f.value)}</textarea>${micButton()}</span>`;
     // Firma con el dedo (o el ratón): se guarda como imagen
@@ -418,7 +418,7 @@ function openForm(title, fields, onSave, extra = '') {
         <button type="button" class="link bad ${f.value ? '' : 'hidden'}" onclick="clearPhoto(this)">Quitar</button>
       </div>`;
     const dl = f.list ? `<datalist id="dl-${f.k}">${f.list.map(o => `<option value="${esc(o)}">`).join('')}</datalist>` : '';
-    return `<input ${attrs} type="${f.type || 'text'}" value="${esc(f.value)}" placeholder="${esc(f.placeholder)}" ${f.list ? `list="dl-${f.k}" autocomplete="off"` : ''} ${f.type === 'number' ? 'inputmode="decimal" min="0" step="any"' : ''}>${dl}`;
+    return `<input ${attrs} type="${f.type || 'text'}" value="${esc(f.value)}" placeholder="${esc(f.placeholder)}" ${f.list ? `list="dl-${f.k}" ` : ''}autocomplete="off" ${f.type === 'number' ? 'inputmode="decimal" min="0" step="any"' : ''}>${dl}`;
   };
   openModal(title, `
     <form id="modalForm" class="form">

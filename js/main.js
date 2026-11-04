@@ -13,6 +13,7 @@ document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = ic(el.da
 applyTheme();
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (!prefs.theme) applyTheme(); });
 navigator.storage?.persist?.().catch(() => {});   // pide al navegador que no borre los datos
+addEventListener('keydown', e => { const t = e.target; if ((e.key === 'Enter' || e.key === ' ') && t.matches?.('[role="button"]:not(button):not(a)') && !e.repeat) { e.preventDefault(); t.click(); } });
 addEventListener('keydown', e => { if (e.key === 'Escape') { if (closeZoom()) return; toggleDrawer(false); closeModal(); clearSearch(); } });
 addEventListener('hashchange', handleHash);
 

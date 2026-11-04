@@ -87,6 +87,31 @@ with sync_playwright() as p:
     a.evaluate("openApu('horfema'); apuSetIn('horfema', 'D', '300')"); a.wait_for_timeout(100)
     assert 'lateral de triángulo' in a.inner_text('.apu-calc')
 
+    # Maderas y medidas: se cambian centímetro a centímetro y todo se recalcula (T de 250 con solera de 15×5, cumbrera 10×15 y cuñas de 8)
+    a.evaluate("openApu('t'); apuSetIn('t', 'H', '250')"); a.wait_for_timeout(100)
+    a.click('.apu-calc .apu-more summary'); a.wait_for_timeout(100)
+    assert a.locator('.apu-mad-row').count() == 3, a.locator('.apu-mad-row').count()
+    a.fill('.apu-mad-row:has-text("Soleras") input >> nth=0', '15'); a.dispatch_event('.apu-mad-row:has-text("Soleras") input >> nth=0', 'change'); a.wait_for_timeout(80)
+    a.fill('.apu-mad-row:has-text("Soleras") input >> nth=1', '5'); a.dispatch_event('.apu-mad-row:has-text("Soleras") input >> nth=1', 'change'); a.wait_for_timeout(80)
+    a.evaluate("apuSetIn('t', 'mCg', '15'); apuSetIn('t', 'n_cu', '8')"); a.wait_for_timeout(100)
+    t = a.inner_text('.apu-calc'); assert '222 cm' in t and '15×5' in t, t        # 250 − 5 − 15 − 8
+    assert a.evaluate("apuCortes('t').pz.find(p => p.c === 'S').s") == '15×5'
+    assert '222 cm' in a.inner_text('#apu-mont') or a.evaluate("apuPaso('t', 1), document.querySelector('#apu-mont').innerText").find('222 cm') >= 0
+    a.click('.apu-calc button:has-text("Usar estas maderas en todos")'); a.wait_for_timeout(100)
+    assert a.evaluate("prefs.apuMad.S.a") == 15 and a.evaluate("apuCortes('dos').pz.find(p => p.c === 'S').s") == '15×5'
+    a.evaluate("setPref({ apuMad: {} }); apuMadReset('t')"); a.wait_for_timeout(100)
+    assert '226 cm' in a.inner_text('.apu-calc')
+    # Guía de corte: cada pieza con su dibujo (cómo se corta y cómo encaja), en todos los tipos
+    for tid in a.evaluate("Object.keys(APU_CORTES)"):
+        r = a.evaluate(f"(r => r.pz.map(p => apuGuiaPieza(p)))(apuCortes('{tid}'))")
+        for h in r:
+            if '<svg' not in h or any(x in h for x in ['NaN', 'undefined', 'Infinity']): problems.append(f'guía de corte de {tid} rota')
+    a.evaluate("openApu('solerafija'); apuSetIn('solerafija', 'ang', '45')"); a.wait_for_timeout(100)
+    a.locator('.apu-pieza:has(.arc-code:text-is("P")) .apu-guia summary').first.click(); a.wait_for_timeout(100)
+    g = a.inner_text('.apu-guia[open]'); assert '45° fuera de escuadra' in g and 'marca 10 cm' in g and 'tope' in g, g
+    assert a.locator('.apu-guia[open] svg.apu-svg').count() >= 1, a.locator('.apu-guia[open] svg').count()
+    a.screenshot(path=f'{OUT}/apuntalamientos-guia-corte.png', full_page=True)
+
     # Montaje con tus medidas: cada tipo con lista de cortes tiene su paso a paso con el dibujo a escala
     assert sorted(a.evaluate("Object.keys(APU_MONTAJE)")) == sorted(a.evaluate("Object.keys(APU_CORTES)"))
     for tid in a.evaluate("Object.keys(APU_MONTAJE)"):

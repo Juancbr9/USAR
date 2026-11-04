@@ -46,7 +46,7 @@ const SECTIONS = [
   ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help'],
   ['apuntalamientos', 'wrench', 'Apuntalamientos', 'Todos los tipos de los temas de la UME: dibujo, piezas, datos y montaje', 'help'],
   // La calculadora de arcos se abre desde «Apuntalamientos» (tipo «Apuntalamiento de arcos»)
-  ['arcos', 'wrench', 'Apuntalar arcos', 'Cuadro y cerchas a medida: lista de cortes, plantillas y montaje', 'help', '', true],
+  ['arcos', 'wrench', 'Apuntalar arcos', 'Cuadro y cercha de camones a medida: lista de cortes, plantillas y montaje', 'help', '', true],
   ['ajustes', 'grid', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
   ['listas', 'layers', 'Listas y opciones', 'Opciones de los desplegables: añade las vuestras', 'help'],
   ['manual', 'file', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help']
@@ -89,7 +89,7 @@ const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];
 function almacenGo(id, smooth) {
   almUnfold(id); document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
-const areaHeader = () => '';
+const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || 'USAR 242')}</h1>`;
 
 /* ---------- Vehículos (antes dentro de Operaciones) ---------- */
 // Aviso en la tarjeta del modelo si alguna de sus matrículas tiene la ITV caducada o en los próximos 30 días

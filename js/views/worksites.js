@@ -401,7 +401,7 @@ function monitorsPanel(w) {
       <div class="between sec-head"><div><h3 class="sec-title" style="margin:0">${ic('gauge')} Vigilancia estructural</h3>
         <p class="muted">Testigos de grietas, apuntalamientos e inclinación. Apuntalamientos cada 12 h y siempre tras una réplica.</p></div>
         <button class="btn btn-g btn-sm" onclick="monitorForm('${w.id}')">${ic('plus')} Punto</button></div>
-      ${list('arcs').filter(x => x.ws === w.id).map(x => `<button class="item" style="margin-bottom:8px" onclick="openArc('${x.id}')"><div><b>Arco apuntalado · ${esc(x.name)}</b><small>Cortes, cerchas y montaje</small></div>${ic('chev', 'i-sm')}</button>`).join('')}
+      ${list('arcs').filter(x => x.ws === w.id).map(x => `<button class="item" style="margin-bottom:8px" onclick="openArc('${x.id}')"><div><b>Arco apuntalado · ${esc(x.name)}</b><small>Cortes, cercha, camones y montaje</small></div>${ic('chev', 'i-sm')}</button>`).join('')}
       ${(w.monitors || []).length ? `<div class="list">${w.monitors.map(x => { const c = lastCheck(x); return `
         <button class="item ${due.has(x.id) ? 'over' : ''}" onclick="monitorCheck('${w.id}', '${x.id}')"><div><b>${esc(x.type)} · ${esc(x.place)}</b>
           <small>${c ? `Revisado ${fmtWhen(c.ts)} por ${esc(c.by)}${c.value ? ' · ' + esc(c.value) : ''}${c.changed ? ' · HA CAMBIADO' : ''}` : 'Sin revisar'} · cada ${x.every} h</small></div>
