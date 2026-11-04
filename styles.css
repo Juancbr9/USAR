@@ -1744,6 +1744,27 @@ img[data-img]:not([src]), img[data-img][src=""] { background: linear-gradient(10
 .apu-parts .muted { font-size: 14px; }
 .apu-dl dd .bad, .apu-dl dd.bad { color: var(--bad); font-weight: 700; }
 .apu-steps { padding-left: 22px; display: grid; gap: 6px; }
+/* Montaje paso a paso con las medidas: lo ya montado apagado y lo nuevo resaltado */
+:root { --apu-hl: #e4701e; }
+:root[data-theme="dark"] { --apu-hl: #ff9a4d; }
+.apu-svg .apu-old { opacity: .3; }
+.apu-svg .apu-fut { display: none; }
+:root[data-theme="dark"] .apu-svg .apu-old { opacity: .42; }
+.apu-svg .apu-new :is(.aw, .aw2, .ap, .ap2, .ac, .am, .am2, .am3, .ahol, .axg, .axb, .axw, .aes) { stroke: var(--apu-hl); stroke-width: calc(var(--s) * 2.6px); }
+.apu-svg .apu-new .acab, .apu-svg .apu-new .aring { stroke: var(--apu-hl); }
+.apu-svg .aring { fill: none; stroke: #c89600; stroke-width: calc(var(--s) * 3px); }
+.apu-dots { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 2px; }
+.apu-dot { min-width: 40px; height: 40px; padding: 0 8px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font: 800 16px var(--cond); }
+.apu-dot.done { background: var(--sunk); color: var(--muted); }
+.apu-dot.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.apu-step-t { font: 800 20px/1.2 var(--cond); margin: 12px 0 0; }
+.apu-mont-fig .apu-svg { max-height: 62vh; }
+.apu-pzs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.apu-pz { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--sunk); }
+.apu-pz .arc-code { margin: 0; min-width: 0; font-size: 15px; }
+.apu-mont-p { padding-left: 20px; margin: 10px 0 0; display: grid; gap: 6px; font-size: 15px; line-height: 1.45; }
+.apu-mont-btns { margin-top: 12px; flex-wrap: wrap; }
+@media print { #print .apu-print-step { break-inside: avoid; } #print .apu-print-step svg { width: 100%; max-height: 95mm; } }
 .apu-ref { font-size: 13px; margin: 4px 2px 0; }
 .apu-nav { justify-content: space-between; margin-top: 12px; }
 .apu-nav .btn { flex: 1 1 160px; white-space: normal; }

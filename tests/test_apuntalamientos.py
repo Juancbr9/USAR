@@ -1,5 +1,6 @@
 """Prueba de «Apuntalamientos»: todos los tipos de los temas de la UME con su dibujo (piezas numeradas y con nombre),
-filtros y buscador, calculadoras (vertical, torre, lateral de solera fija, zampeado y horizontal) y el paso a la calculadora de arcos.
+filtros y buscador, calculadoras (vertical, torre, lateral de solera fija, zampeado y horizontal), montaje paso a paso con las medidas
+y el paso a la calculadora de arcos.
 Uso: python3 tests/test_apuntalamientos.py  (con la app servida en APP_URL)"""
 import os, sys, pathlib
 from playwright.sync_api import sync_playwright
@@ -85,6 +86,39 @@ with sync_playwright() as p:
     assert 'Demasiado alto' in a.inner_text('.apu-calc')
     a.evaluate("openApu('horfema'); apuSetIn('horfema', 'D', '300')"); a.wait_for_timeout(100)
     assert 'lateral de triángulo' in a.inner_text('.apu-calc')
+
+    # Montaje con tus medidas: cada tipo con lista de cortes tiene su paso a paso con el dibujo a escala
+    assert sorted(a.evaluate("Object.keys(APU_MONTAJE)")) == sorted(a.evaluate("Object.keys(APU_CORTES)"))
+    for tid in a.evaluate("Object.keys(APU_MONTAJE)"):
+        a.evaluate(f"openApu('{tid}')"); a.wait_for_timeout(40)
+        n = a.locator('#apu-mont .apu-dot').count()
+        if n < 3: problems.append(f'montaje de {tid}: solo {n} pasos')
+        for k in range(n):
+            a.evaluate(f"apuPaso('{tid}', {k})")
+            box = a.evaluate("(() => { const s = document.querySelector('#apu-mont svg').viewBox.baseVal; return [s.width, s.height]; })()")
+            if not (box[0] > 0 and box[1] > 0): problems.append(f'montaje {tid} paso {k + 1}: dibujo vacío')
+            if a.locator('#apu-mont .apu-mont-p li').count() < 1: problems.append(f'montaje {tid} paso {k + 1}: sin texto')
+            seen(f'montaje {tid} paso {k + 1}'); wide(f'montaje {tid} paso {k + 1}')
+        a.evaluate(f"apuPaso('{tid}', 0)")
+    # Con las medidas de la calculadora: T de 250 cm → puntal de 226 cm, centrado a 45 cm
+    a.evaluate("openApu('t'); apuSetIn('t', 'H', '250'); apuSetIn('t', 'C', '90')"); a.wait_for_timeout(100)
+    a.click('#apu-mont button:has-text("Siguiente")'); a.wait_for_timeout(80)
+    t = a.inner_text('#apu-mont'); assert 'Paso 2 de' in t and '226 cm' in t and '45 cm' in t, t
+    assert a.locator('#apu-mont svg .apu-new').count() == 1 and a.locator('#apu-mont .apu-pz').count() == 2
+    a.click('#apu-mont button:has-text("Anterior")'); a.wait_for_timeout(80); assert 'Paso 1 de' in a.inner_text('#apu-mont')
+    a.click('#apu-mont .apu-dot >> nth=-1'); a.wait_for_timeout(80); assert 'Comprueba y revisa' in a.inner_text('#apu-mont')
+    assert a.locator('#apu-mont svg .apu-old').count() == 0 and a.locator('#apu-mont button:has-text("Desde el principio")').count() == 1
+    # Fila de 3 m: tres puntales a 30, 150 y 270 cm del extremo
+    a.evaluate("openApu('fila'); apuSetIn('fila', 'L', '300'); apuPaso('fila', 2)"); a.wait_for_timeout(100)
+    assert '30, 150, 270 cm' in a.inner_text('#apu-mont'), a.inner_text('#apu-mont')
+    # Las medidas cambian el dibujo y el texto al momento; el paso se mantiene
+    a.evaluate("apuSetIn('fila', 'L', '420')"); a.wait_for_timeout(100)
+    assert 'Paso 3 de' in a.inner_text('#apu-mont') and '30, 150, 270, 390 cm' in a.inner_text('#apu-mont'), a.inner_text('#apu-mont')
+    a.screenshot(path=f'{OUT}/apuntalamientos-montaje.png', full_page=True)
+    # Imprimir: todos los pasos con su dibujo
+    a.evaluate("window.print = () => { window._printed = true; }; apuMontPrint('fila')")
+    assert a.evaluate("window._printed") and a.locator('#print .apu-print-step').count() == a.locator('#apu-mont .apu-dot').count()
+    assert a.locator('#print .apu-print-step svg').count() == a.locator('#print .apu-print-step').count()
 
     # Siguiente y anterior; volver a la lista
     a.evaluate("openApu('t')"); a.click('.apu-nav button:has-text("Filas de puntales")'); a.wait_for_timeout(100)
