@@ -183,9 +183,9 @@ function docDetail(id) {
   const st = docState(d);
   openModal(`${d.type} · ${opName(d.op)}`, `
     <div class="row" style="margin-bottom:10px"><span class="tag ${st.cls}">${st.text}</span></div>
-    ${(d.imgs || []).map(k => `<img class="doc-full" data-img="${k}" alt="Foto del documento" onclick="openZoom(this.src, this.alt)">`).join('') || '<p class="muted">Sin fotos.</p>'}
+    ${(d.imgs || []).map(k => `<img class="doc-full" data-img="${k}" alt="Foto del documento" role="button" tabindex="0" onclick="openZoom(this.src, this.alt)">`).join('') || '<p class="muted">Sin fotos.</p>'}
     <p class="muted missing-note" style="margin:6px 0">La foto aún no ha llegado a este móvil (se hizo en otro y se está sincronizando).</p>
-    <dl class="dl">${d.number ? `<dt>Número</dt><dd><span class="reveal" data-n="${esc(d.number)}" onclick="this.textContent = this.dataset.n">${esc(maskNo(d.number))} · ver</span></dd>` : ''}
+    <dl class="dl">${d.number ? `<dt>Número</dt><dd><button type="button" class="link reveal" data-n="${esc(d.number)}" onclick="this.textContent = this.dataset.n">${esc(maskNo(d.number))} · ver</button></dd>` : ''}
       ${d.issued ? `<dt>Expedido</dt><dd>${fmtDate(d.issued)}</dd>` : ''}${d.expires ? `<dt>Caduca</dt><dd>${fmtDate(d.expires)}</dd>` : ''}${d.notes ? `<dt>Notas</dt><dd>${esc(d.notes)}</dd>` : ''}</dl>
     <div class="row"><button class="btn btn-g" onclick="docForm('${d.op}', '${id}')">${ic('pencil')} Editar</button>
       ${(d.imgs || []).length ? `<button class="btn btn-g" onclick="shareDocImages('${id}')">${ic('share')} Enviar fotos</button>` : ''}</div>`);

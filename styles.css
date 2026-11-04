@@ -1774,3 +1774,42 @@ img[data-img]:not([src]), img[data-img][src=""] { background: linear-gradient(10
 .apu-dl dt:first-child { margin-top: 0; }
 .apu-dl dd { color: var(--ink); font-weight: 400; }
 @media (min-width: 700px) { .apu-dl { grid-template-columns: minmax(180px, 30%) 1fr; gap: 8px 16px; } .apu-dl dt { margin-top: 0; } }
+
+/* ==================== PASE DE DISEÑO (skills taste y Web Interface Guidelines) ==================== */
+/* Bordes de panel suaves (los controles siguen con --line-2, más marcado) */
+:root:not([data-theme="dark"]):not([data-sun]) { --line: #e1e5de; }
+/* Un borde o una sombra, nunca los dos: lo que está en la página es plano; solo flota lo que flota (menú, ventanas, avisos) */
+body { background-image: none; }
+.panel, .dash-kpi, .dash-q, .tile, .op-tile, .item:not(.check), .btn-g { box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  button.item:hover, .dash-kpi:hover, .dash-q:hover, .tile:hover, .op-tile:hover, .doc-card:hover { transform: none; box-shadow: none; border-color: var(--line-2); }
+  .btn-g:hover { box-shadow: none; background: var(--sunk); }
+}
+/* Botón principal: amarillo plano, sin degradado ni brillo */
+.btn-a { background: var(--yellow); box-shadow: none; }
+@media (hover: hover) and (pointer: fine) { .btn-a:hover { background: var(--yellow-2); filter: none; box-shadow: none; } }
+/* Indicadores: manda la cifra; el icono, sin caja de color */
+.dash-kpi-i { width: auto; height: auto; border-radius: 0; background: none; color: var(--muted); justify-items: start; margin-bottom: 6px; }
+/* Sin etiquetas diminutas en mayúsculas: fecha en frase normal y nada por debajo de 11 px */
+.hero-date { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.hero-date::first-letter { text-transform: uppercase; }
+.ring small { font-size: 11px; letter-spacing: 0; }
+/* Títulos sin palabras sueltas en la última línea */
+h1, h2, h3, h4, .sec-title, .apu-step-t, .hello { text-wrap: balance; }
+p, .muted, .callout p { text-wrap: pretty; }
+/* La cabecera y la barra de abajo no tapan lo enfocado ni los saltos */
+html { scroll-padding-top: calc(var(--sa-t) + 76px); scroll-padding-bottom: calc(var(--nav-h) + var(--sa-b) + 16px); }
+/* Foco visible también donde el campo no lleva borde */
+.who select:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; border-radius: 4px; }
+.finder-in:focus-within { box-shadow: 0 0 0 3px rgba(245, 184, 0, .45); }
+#view:focus { outline: none; }
+/* Menú lateral: el desplazamiento no pasa a la página de debajo */
+.drawer-panel { overscroll-behavior: contain; }
+/* Saltar al contenido (solo se ve con el teclado) */
+.skip { position: fixed; left: 12px; top: -60px; z-index: 300; background: var(--yellow); color: var(--on-yellow); font-weight: 700; padding: 10px 14px; border-radius: var(--r-sm); }
+.skip:focus { top: calc(var(--sa-t) + 10px); }
+/* Lo que hace de botón sin serlo: mano y foco */
+[role="button"]:not(button) { cursor: pointer; }
+button.reveal { font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; padding: 0; min-height: 0; }
+h1.sr-only { font-size: 16px; }
+.area-chip { text-transform: none; letter-spacing: 0; font: 700 12px var(--sans); }

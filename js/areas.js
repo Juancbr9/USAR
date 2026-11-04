@@ -89,7 +89,7 @@ const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];
 function almacenGo(id, smooth) {
   almUnfold(id); document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
-const areaHeader = () => '';
+const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || 'USAR 242')}</h1>`;
 
 /* ---------- Vehículos (antes dentro de Operaciones) ---------- */
 // Aviso en la tarjeta del modelo si alguna de sus matrículas tiene la ITV caducada o en los próximos 30 días

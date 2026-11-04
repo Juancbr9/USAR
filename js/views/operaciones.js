@@ -392,7 +392,7 @@ const extraText = x => (+x.qty > 1 ? x.qty + ' × ' : '') + x.name;
 function extrasForm(mid) {
   if (!soloFlota()) return;
   const m = mget(mid), dests = destOptions(m), rows = [...(m.extras || []), { name: '', qty: 1, in: 'cont' }];
-  const row = x => `<div class="extra-row"><input class="input" name="name" value="${esc(x.name)}" placeholder="Ej: Puntales de madera" aria-label="Material">
+  const row = x => `<div class="extra-row"><input class="input" name="name" value="${esc(x.name)}" placeholder="Ej.: puntales de madera…" aria-label="Material">
     <input class="input qty" name="qty" type="number" min="1" inputmode="numeric" value="${x.qty || 1}" aria-label="Cantidad">
     <select class="input" name="in" aria-label="Dónde va">${dests.map(([k, l]) => `<option value="${esc(k)}" ${(x.in || 'cont') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
   openModal('Material extra', `
