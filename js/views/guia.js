@@ -45,7 +45,7 @@ const GUIDE = [
       'Piezas grandes entre dos o más; avisar antes de levantar. Pinturas con la cara hacia dentro, nunca enrolladas.', 'Las piezas que se sueltan van con el mismo número en una bolsa aparte.'])}
     <b>Según la amenaza</b>${ul(['Fuego: no limpiar el hollín; cubrir lo que queda con mantas ignífugas.', 'Lava y ceniza: cubrir y sellar huecos; la ceniza raya, no frotar.',
       'Agua: elevar del suelo; papel y libros mojados en bolsa y al frío (congelar en 48 h); no separar hojas.', 'Terremoto: apuntalar arcos y estabilizar columnas con eslingas antes de entrar.'])}
-    <b>Estabilización en edificios históricos</b>${ul(['Arcos: apuntalar con cerchas a la medida, con plantilla del contorno; solera bien asentada y nivelada.',
+    <b>Estabilización en edificios históricos</b>${ul(['Arcos: apuntalar con una cercha de camones a la medida, con plantilla del contorno; solera bien asentada y nivelada.',
       'Columnas: cintas o eslingas tensoras con tablones, cierres opuestos y tensados en orden.', 'Siempre en binomios y con medidas de seguridad extremas.'])}`],
 
   ['senales', 'megaphone', 'Señales y luces', () => `${signalButtons('')}
@@ -100,9 +100,9 @@ const GUIDE = [
       ['Lateral', 'Ángulo de 30° a 60°. Triángulos cada ≤ 2,4 m, con freno'], ['Horizontal', 'Puntal ≤ 2,4 m, sistemas cada ≤ 2,4 m, riostras en cruz'],
       ['Holmatro', '10 t por puntal. Extensiones: SX1 125 mm blanca · SX2 250 azul · SX5 500 amarilla · SX10 1000 verde · SX15 1500 roja']])}
     ${ul(['Prefabricar en zona segura. Medir dos veces, cortar una.', 'Revisar cada 12 h y siempre después de una réplica.', 'Holmatro: pocas extensiones, las cortas al final; dejar 10 cm para cambiar a madera.',
-      'Arcos: cuadro (solera, puntales en los extremos y cumbrera) y cerchas a la medida del arco; puntal intermedio por cada 1,50 m de luz.'])}
+      'Arcos: cuadro (solera, puntales en los extremos y cumbrera) y cercha (camones) a la medida del arco; puntal intermedio por cada 1,50 m de luz.'])}
     <div class="row" style="margin-top:12px"><button class="btn btn-a" onclick="go('apuntalamientos')">${ic('wrench')} Todos los apuntalamientos, con dibujo</button>
-      <button class="btn btn-g" onclick="go('arcos')">${ic('wrench')} Apuntalar un arco: cortes y cerchas</button></div>`],
+      <button class="btn btn-g" onclick="go('arcos')">${ic('wrench')} Apuntalar un arco: cortes, cercha y camones</button></div>`],
 
   ['corte', 'wrench', 'Corte y perforación', () => ul([
     'Herramienta adecuada al material. Marca el corte con pintura. Protección auditiva y respiratoria.',

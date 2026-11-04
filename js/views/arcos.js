@@ -1,6 +1,6 @@
 'use strict';
-// USAR 242 · Apuntalar arcos: cuadro (solera, puntales y cumbrera) y cerchas a la medida del arco.
-// Con las medidas A–G da el dibujo, la lista de cortes con rótulos, el trazado de cada cercha sobre el tablón,
+// USAR 242 · Apuntalar arcos: cuadro (solera, puntales y cumbrera) y cercha (el arco de camones) a la medida.
+// Con las medidas A–G da el dibujo, la lista de cortes con rótulos, el trazado de cada camón sobre el tablón,
 // cómo sacar las piezas de las barras y el orden de montaje. El cálculo está en js/arcos.js (ARCO).
 // Cada arco se guarda en «arcs» y se comparte con el equipo; puede ir unido a un worksite (vigilancia cada 12 h).
 
@@ -10,7 +10,7 @@ const ARC_NUMS = ['Larr', 'Lsuelo', 'Hizq', 'Hder', 'Hclave', 'hq', 'fondo', 'ta
   'holguraLateral', 'holguraArco', 'huecoCunas', 'sepMax', 'anchoCorrea', 'grosorCorrea'];
 const ARC_SECCIONES = [['10x10', '10×10'], ['15x15', '15×15'], ['20x7x2', '2 tablones 20×7 embridados']];
 const ARC_RIOSTRAS = ['tabla 15×2,5', 'listón 5×10', 'tabla 20×2,5', 'tablón 20×7'];
-const ARC_TABS = [['alzado', 'building', 'Alzado'], ['fondo', 'layers', 'Fondo'], ['cortes', 'list', 'Cortes'], ['cerchas', 'wrench', 'Cerchas'], ['plan', 'calc', 'Plan de corte'], ['montaje', 'check', 'Montaje']];
+const ARC_TABS = [['alzado', 'building', 'Alzado'], ['fondo', 'layers', 'Fondo'], ['cortes', 'list', 'Cortes'], ['cerchas', 'wrench', 'Camones'], ['plan', 'calc', 'Plan de corte'], ['montaje', 'check', 'Montaje']];
 const ARC_TIPO = { 'medio punto': 'Medio punto', rebajado: 'Rebajado', apuntado: 'Apuntado' };
 const ARC_NIVEL = { alto: ['bad', 'Atención'], medio: ['warn', 'Revisar'], info: ['info', 'Nota'] };
 // Las medidas que se toman en el arco (letra, nombre, explicación)
@@ -47,7 +47,7 @@ function viewArcos() {
     <div class="panel">
       <button class="link" onclick="openApu('arco')">${ic('back', 'i-sm')} Apuntalamiento de arcos</button>
       <div class="between sec-head"><div><h2>Apuntalar arcos</h2>
-        <p class="muted">Cuadro y cerchas a la medida del arco: dibujo, lista de cortes con rótulos, plantilla de cada cercha y montaje. Según el Manual de Campo USAR y los temas de apuntalamiento de la UME.</p></div>
+        <p class="muted">Cuadro y cercha a la medida del arco: dibujo, lista de cortes con rótulos, plantilla de cada camón y montaje. Según el Manual de Campo USAR y los temas de apuntalamiento de la UME.</p></div>
         <button class="btn btn-a" onclick="arcForm()">${ic('plus')} Arco</button></div>
       ${arcs.length ? `<div class="list">${arcs.map(x => { const r = arcCalc(x), ws = arcWs(x), pend = arcPending(x, r);
         return `<button class="item" onclick="openArc('${x.id}')"><div class="grow"><b>${esc(x.name || 'Arco')}</b>
@@ -93,15 +93,15 @@ function arcWoodForm(id) {
   openForm('Madera y opciones', [
     { k: 'seccion', label: 'Puntales, solera y cumbrera', value: a.seccion, options: ARC_SECCIONES },
     { k: 'riostra', label: 'Riostras', value: a.riostra, options: [...new Set([...ARC_RIOSTRAS, a.riostra])].map(x => [x, x]) },
-    { k: 'tablonAncho', label: 'Tablón de las cerchas: ancho (cm)', type: 'number', value: a.tablonAncho, required: true },
-    { k: 'tablonGrueso', label: 'Tablón de las cerchas: grueso (cm)', type: 'number', value: a.tablonGrueso, required: true },
+    { k: 'tablonAncho', label: 'Tablón de los camones: ancho (cm)', type: 'number', value: a.tablonAncho, required: true },
+    { k: 'tablonGrueso', label: 'Tablón de los camones: grueso (cm)', type: 'number', value: a.tablonGrueso, required: true },
     { k: 'stockViga', label: 'Largo de vuestras vigas (cm)', type: 'number', value: a.stockViga, required: true },
     { k: 'stockTablon', label: 'Largo de tablones y tablas (cm)', type: 'number', value: a.stockTablon, required: true },
     yn('paso', '¿Hay que dejar paso por el arco?', 'Sí: sin puntales intermedios ni X', 'No'),
     yn('cumbreraDoble', 'Cumbrera doble', 'Sí (recomendado)', 'No'),
-    yn('correas', 'Correas de reparto sobre las cerchas'),
+    yn('correas', 'Correas de reparto sobre los camones'),
     { k: 'holguraLateral', label: 'Holgura en el ancho (cm, total)', type: 'number', value: a.holguraLateral },
-    { k: 'holguraArco', label: 'Holgura cercha–intradós (cm)', type: 'number', value: a.holguraArco },
+    { k: 'holguraArco', label: 'Holgura camones–intradós (cm)', type: 'number', value: a.holguraArco },
     { k: 'huecoCunas', label: 'Cuñas bajo el puntal (cm)', type: 'number', value: a.huecoCunas },
     { k: 'sepMax', label: 'Separación máx. entre pórticos (cm)', type: 'number', value: a.sepMax },
     { k: 'anchoCorrea', label: 'Correas: ancho (cm)', type: 'number', value: a.anchoCorrea },
@@ -163,7 +163,7 @@ function arcDetail(a) {
     <div class="status arc-kpis">
       <div class="kpi"><div><small>Pórticos</small><b>${r.nf}</b></div></div>
       <div class="kpi"><div><small>Puntales / pórtico</small><b>${2 + r.nInter}</b></div></div>
-      <div class="kpi"><div><small>Cerchas / pórtico</small><b>${2 * r.n}</b></div></div>
+      <div class="kpi"><div><small>Camones por cercha</small><b>${2 * r.n}</b></div></div>
       <div class="kpi ${pend ? '' : 'ok'}"><div><small>Piezas por cortar</small><b>${pend}<span class="arc-of">/${total}</span></b></div></div>
     </div>
     ${r.checkQ ? `<p class="muted arc-q">Comprobación F: medido ${arcF(r.checkQ.medido)} cm, previsto ${arcF(r.checkQ.previsto)} cm.${Math.abs(r.checkQ.dif) <= 3 ? ' La forma cuadra.' : ''}</p>` : ''}
@@ -178,28 +178,29 @@ const ARC_TAB_VIEW = {
   alzado: (a, r) => `
     <div class="arc-fig">${arcSvgAlzado(r)}</div>
     <div class="arc-legend">${[['S', 'solera'], ['TA', 'tacos'], ['P', 'puntal lateral'], ...(r.nInter ? [['PI', 'puntal intermedio']] : []), ['J', 'jabalcón de cuadro'], ...(r.paso ? [] : [['RX', 'riostras en X']]),
-      ['C', r.cumbreraDoble ? 'cumbrera doble' : 'cumbrera'], ['AT', 'atado de cercha'], ['PD', 'pendolón'], ...(r.jab.length ? [['JC', 'jabalcones de cercha']] : []), ['CE', 'cerchas'], ...(r.nCorr ? [['CR', 'correas']] : [])]
+      ['C', r.cumbreraDoble ? 'cumbrera doble' : 'cumbrera'], ['AT', 'atado de cercha'], ['PD', 'pendolón'], ...(r.jab.length ? [['JC', 'jabalcones de cercha']] : []), ['CE', 'camones'], ...(r.nCorr ? [['CR', 'correas']] : [])]
       .map(([c, t]) => `<span><b>${c}</b> ${t}</span>`).join('')}<span class="arc-wedge">▲ cuñas</span></div>
-    <p class="muted">Vista desde la cara A. El cuadro se fabrica ${arcF(r.gLat)} cm más estrecho que el hueco (cuñas en un extremo de la solera y en el contrario de la cumbrera) y las cerchas ${arcF(r.gArco)} cm por debajo del intradós${r.nCorr ? ` más ${arcF(r.tCorr)} cm de correa` : ''}; ese hueco se cierra con calzos finos, sin levantar el arco.</p>`,
+    <p class="muted">Vista desde la cara A. El cuadro se fabrica ${arcF(r.gLat)} cm más estrecho que el hueco (cuñas en un extremo de la solera y en el contrario de la cumbrera) y los camones ${arcF(r.gArco)} cm por debajo del intradós${r.nCorr ? ` más ${arcF(r.tCorr)} cm de correa` : ''}; ese hueco se cierra con calzos finos, sin levantar el arco.</p>`,
 
   fondo: (a, r) => `
     <div class="arc-fig arc-fig-fondo">${arcSvgFondo(r)}</div>
-    <p class="muted">Corte por el eje del arco, mirando de lado. ${r.nf} pórtico${r.nf > 1 ? 's' : ''} de ${r.sec.b} cm de grueso, con ejes a ${r.zs.map(z => arcF(z)).join(', ')} cm de la cara A${r.nf > 1 ? ` (separación ${arcF(r.sep)} cm). Se atan con riostras longitudinales (RL) por la cara interior de los puntales y entre pendolones, y diagonales (RD) en cada lado` : ''}.${r.nCorr ? ' Las correas (CR) van atravesadas sobre las cerchas de todos los pórticos.' : ''}</p>`,
+    <p class="muted">Corte por el eje del arco, mirando de lado. ${r.nf} pórtico${r.nf > 1 ? 's' : ''} de ${r.sec.b} cm de grueso, con ejes a ${r.zs.map(z => arcF(z)).join(', ')} cm de la cara A${r.nf > 1 ? ` (separación ${arcF(r.sep)} cm). Se atan con riostras longitudinales (RL) por la cara interior de los puntales y entre pendolones, y diagonales (RD) en cada lado` : ''}.${r.nCorr ? ' Las correas (CR) van atravesadas sobre los camones de todos los pórticos.' : ''}</p>`,
 
   cortes: (a, r) => {
-    const done = a.done || {}, fams = { viga: `Escuadría (${r.sec.nombre})`, tablon: `Cerchas (tablón ${arcF(r.inp.tablonAncho)}×${arcF(r.inp.tablonGrueso)})`, riostra: 'Riostras, atados y correas' };
+    const done = a.done || {}, fams = { viga: `Escuadría (${r.sec.nombre})`, tablon: `Camones de la cercha (tablón ${arcF(r.inp.tablonAncho)}×${arcF(r.inp.tablonGrueso)})`, riostra: 'Riostras, atados y correas' };
     let last = '', h = '<p class="muted">Marca cada pieza al cortarla. Escribe su rótulo bien visible (qué es, medida y equipo).</p>';
     r.piezas.forEach(p => {
       if (p.fam !== last) { h += `${last ? '</div>' : ''}<h3 class="sec-title arc-fam">${esc(fams[p.fam])}</h3><div class="list">`; last = p.fam; }
       h += `<label class="check-row arc-cut ${done[p.code] ? 'done' : ''}"><input type="checkbox" ${done[p.code] ? 'checked' : ''} onchange="arcDone('${a.id}', '${esc(p.code)}', this.checked)">
         <span class="grow"><span class="arc-cut-head"><b class="arc-code">${esc(p.code)}</b><b>${esc(p.nombre)}</b><span class="arc-len">${arcF(p.largo, 0)} cm × ${p.cant}</span></span>
           <small>${esc(p.seccion)} · ${esc(p.donde)}</small><small class="arc-cut-how">${esc(p.corte)}</small>
-          <span class="arc-label">${esc(p.corto)} ${arcF(p.largo, 0)} cm${a.team ? ' · ' + esc(a.team) : ''}</span></span></label>`;
+          <span class="arc-label">${esc(p.corto)} ${arcF(p.largo, 0)} cm${a.team ? ' · ' + esc(a.team) : ''}</span></span></label>
+        ${p.geo ? `<details class="apu-guia arc-guia"><summary>${ic('wrench', 'i-sm')} Cómo se corta y cómo encaja</summary>${apuGuiaPieza({ s: p.seccion, l: p.largo, n: p.nombre, geo: p.geo })}</details>` : ''}`;
     });
     h += '</div><h3 class="sec-title arc-fam">Pletinas, cuñas, calzos y clavos</h3>';
     const rows = [...r.pletinas.map(p => [p.code, p.nombre, p.cant, `${p.donde} ${p.clavos} clavos cada una.`]),
       ['W', `Par de cuñas ${r.cunas.medida} cm`, r.cunas.cant, 'Un par bajo cada puntal, uno en un extremo de la solera y otro en el extremo contrario de la cumbrera. Dejar al menos 2,5 cm de sobrante y clavar tras ajustar.'],
-      ['Z', 'Calzos o cuñas finas', r.calzos, `Entre ${r.nCorr ? 'correas' : 'cerchas'} e intradós, desde las dos caras. Rellenar todos los huecos, solo hasta contacto firme.`],
+      ['Z', 'Calzos o cuñas finas', r.calzos, `Entre ${r.nCorr ? 'correas' : 'camones'} e intradós, desde las dos caras. Rellenar todos los huecos, solo hasta contacto firme.`],
       ['', 'Clavos de 6,5 cm', r.nClavos, 'Con un 20 % de margen. Patrones de clavado del manual.']];
     h += `<div class="list">${rows.map(([c, n, q, d]) => `<div class="item arc-extra"><div class="grow"><span class="arc-cut-head"><b class="arc-code">${esc(c)}</b><b>${esc(n)}</b><span class="arc-len">× ${arcF(q, 0)}</span></span><small>${esc(d)}</small></div></div>`).join('')}</div>
       <p class="muted">Contrachapado de 2–3 cm: unos ${r.tableros} tablero${r.tableros === 1 ? '' : 's'} de 250×122 para todas las pletinas.</p>`;
@@ -207,7 +208,7 @@ const ARC_TAB_VIEW = {
   },
 
   cerchas: (a, r) => `
-    <p class="muted">Cada cercha sale de un tablón de ${arcF(r.inp.tablonAncho)} cm: el borde interior es el canto recto del tablón y solo se corta la curva exterior (radio ${arcF(r.Ro)} cm${r.A.tipo === 'apuntado' ? ', dos centros' : ''}). En los extremos queda al menos ⅓ del ancho (${arcF(r.cantoMin)} cm, línea discontinua). Marca las ordenadas desde el canto de arriba y únelas con un listón flexible, o usa una plantilla de cartón presentada en el arco. Corta con motosierra, despacio, siguiendo el trazo.</p>
+    <p class="muted">La cercha es todo el arco de arriba y cada pieza que la forma es un camón. Cada camón sale de un tablón de ${arcF(r.inp.tablonAncho)} cm: el borde interior es el canto recto del tablón y solo se corta la curva exterior (radio ${arcF(r.Ro)} cm${r.A.tipo === 'apuntado' ? ', dos centros' : ''}). En los extremos queda al menos ⅓ del ancho (${arcF(r.cantoMin)} cm, línea discontinua). Marca las ordenadas desde el canto de arriba y únelas con un listón flexible, o usa una plantilla de cartón presentada en el arco. Corta con motosierra, despacio, siguiendo el trazo.</p>
     ${r.tipos.map(t => { const c = t.ref, cant = r.piezas.find(p => p.code === t.code)?.cant || 0; return `
       <div class="arc-cercha">
         <div><h3 class="sec-title">${ic('wrench')} ${esc(t.code)} · ${cant} piezas</h3>
@@ -233,20 +234,20 @@ const ARC_TAB_VIEW = {
   montaje: (a, r) => `
     <ol class="tips arc-steps">
       <li><b>Valorar y organizar.</b> El especialista de estructuras valora el arco (grietas, dovelas desplazadas, clave descendida). Si está dañado, antes un apuntalamiento de emergencia. Equipo de colocación (jefe, medidor y tres apuntaladores) y equipo de corte (jefe, tres cortadores y parquista), con la zona de corte balizada y separada.</li>
-      <li><b>Medir dos veces.</b> El medidor toma A–G y las pasa al jefe de corte. Si F no cuadra o el arco está deformado, saca las cerchas con plantilla de cartón o peine copiador.</li>
+      <li><b>Medir dos veces.</b> El medidor toma A–G y las pasa al jefe de corte. Si F no cuadra o el arco está deformado, saca los camones con plantilla de cartón o peine copiador.</li>
       <li><b>Cortar y rotular.</b> Con la lista de cortes; cada pieza con su rótulo. Mecaniza los cortes repetidos con escantillón.</li>
-      <li><b>Prefabricar las cerchas en el suelo.</b> Dibuja el arco con una cuerda desde el centro de la cumbrera, presenta encima las cerchas, el pendolón y los jabalcones de cercha, clava pletinas de 30×30 en cada junta por las dos caras y la tabla de atado (AT) en los pies.</li>
+      <li><b>Prefabricar la cercha en el suelo.</b> Dibuja el arco con una cuerda desde el centro de la cumbrera, presenta encima los camones, el pendolón y los jabalcones de cercha, clava pletinas de 30×30 en cada junta por las dos caras y la tabla de atado (AT) en los pies.</li>
       <li><b>Solera.</b> Asentada y a nivel, con un par de cuñas en un extremo metidas a la vez con golpes ligeros. En suelo blando, zapatas de tablón bajo cada puntal.</li>
       <li><b>Cuadro.</b> Cumbrera${r.cumbreraDoble ? ' doble' : ''} con sus cuñas en el extremo contrario; primer puntal bajo el lado de las cuñas de la cumbrera, luego el otro${r.nInter ? ' y los intermedios' : ''}, con un par de cuñas debajo de cada uno y a plomo. Tacos (TA) encerrando las cuñas, medias pletinas triangulares en las esquinas y jabalcones de cuadro (J).</li>
-      <li><b>Subir las cerchas.</b> Centradas sobre la cumbrera (cara superior a ${arcF(r.yCum)} cm del suelo); clava las medias pletinas de apoyo de las cerchas y del pendolón.</li>
+      <li><b>Subir la cercha.</b> Centradas sobre la cumbrera (cara superior a ${arcF(r.yCum)} cm del suelo); clava las medias pletinas de apoyo de los camones y del pendolón.</li>
       <li><b>Atar los pórticos.</b> ${r.nf > 1 ? `Los ${r.nf} pórticos, con riostras longitudinales (RL) y diagonales (RD).` : 'Un solo pórtico: arriostra bien y comprueba que no se mueve fuera de su plano.'}</li>
-      <li><b>Poner en carga.</b> ${r.nCorr ? 'Coloca las correas sobre las cerchas. ' : ''}Rellena todos los huecos entre cerchas e intradós con calzos desde las dos caras; después aprieta por igual las cuñas de los puntales, clávalas y cierra las medias pletinas. No levantes el arco: solo contacto.</li>
+      <li><b>Poner en carga.</b> ${r.nCorr ? 'Coloca las correas sobre los camones. ' : ''}Rellena todos los huecos entre camones e intradós con calzos desde las dos caras; después aprieta por igual las cuñas de los puntales, clávalas y cierra las medias pletinas. No levantes el arco: solo contacto.</li>
       <li><b>Arriostrar y comprobar.</b> ${r.paso ? 'Sin X para dejar paso: revisa jabalcones y riostras longitudinales' : 'Riostras en X por las dos caras, clavadas a solera, puntales y cumbrera'}${r.Hp > 180 ? '; riostra horizontal a media altura' : ''}. Comprueba con el nivel.</li>
       <li><b>Revisar.</b> Cada 12 horas (en el cambio de turno) y siempre después de una réplica.${arcWs(a) ? '' : ' Si el arco está en un worksite, únelo en «Medidas» y añádelo a la vigilancia.'}</li>
     </ol>
     <table class="ref"><tr><th>Regla</th><th>Fuente</th></tr>${[
       ['Puntales en los extremos con jabalcones; uno intermedio por cada 1,50 m de luz', 'M8 p.7'],
-      ['Cerchas: un puntal vertical y dos inclinados desde el centro de la cumbrera; ideal 90° y 45°', 'M8 p.8–10'],
+      ['Cercha: un puntal vertical y dos inclinados desde el centro de la cumbrera; ideal 90° y 45°', 'M8 p.8–10'],
       ['Respetar ⅓ del tablón; borde interior recto y curva exterior', 'M8 p.8'],
       ['Prefabricado 4 cm menor que el hueco; restar 4 cm con cuñas de 5×10', 'MC p.111 · M6 p.20, 68'],
       ['Riostras a compresión ≤ 2,25 m; en X (solo tracción) hasta 3 m', 'M6 p.4'],
@@ -263,7 +264,7 @@ function arcText(id) {
   if (!r || r.error) return '';
   const ws = arcWs(a);
   return [...waHead('🏛️', 'APUNTALAMIENTO DE ARCO', a.name), `${ARC_TIPO[r.A.tipo]} · luz ${arcF(r.inp.Larr)} cm · arranque ${arcF(r.Hmin)} cm · clave ${arcF(r.inp.Hclave)} cm · fondo ${arcF(r.inp.fondo)} cm`,
-    `${r.nf} pórticos · ${2 + r.nInter} puntales y ${2 * r.n} cerchas por pórtico${ws ? ` · worksite ${ws.code}` : ''}${a.team ? ` · ${a.team}` : ''}`,
+    `${r.nf} pórticos · ${2 + r.nInter} puntales y ${2 * r.n} camones por cercha${ws ? ` · worksite ${ws.code}` : ''}${a.team ? ` · ${a.team}` : ''}`,
     ...waSec('🪚', 'CORTES (cm)'), ...r.piezas.map(p => `${waB(p.code)} ${p.nombre} · ${p.seccion} · ${p.largo} × ${p.cant}`),
     ...waSec('🔩', 'PLETINAS, CUÑAS Y CLAVOS'), ...r.pletinas.map(p => `${p.code} ${p.nombre} × ${p.cant}`), `W Pares de cuñas ${r.cunas.medida} × ${r.cunas.cant}`, `Z Calzos finos × ${r.calzos}`, `Clavos 6,5 cm ≈ ${r.nClavos}`,
     ...(r.warnings.length ? [...waSec('⚠️', 'AVISOS'), ...r.warnings.map(w => '• ' + w.txt)] : [])].join('\n');
@@ -279,7 +280,7 @@ function printArc(id) {
     <table><tr><th></th><th>Código</th><th>Pieza</th><th>Sección</th><th>Largo</th><th>Cant.</th><th>Corte</th><th>Rótulo</th></tr>
       ${r.piezas.map(p => `<tr><td>☐</td><td><b>${esc(p.code)}</b></td><td>${esc(p.nombre)}</td><td>${esc(p.seccion)}</td><td>${p.largo} cm</td><td>${p.cant}</td><td>${esc(p.corte)}</td><td>${esc(p.corto)} ${p.largo} cm${a.team ? ' · ' + esc(a.team) : ''}</td></tr>`).join('')}</table>
     <p>${r.pletinas.map(p => `${p.code} ${esc(p.nombre)} × ${p.cant}`).join(' · ')} · W pares de cuñas ${esc(r.cunas.medida)} × ${r.cunas.cant} · Z calzos × ${r.calzos} · clavos 6,5 cm ≈ ${r.nClavos}</p>
-    ${r.tipos.map(t => `<h2>Cercha ${esc(t.code)} · ordenadas desde el canto de arriba</h2>
+    ${r.tipos.map(t => `<h2>Camón ${esc(t.code)} · ordenadas desde el canto de arriba</h2>
       <p>Largo ${arcF(t.ref.len)} cm · flecha ${arcF(t.ref.flecha)} cm · cortes ${arcF(t.ref.cutS)}° y ${arcF(t.ref.cutK)}° fuera de escuadra · radio ${arcF(r.Ro)} cm</p>
       <table><tr><th>A lo largo (cm)</th>${t.ref.ord.map(o => `<td>${arcF(o.s)}</td>`).join('')}</tr><tr><th>Hasta la curva (cm)</th>${t.ref.ord.map(o => `<td>${o.ext == null ? '—' : arcF(o.ext)}</td>`).join('')}</tr></table>`).join('')}
     ${r.warnings.length ? `<h2>Avisos</h2><ul>${r.warnings.map(w => `<li>${esc(w.txt)}</li>`).join('')}</ul>` : ''}
@@ -327,7 +328,7 @@ function arcSvgAlzado(r) {
   const Ls = inp.Lsuelo || inp.Larr, open = [{ x: -Ls / 2, y: 0 }, { x: -inp.Larr / 2, y: Ha }, ...left, ...right, { x: inp.Larr / 2, y: Ha }, { x: Ls / 2, y: 0 }];
   const a = sec.a, ts = sec.ts, gw = r.gapW, yC = r.yCum, tcT = r.tcTot, xL = -r.lCumb / 2, xR = r.lCumb / 2, yTop = yC - tcT;
   const labels = [];
-  let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Alzado del apuntalamiento: solera, puntales, cumbrera, pendolón, jabalcones y cerchas" font-family="var(--sans)">
+  let s = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" role="img" aria-label="Alzado del apuntalamiento: solera, puntales, cumbrera, pendolón, jabalcones y camones de la cercha" font-family="var(--sans)">
     <defs><pattern id="arc-hw" width="${fs}" height="${fs}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${fs}" height="${fs}" fill="var(--arc-wall)"/><line x1="0" y1="0" x2="0" y2="${fs}" stroke="var(--arc-wall-line)" stroke-width="${sw * 1.5}"/></pattern>
     <marker id="arc-am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker></defs>
     <path fill-rule="evenodd" fill="url(#arc-hw)" d="M${X(x0 + 8)} ${Y(0)}L${X(x0 + 8)} ${Y(inp.Hclave + 40)}L${X(x1 - 8)} ${Y(inp.Hclave + 40)}L${X(x1 - 8)} ${Y(0)}Z ${P(open)}"/>
@@ -426,7 +427,7 @@ function arcSvgCercha(c, r) {
   const Wb = r.inp.tablonAncho, len = c.len, mg = 2, Lb = len + 2 * mg, pad = 6, W = Lb + 2 * pad, H = Wb + 2 * pad;
   const X = s => (pad + mg + s).toFixed(2), Y = t => (pad + t).toFixed(2);
   const pts = c.O.concat([c.esquinas.intClave, c.esquinas.intArr]);
-  return `<svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" role="img" aria-label="Trazado de la cercha ${esc(c.code)} sobre el tablón: curva arriba y canto recto abajo">
+  return `<svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" role="img" aria-label="Trazado del camón ${esc(c.code)} sobre el tablón: curva arriba y canto recto abajo">
     <rect x="${pad}" y="${pad}" width="${Lb.toFixed(1)}" height="${Wb}" fill="var(--sunk)" stroke="var(--ink)" stroke-width=".4"/>
     <path d="${pts.map((p, i) => (i ? 'L' : 'M') + X(p.s) + ' ' + Y(p.t)).join(' ')}Z" fill="var(--arc-wood-light)" stroke="var(--arc-wood-dark)" stroke-width=".5"/>
     ${c.ord.filter(o => o.ext != null).map(o => `<line x1="${X(o.s)}" y1="${Y(0)}" x2="${X(o.s)}" y2="${Y(o.ext)}" stroke="var(--logo-orange)" stroke-width=".4"/>`).join('')}

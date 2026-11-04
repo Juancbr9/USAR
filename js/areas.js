@@ -46,7 +46,7 @@ const SECTIONS = [
   ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help'],
   ['apuntalamientos', 'wrench', 'Apuntalamientos', 'Todos los tipos de los temas de la UME: dibujo, piezas, datos y montaje', 'help'],
   // La calculadora de arcos se abre desde «Apuntalamientos» (tipo «Apuntalamiento de arcos»)
-  ['arcos', 'wrench', 'Apuntalar arcos', 'Cuadro y cerchas a medida: lista de cortes, plantillas y montaje', 'help', '', true],
+  ['arcos', 'wrench', 'Apuntalar arcos', 'Cuadro y cercha de camones a medida: lista de cortes, plantillas y montaje', 'help', '', true],
   ['ajustes', 'grid', 'General', 'Sesión, compartir datos, pantalla, unidades y copias', 'help'],
   ['listas', 'layers', 'Listas y opciones', 'Opciones de los desplegables: añade las vuestras', 'help'],
   ['manual', 'file', 'Manual de uso', 'Todo lo que se puede hacer, paso a paso, con ejemplos e imágenes', 'help']
