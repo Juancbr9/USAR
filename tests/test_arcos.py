@@ -67,6 +67,16 @@ with sync_playwright() as p:
     a.evaluate("document.querySelectorAll('.arc-guia').forEach(d => d.open = true)"); a.wait_for_timeout(100)
     g = a.inner_text('#view'); assert 'dos cortes que se juntan' in g and 'fuera de escuadra' in g and 'Junta 1 de los camones'.lower() in g.lower(), g[:400]
     a.evaluate("document.querySelectorAll('.arc-guia').forEach(d => d.open = false)")
+    # Plantillas a tamaño real: camones y extremos en ángulo, en hojas A4 de 18 × 25 cm con regla de 10 cm
+    a.evaluate("window.print = () => { window._printed = (window._printed || 0) + 1; }; arcPlantillas(prefs.arc)")
+    assert a.evaluate("window._printed") == 1
+    hojas = a.locator('#print .plt-hoja').count(); assert hojas >= 5, hojas
+    assert a.locator('#print .plt-hoja svg.plt-svg').first.get_attribute('width') == '180mm'
+    assert a.locator('#print .plt-regla').count() == hojas and 'Camón CE1' in a.inner_text('#print .plt-portada')
+    pr = a.inner_text('#print'); assert 'fuera de escuadra' in pr and 'Radio de la curva' in pr and 'Ordenadas' in pr, pr[:300]
+    assert not any(x in a.inner_html('#print') for x in ['NaN', 'undefined'])
+    a.evaluate("arcPlantillas(prefs.arc, 'CE1')"); assert a.locator('#print .plt-item').count() == 1
+    a.evaluate("window.print = () => { window._printed = document.getElementById('print').innerText; }")
     pend = int(a.locator('.arc-kpis .kpi b').nth(3).inner_text().split('/')[0])
     p.locator('input').check(); a.wait_for_timeout(200)
     assert a.evaluate(f"get('arcs', '{aid}').done.P") is True

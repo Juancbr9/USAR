@@ -612,7 +612,8 @@ function apuCortesPanel(t) {
         <div class="grow"><div class="arc-cut-head"><span class="arc-code">${esc(p.c)}</span><b>${esc(p.n)}</b><span class="arc-len">${p.q} × ${p.l} cm</span></div>
           <small>${esc(p.s)} · ${esc(p.d)}</small><small class="arc-cut-how">${esc(p.cut)}</small>
           <span class="arc-label">${esc(p.corto)} ${p.l} cm${esc(eq)}</span></div></label>
-        <details class="apu-guia"><summary>${ic('wrench', 'i-sm')} Cómo se corta y cómo encaja</summary>${apuGuiaPieza(p)}</details></div>`).join('')}</div>` : ''}
+        <details class="apu-guia"><summary>${ic('wrench', 'i-sm')} Cómo se corta y cómo encaja</summary>${apuGuiaPieza(p)}
+          ${pltExtremos(p) ? `<button class="btn btn-g btn-sm" onclick="apuPlantillas('${t.id}', '${esc(p.c)}')">${ic('printer', 'i-sm')} Plantilla del corte a tamaño real</button>` : ''}</details></div>`).join('')}</div>` : ''}
       ${r.ex.length || r.clavos ? `<h4 class="arc-fam">Además</h4><div class="list">${r.ex.map(x => `<div class="item arc-extra"><div class="grow"><b>${esc(x.n)}</b>${x.d ? `<small>${esc(x.d)}</small>` : ''}</div><span class="arc-num"><b>${x.q}</b></span></div>`).join('')}
         ${r.clavos ? `<div class="item arc-extra"><div class="grow"><b>Clavos (aprox.)</b><small>Pletinas, ejiones, tacos y unos 5 por unión de riostra; lleva de sobra</small></div><span class="arc-num"><b>${Math.ceil(r.clavos * 1.2 / 10) * 10}</b></span></div>` : ''}</div>` : ''}
       ${r.pz.length ? `<h4 class="arc-fam">Madera</h4>
@@ -620,6 +621,7 @@ function apuCortesPanel(t) {
         <div class="list" style="margin-top:8px">${apuBarras(r.pz, stock).map(b => `<div class="item arc-extra"><div class="grow"><b>${esc(b.s)}</b><small>${acF(b.metros, 1)} m en total${b.largas.length ? ` · ${b.largas.length} pieza(s) más larga(s) que la barra: pedir más larga o empalmar si es riostra` : ''}</small></div><span class="arc-num"><b>${b.barras}</b> barras</span></div>`).join('')}</div>
         <div class="row" style="margin-top:12px"><button class="btn btn-g" onclick="shareText(apuCortesText('${t.id}'), 'Cortes')">${ic('chat')} Enviar los cortes</button>
           <button class="btn btn-g" onclick="apuPrint('${t.id}')">${ic('printer')} Hoja de corte</button>
+          ${apuTienePlantillas(r) ? `<button class="btn btn-g" onclick="apuPlantillas('${t.id}')">${ic('printer')} Plantillas a tamaño real</button>` : ''}
           ${Object.values(done).some(Boolean) ? `<button class="btn btn-g" onclick="apuDoneReset('${t.id}')">${ic('refresh')} Quitar las marcas</button>` : ''}</div>` : ''}`}
       <p class="muted" style="margin-top:10px;font-size:13px">Medir dos veces y cortar una. Las medidas salen de los temas de la UME; compruébalas en el sitio antes de cortar.</p>
     </div>`;

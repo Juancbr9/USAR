@@ -111,6 +111,11 @@ with sync_playwright() as p:
     g = a.inner_text('.apu-guia[open]'); assert '45° fuera de escuadra' in g and 'marca 10 cm' in g and 'tope' in g, g
     assert a.locator('.apu-guia[open] svg.apu-svg').count() >= 1, a.locator('.apu-guia[open] svg').count()
     a.screenshot(path=f'{OUT}/apuntalamientos-guia-corte.png', full_page=True)
+    # Plantillas a tamaño real de los extremos en ángulo (solo si hay alguno)
+    a.evaluate("window.print = () => {}; apuPlantillas('solerafija')"); assert a.locator('#print .plt-hoja').count() >= 2
+    assert 'Encaja' not in a.inner_text('#print .plt-portada') and '45 ° fuera' not in a.inner_text('#print')
+    assert a.locator('.apu-calc button:has-text("Plantillas a tamaño real")').count() == 1
+    a.evaluate("openApu('t')"); a.wait_for_timeout(80); assert a.locator('.apu-calc button:has-text("Plantillas a tamaño real")').count() == 0
 
     # Montaje con tus medidas: cada tipo con lista de cortes tiene su paso a paso con el dibujo a escala
     assert sorted(a.evaluate("Object.keys(APU_MONTAJE)")) == sorted(a.evaluate("Object.keys(APU_CORTES)"))

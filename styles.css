@@ -1834,3 +1834,33 @@ h1.sr-only { font-size: 16px; }
 .apu-guia[open] > summary { margin-bottom: 4px; }
 .apu-guia-fig .apu-svg { max-height: 56vh; }
 @media print { #print .apu-print-guias svg { max-height: 80mm; } }
+
+/* ==================== Plantillas a tamaño real ==================== */
+.plt-print { display: none; }
+@media print {
+  #print .plt-print { display: block; color: #000; }
+  #print .plt-portada { break-after: page; }
+  #print .plt-portada h1 { font: 700 18pt var(--cond); }
+  #print .plt-pasos { font-size: 10pt; padding-left: 18px; margin: 6px 0 10px; }
+  #print .plt-item { break-inside: avoid; margin-top: 8px; }
+  #print .plt-item h2 { font-size: 12pt; margin: 8px 0 2px; }
+  #print .plt-item p { margin: 0 0 4px; font-size: 9.5pt; }
+  #print .plt-item-c { display: grid; grid-template-columns: auto 1fr; gap: 6mm; align-items: start; }
+  #print .plt-item table { font-size: 9pt; }
+  #print .plt-item th { text-align: left; width: 42%; font-weight: 600; }
+  #print .plt-pq { font-size: 8.5pt; }
+  #print .plt-hoja { break-after: page; page-break-after: always; break-inside: avoid; }
+  #print .plt-cab { display: flex; justify-content: space-between; align-items: center; gap: 4mm; font-size: 8.5pt; height: 9mm; }
+  #print .plt-svg, #print .plt-regla { display: block; flex: none; }
+}
+.plt-svg text, .plt-print svg text { font-family: var(--sans); fill: #000; }
+.plt-corte { fill: none; stroke: #000; stroke-width: .07; stroke-linejoin: round; }
+.plt-tablon { fill: none; stroke: #555; stroke-width: .025; stroke-dasharray: .4 .25; }
+.plt-tablon-l { stroke: #555; stroke-width: .025; stroke-dasharray: .4 .25; }
+.plt-tercio { stroke: #777; stroke-width: .02; stroke-dasharray: .25 .2; }
+.plt-ord { stroke: #c62828; stroke-width: .02; }
+.plt-esc { stroke: #1f5fa8; stroke-width: .02; stroke-dasharray: .3 .2; }
+.plt-cota { stroke: #000; stroke-width: .02; }
+.plt-fina { stroke: #000; stroke-width: .02; }
+.plt-reg { stroke: #000; stroke-width: .03; }
+.plt-solape { fill: #000; fill-opacity: .08; stroke: #000; stroke-width: .02; stroke-dasharray: .2 .15; }
