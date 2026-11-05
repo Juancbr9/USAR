@@ -195,7 +195,9 @@ const ARC_TAB_VIEW = {
         <span class="grow"><span class="arc-cut-head"><b class="arc-code">${esc(p.code)}</b><b>${esc(p.nombre)}</b><span class="arc-len">${arcF(p.largo, 0)} cm × ${p.cant}</span></span>
           <small>${esc(p.seccion)} · ${esc(p.donde)}</small><small class="arc-cut-how">${esc(p.corte)}</small>
           <span class="arc-label">${esc(p.corto)} ${arcF(p.largo, 0)} cm${a.team ? ' · ' + esc(a.team) : ''}</span></span></label>
-        ${p.geo ? `<details class="apu-guia arc-guia"><summary>${ic('wrench', 'i-sm')} Cómo se corta y cómo encaja</summary>${apuGuiaPieza({ s: p.seccion, l: p.largo, n: p.nombre, geo: p.geo })}</details>` : ''}`;
+        ${p.geo ? `<details class="apu-guia arc-guia"><summary>${ic('wrench', 'i-sm')} Cómo se corta y cómo encaja</summary>${apuGuiaPieza({ s: p.seccion, l: p.largo, n: p.nombre, geo: p.geo })}
+          ${pltExtremos({ c: p.code, n: p.nombre, s: p.seccion, l: p.largo, q: p.cant, geo: p.geo }) ? `<button class="btn btn-g btn-sm" onclick="arcPlantillas('${a.id}', '${esc(p.code)}')">${ic('printer', 'i-sm')} Plantilla del corte a tamaño real</button>` : ''}</details>`
+          : p.fam === 'tablon' ? `<button class="btn btn-g btn-sm arc-plt-btn" onclick="arcPlantillas('${a.id}', '${esc(p.code)}')">${ic('printer', 'i-sm')} Plantilla del camón a tamaño real</button>` : ''}`;
     });
     h += '</div><h3 class="sec-title arc-fam">Pletinas, cuñas, calzos y clavos</h3>';
     const rows = [...r.pletinas.map(p => [p.code, p.nombre, p.cant, `${p.donde} ${p.clavos} clavos cada una.`]),
@@ -209,16 +211,19 @@ const ARC_TAB_VIEW = {
 
   cerchas: (a, r) => `
     <p class="muted">La cercha es todo el arco de arriba y cada pieza que la forma es un camón. Cada camón sale de un tablón de ${arcF(r.inp.tablonAncho)} cm: el borde interior es el canto recto del tablón y solo se corta la curva exterior (radio ${arcF(r.Ro)} cm${r.A.tipo === 'apuntado' ? ', dos centros' : ''}). En los extremos queda al menos ⅓ del ancho (${arcF(r.cantoMin)} cm, línea discontinua). Marca las ordenadas desde el canto de arriba y únelas con un listón flexible, o usa una plantilla de cartón presentada en el arco. Corta con motosierra, despacio, siguiendo el trazo.</p>
+    <button class="btn btn-a full" onclick="arcPlantillas('${a.id}')">${ic('printer')} Imprimir plantillas a tamaño real (camones y cortes en ángulo)</button>
     ${r.tipos.map(t => { const c = t.ref, cant = r.piezas.find(p => p.code === t.code)?.cant || 0; return `
       <div class="arc-cercha">
-        <div><h3 class="sec-title">${ic('wrench')} ${esc(t.code)} · ${cant} piezas</h3>
+        <div><div class="between"><h3 class="sec-title" style="margin:0">${ic('wrench')} ${esc(t.code)} · ${cant} piezas</h3><button class="btn btn-g btn-sm" onclick="arcPlantillas('${a.id}', '${esc(t.code)}')">${ic('printer', 'i-sm')} Plantilla</button></div>
           <div class="arc-fig">${arcSvgCercha(c, r)}</div>
           <dl class="dl arc-dl"><dt>Largo</dt><dd>${arcF(c.len)} cm (tablón de ${arcF(Math.ceil(c.len + 4), 0)})</dd>
             <dt>Flecha de la curva</dt><dd>${arcF(c.flecha)} cm</dd>
             <dt>Canto en los extremos</dt><dd>${arcF(c.cantoExtremo)} cm (mín. ${arcF(r.cantoMin)})</dd>
             <dt>Corte lado arranque</dt><dd>${arcF(c.cutS)}° fuera de escuadra${c.endS === 'h' ? ' (apoya a nivel)' : ''}</dd>
             <dt>Corte lado clave</dt><dd>${arcF(c.cutK)}° fuera de escuadra${c.endK === 'v' ? ' (a plomo)' : ''}</dd>
-            <dt>Esquinas en el canto recto</dt><dd>a ${arcF(c.esquinas.intArr.s)} y ${arcF(c.esquinas.intClave.s)} cm del extremo</dd></dl></div>
+            <dt>Esquinas en el canto recto</dt><dd>a ${arcF(c.esquinas.intArr.s)} y ${arcF(c.esquinas.intClave.s)} cm del extremo</dd>
+            <dt>Canto recto</dt><dd>${arcF(Math.abs(c.esquinas.intClave.s - c.esquinas.intArr.s))} cm</dd>
+            <dt>Radio de la curva</dt><dd>${arcF(r.Ro)} cm</dd></dl></div>
         <div><b class="lbl-sm">Ordenadas desde el canto de arriba (cm)</b>
           <table class="ref arc-ord"><tr><th>A lo largo</th><th>Hasta la curva</th></tr>${c.ord.map(o => `<tr><td class="arc-num">${arcF(o.s)}</td><td class="arc-num">${o.ext == null ? '—' : arcF(o.ext)}</td></tr>`).join('')}</table></div>
       </div>`; }).join('')}`,
