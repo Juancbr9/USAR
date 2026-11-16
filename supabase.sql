@@ -106,15 +106,16 @@ drop policy if exists "equipo usar: crear" on public.usar_records;
 drop policy if exists "equipo usar: cambiar" on public.usar_records;
 create policy "equipo usar: ver" on public.usar_records for select to authenticated
   using ((select private.usar_role()) is not null);
--- Material (gear), cajas (boxes), consumibles y vehículos: solo un jefe los da de alta (los ids de FLOTA_KINDS en js/sesion.js)
+-- Todo el equipo da de alta, cambia y elimina material (gear), cajas (boxes), consumibles y vehículos. Antes era solo cosa
+-- de los jefes; se abrió a petición del equipo (gente de confianza: así se ayudan). Los miembros y los PIN siguen siendo de los jefes.
 create policy "equipo usar: crear" on public.usar_records for insert to authenticated
-  with check ((select private.usar_role()) = 'jefe'
-    or ((select private.usar_role()) is not null and kind not in ('gear', 'boxes', 'consumables', 'vehicles')));
--- Todos cambian lo que ya existe (estado, ubicación, stock…), pero solo un jefe elimina material, cajas, consumibles o vehículos
+  with check ((select private.usar_role()) is not null);
 create policy "equipo usar: cambiar" on public.usar_records for update to authenticated
   using ((select private.usar_role()) is not null)
-  with check ((select private.usar_role()) = 'jefe'
-    or ((select private.usar_role()) is not null and (not deleted or kind not in ('gear', 'boxes', 'consumables', 'vehicles'))));
+  with check ((select private.usar_role()) is not null);
+-- La app mira este registro para saber que la base de datos ya admite las altas de los miembros (ver puedeFlota en js/sesion.js)
+insert into public.usar_records (kind, id, data, deleted) values ('meta', 'flotaabierta', '{"id": "flotaabierta", "value": true, "_u": 1}'::jsonb, false)
+  on conflict (kind, id) do update set data = excluded.data, deleted = false;
 -- Si más adelante queréis que la documentación del personal solo la vean los jefes, cambiad el «using» de «ver» por:
 --   using ((select private.usar_role()) is not null and (kind not in ('readiness', 'docs', 'images') or (select private.usar_role()) = 'jefe'))
 revoke all on public.usar_records from anon;

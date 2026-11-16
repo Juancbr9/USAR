@@ -81,17 +81,14 @@ with sync_playwright() as p:
     assert a.locator('.panel:has-text("Vehículos con fallos")').count() == 0
     a.screenshot(path=f'{OUT}/funciones-inicio.png', full_page=True)
 
-    # ---------- Permiso de logística ----------
+    # ---------- Cualquiera del equipo gestiona el material (ya no hay permiso de logística) ----------
     dorta = a.evaluate("operators().find(o => o.name === 'DORTA').id")
-    a.evaluate(f"personForm('{dorta}')"); a.wait_for_selector('#modalForm')
-    a.locator('#modalForm input[name=logi]').check(); save()
-    assert a.evaluate(f"get('operators', '{dorta}').logistica") is True
     a.evaluate(f"setPref({{ session: '{dorta}', activeOperator: 'DORTA' }})"); a.wait_for_timeout(150)
-    assert a.evaluate("puedeFlota()"), 'con permiso de logística gestiona el material'
+    assert a.evaluate("puedeFlota()"), 'cualquiera gestiona el material'
     a.evaluate("setPref({ tab: 'contenedor' })"); a.wait_for_timeout(200)
     assert a.locator('#view button.btn-a:has-text("Material")').count() == 1
     a.evaluate(f"personForm('{dorta}')"); a.wait_for_selector('#modalForm')
-    assert a.locator('#modalForm input[name=logi]').count() == 0, 'solo ADMIN da el permiso'
+    assert a.locator('#modalForm input[name=logi]').count() == 0, 'ya no se pregunta el permiso de logística'
     a.keyboard.press('Escape')
     br.close()
 

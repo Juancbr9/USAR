@@ -11,6 +11,7 @@ pins = {}; sesiones = {}; anon_n = [0]   # PIN por nombre y nombre de cada invit
 SECURE = [False]   # GET /_secure lo activa: como el modo seguro de supabase.sql, sin usuario no se lee ni se escribe usar_records
 JEFE_KINDS = set()   # ahora todo el personal accede a todo
 FLOTA_KINDS = {'gear', 'boxes', 'consumables', 'vehicles'}
+ABIERTO = [False]  # GET /_abierto: como supabase.sql tras abrir las reglas (todo el equipo da de alta y elimina material y vehículos)
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
     def cors(self):
@@ -72,6 +73,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == '/_dump': return self.reply(200, list(rows.values()))
         if u.path == '/_stats': return self.reply(200, stats)
         if u.path == '/_secure': SECURE[0] = True; return self.reply(200, {})
+        if u.path == '/_abierto': ABIERTO[0] = True; return self.reply(200, {})
         if u.path == '/_pin':   # alta directa de un PIN (para preparar las pruebas)
             pins[q['name'][0].upper()] = {'role': q.get('role', ['miembro'])[0], 'pin': q['pin'][0], 'fails': 0}; return self.reply(200, {})
         if self.bad_jwt(): return
@@ -118,12 +120,12 @@ class H(BaseHTTPRequestHandler):
         if self.denied(email): return
         if role == 'miembro' and any(r['kind'] in JEFE_KINDS for r in body): return self.reply(403, {'message': 'permiso denegado'})
         # Como supabase.sql: con usuario, solo un jefe da de alta o elimina material, cajas, consumibles y vehículos
-        if email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS and (r.get('deleted') or (r['kind'], r['id']) not in rows) for r in body):
+        if not ABIERTO[0] and email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS and (r.get('deleted') or (r['kind'], r['id']) not in rows) for r in body):
             return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
         prefer = self.headers.get('Prefer', '')
         # Como PostgREST: «ignore-duplicates» solo inserta lo que no existe y con «return=representation» devuelve lo insertado
         if 'ignore-duplicates' in prefer:
-            if email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS for r in body):   # la regla de crear se mira antes que el duplicado
+            if not ABIERTO[0] and email and role != 'jefe' and any(r['kind'] in FLOTA_KINDS for r in body):   # la regla de crear se mira antes que el duplicado
                 return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
             out = []
             with lock:
@@ -144,7 +146,7 @@ class H(BaseHTTPRequestHandler):
         email, role = self.who()
         if self.denied(email): return
         k = (q.get('kind', ['eq.'])[0][3:], q.get('id', ['eq.'])[0][3:]); at = q.get('updated_at', [None])[0]
-        if email and role != 'jefe' and k[0] in FLOTA_KINDS and body.get('deleted'):
+        if not ABIERTO[0] and email and role != 'jefe' and k[0] in FLOTA_KINDS and body.get('deleted'):
             return self.reply(403, {'code': '42501', 'message': 'new row violates row-level security policy for table "usar_records"'})
         with lock:
             r = rows.get(k)

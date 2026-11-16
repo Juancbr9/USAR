@@ -34,13 +34,14 @@ function viewPerson(o) {
           ${[opEsp(o) === 'USAR' ? 'USAR' : '', ...opEquipos(o), ...(o.funcs || [])].filter(Boolean).length ? `<div class="row tags" style="margin-top:6px">${[opEsp(o) === 'USAR' ? 'USAR' : '', ...opEquipos(o), ...(o.funcs || [])].filter(Boolean).map(f => `<span class="tag info">${esc(f)}</span>`).join('')}</div>` : ''}</div>
         ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}
       </div>
-      ${esAusente(o) ? `<div class="callout bad" style="margin-top:12px"><p>${ic('alert', 'i-sm')} Ausente: ${esc(ausTxt(o))}${o.aus.nota ? ' · ' + esc(o.aus.nota) : ''}</p></div>` : ''}
+      ${esAusente(o) ? `<div class="callout bad" style="margin-top:12px"><p>${ic('alert', 'i-sm')} Ausente: ${esc(ausTxt(o))}${ausHoy(o).nota ? ' · ' + esc(ausHoy(o).nota) : ''}</p></div>` : ''}
       ${ausPrevista(o) ? `<div class="callout" style="margin-top:12px"><p>${ic('calendar', 'i-sm')} Ausencia prevista: ${esc(ausPrevTxt(o))}${o.aus.nota ? ' · ' + esc(o.aus.nota) : ''} <button class="link" onclick="marcarPresente('${o.id}')">Anular</button></p></div>` : ''}
       ${issues.length ? `<div class="stack" style="margin-top:12px">${issues.map(([cls, t]) => `<span class="tag ${cls}">${esc(t)}</span>`).join(' ')}</div>` : ''}
       <div class="row carne-acts" style="margin-top:12px">
         ${o.phone ? `<a class="btn btn-a" href="tel:${esc(o.phone.replace(/\s/g, ''))}">${ic('phone')} Llamar</a>
           <a class="btn btn-g" target="_blank" rel="noopener" href="https://wa.me/${esc(o.phone.replace(/\D/g, '').replace(/^(?!34)(\d{9})$/, '34$1'))}">${ic('chat')} WhatsApp</a>` : ''}
         ${esAusente(o) ? `<button class="btn btn-g" onclick="marcarPresente('${o.id}')">${ic('check')} Marcar presente</button>` : `<button class="btn btn-g" onclick="ausenciaForm('${o.id}')">${ic('out')} Marcar ausente</button>`}
+        <button class="btn btn-g" onclick="planDe('${o.id}')">${ic('calendar')} Vacaciones y permisos${(o.plan || []).filter(p => p.hasta >= todayISO()).length ? ` (${(o.plan || []).filter(p => p.hasta >= todayISO()).length})` : ''}</button>
         <button class="btn btn-g" onclick="personForm('${o.id}')">${ic('pencil')} Editar datos</button>
         <button class="btn btn-g" onclick="readinessForm('${o.id}')">${ic('flag')} Pasaporte y emergencia</button>
       </div>
@@ -119,18 +120,14 @@ function personForm(op) {
     { k: 'funcs', label: 'Otras funciones (puede tener varias)', type: 'checks', catalog: 'opFuncs', value: o.funcs || [], wide: true },
     { k: 'phone', label: 'Teléfono', type: 'tel', value: o.phone, placeholder: '600 000 000' },
     { k: 'email', label: 'Correo', type: 'email', value: o.email },
-    { k: 'photo', label: 'Foto de la persona', type: 'photo', value: '', wide: true },
-    // Solo ADMIN da (o quita) el permiso de logística: añadir y cambiar material, vehículos y extras como él
-    ...(isAdmin() && o.name !== ADMIN ? [{ k: 'logi', label: 'Permisos', type: 'checks', wide: true, value: o.logistica ? ['logistica'] : [],
-      options: [['logistica', 'Logística: añade y cambia material, vehículos y extras (en Miembros y permisos tiene que ser jefe)']] }] : [])
+    { k: 'photo', label: 'Foto de la persona', type: 'photo', value: '', wide: true }
   ], async v => {
     if (v.name !== o.name && allOperators().some(x => x.id !== o.id && x.name === v.name)) return toast('Ya hay otra persona con ese nombre', 'bad');
     if (v.photo) await Img.put(`op:${op}`, v.photo);
     if (prefs.activeOperator === o.name) { prefs.activeOperator = v.name; writeJSON(KEY.prefs, prefs); }
-    const { photo, logi, fullName, motoTipo, motoEq, motoAut, ...rest } = v, logistica = logi ? logi.includes('logistica') : !!o.logistica;
+    const { photo, fullName, motoTipo, motoEq, motoAut, ...rest } = v;
     if ((fullName || '') !== (readiness(op).fullName || '')) stamp('readiness', { ...readiness(op), id: op, fullName: fullName || '' });
-    put('operators', { ...o, ...rest, ...sierValues(v), logistica, photo: photo ? true : o.photo || false },
-      logistica !== !!o.logistica ? `${v.name}: ${logistica ? 'con' : 'sin'} permiso de logística` : `Datos de ${v.name} actualizados`);
+    put('operators', { ...o, ...rest, ...sierValues(v), photo: photo ? true : o.photo || false }, `Datos de ${v.name} actualizados`);
   }, `<div class="row span2" style="gap:8px">
     ${o.active === false ? `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', true)">${ic('check')} Volver a dar de alta</button>`
       : `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', false)">${ic('out')} Dar de baja</button>`}
@@ -206,6 +203,7 @@ function expiries() {
   list('epis').filter(e => e.expires).forEach(e => out.push({ date: e.expires, what: `${epiLabel(e)} de ${opName(e.holder)}`, kind: 'EPI', go: `epiForm('${e.id}')` }));
   list('gear').filter(g => g.service).forEach(g => out.push({ date: g.service, what: g.name, kind: 'Mantenimiento', go: `gearDetail('${g.id}')` }));
   matTodo().filter(m => m.review).forEach(m => out.push({ date: m.review, what: `${m.name} · ${matDueno(m)}`, kind: 'Revisión', go: matIr(m) }));
+  matTodo().filter(m => m.caduca).forEach(m => out.push({ date: m.caduca, what: `${m.name} · ${matDueno(m)}`, kind: 'Caducidad', go: matIr(m) }));
   list('vehicles').forEach(v => (v.units || []).filter(u => u.itv).forEach(u => out.push({ date: u.itv, what: `${v.name} ${u.plate}${u.cita ? ' · cita ' + u.cita : ''}`, kind: 'ITV', go: `vehicleForm('${v.id}'); unitForm('${v.id}', '${u.id}')` })));
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }

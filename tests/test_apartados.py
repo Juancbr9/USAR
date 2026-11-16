@@ -152,7 +152,7 @@ with sync_playwright() as p:
 
     # El Parque: material común en los pasillos 1 y 2 (sin gente propia); cualquiera coge y devuelve con un toque
     a.evaluate("go('parque')"); a.wait_for_timeout(200)
-    assert a.inner_text('#view h2') == 'Parque' and [t.split(' ')[0] for t in a.locator('#view .ctab').all_inner_texts()] == ['Material', 'Notas'], 'el Parque no tiene pestaña de equipo'
+    assert a.inner_text('#view h2') == 'Parque' and [t.split(' ')[0] for t in a.locator('#view .ctab').all_inner_texts()] == ['Material', 'Necesidades', 'Notas'], 'el Parque no tiene pestaña de equipo'
     assert a.evaluate("apPasillos('parque')") == [1, 2] and a.locator('#view .panel:has(.px) .chips .chip').count() == 2
     a.click('#view button:has-text("Empezar con lo habitual")'); a.wait_for_timeout(250)
     a.click('#view .panel:has(.px) .chips .chip:has-text("Pasillo 2")'); a.wait_for_timeout(150); assert a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 2'

@@ -30,7 +30,7 @@ function pasilloPanel(k) {
   const cell = (mod, niv) => { const its = enHueco(k, pas, lado, mod, niv);
     return `<button class="px-cell ${niv ? '' : 'px-floor'}" aria-label="Módulo ${mod}, ${nivNombre(niv, p.baldas).toLowerCase()}: ${its.length ? its.length + (its.length === 1 ? ' cosa' : ' cosas') : 'vacío'}" onclick="pasHueco('${k}', ${pas}, '${lado}', ${mod}, ${niv})">
       ${niv === p.baldas ? `<span class="px-tag">M${mod}</span>` : ''}
-      ${its.slice(0, 4).map(m => `<span class="px-it ${matOk(m) ? '' : m.status === 'AVERIADO' ? 'bad' : 'warn'}">${esc(m.name)}${(+m.qty || 1) > 1 ? ' ×' + m.qty : ''}</span>`).join('')}
+      ${its.slice(0, 4).map(m => `<span class="px-it ${matOk(m) ? '' : m.status === 'AVERIADO' ? 'bad' : m.status === 'BAJA' ? 'baja' : 'warn'}">${esc(m.name)}${(+m.qty || 1) > 1 ? ' ×' + m.qty : ''}</span>`).join('')}
       ${its.length > 4 ? `<span class="px-more">+${its.length - 4} más</span>` : ''}</button>`; };
   return `<div class="panel">
     <div class="between sec-head"><h3>Pasillo ${pas}</h3>${puede ? `<button class="btn btn-g btn-sm" onclick="pasConfig('${k}')">${ic('sliders')} Pasillos y baldas</button>` : ''}</div>
@@ -42,6 +42,7 @@ function pasilloPanel(k) {
         <div class="px-lvl ${niv ? '' : 'floor'}"><span>${nivNombre(niv, p.baldas)}</span></div>
         ${Array.from({ length: p.mods }, (_, m) => cell(m + 1, niv)).join('')}`).join('')}
     </div></div>
+    ${puede ? `<div class="row mat-mas"><button class="link" onclick="pasEtiquetas('${k}')">${ic('qr', 'i-sm')} Etiquetas QR de los huecos</button></div>` : ''}
     ${total ? `<p class="px-suelto ${sueltos.length ? 'warn' : ''}">${sueltos.length ? `${ic('alert', 'i-sm')} Sin colocar: ${sueltos.length} de ${total}. Toca un hueco y elige «Colocar aquí».` : `${ic('checkc', 'i-sm')} Todo el material tiene su hueco.`}</p>` : ''}
   </div>`;
 }
@@ -79,4 +80,42 @@ function pasConfig(k) {
     const lados = { ...(pasCfg(k).lados || {}), ...(pas ? { [pas + lado]: cfg, ...((v.ambos || []).includes('si') ? { [pas + (lado === 'I' ? 'D' : 'I')]: cfg } : {}) } : {}) };
     put('meta', { id: 'appas-' + k, value: { nums: nuevos, lados } }, `Pasillos de ${APARTADOS[k].name}: ${nuevos.join(', ') || 'ninguno'}`);
   }, `<p class="muted span2">Si quitas un pasillo, módulos o baldas, lo que estaba en ellos pasa a «Sin colocar»; no se borra nada.</p>`);
+}
+
+// Etiquetas con QR para pegar en cada hueco del pasillo que se está viendo (los dos lados): al leerlas se abre ese hueco
+function pasEtiquetas(k) {
+  const { pas } = pasVista(k); if (!pas) return;
+  const huecos = ['I', 'D'].flatMap(lado => { const p = pasLado(k, pas, lado);
+    return Array.from({ length: p.mods }, (_, m) => Array.from({ length: p.baldas + 1 }, (_, niv) => [lado, m + 1, niv, p.baldas])).flat(); });
+  $('print').innerHTML = `<div class="labels">${huecos.map(([lado, mod, niv, baldas]) => `<div class="label">${QR.svg(appUrl() + '#h=' + [k, pas, lado, mod, niv].join('.'), 2)}
+    <b>Pasillo ${pas} · ${LADOS[lado]}</b>Módulo ${mod} · ${nivNombre(niv, baldas)} · ${esc(APARTADOS[k].name)}</div>`).join('')}</div>`;
+  print();
+}
+
+/* ---------- Qué apartado hay en cada pasillo del almacén ---------- */
+// USAR tiene su propio dibujo del pasillo (en su Almacén); aquí solo se apunta qué número es
+const usarPasillos = () => { const v = get('meta', 'usarpas')?.value; return (Array.isArray(v) ? v : [3]).map(Number).filter(n => n >= 1); };
+const pasDuenos = n => [...(usarPasillos().includes(n) ? ['usar'] : []), ...Object.keys(APARTADOS).filter(k => apPasillos(k).includes(n))];
+const pasDuenoTxt = d => d === 'usar' ? 'USAR' : APARTADOS[d]?.name || '';
+const almacenNums = (extra = 0) => Array.from({ length: Math.max(6, ...usarPasillos(), ...Object.keys(APARTADOS).flatMap(apPasillos)) + extra }, (_, i) => i + 1);
+function almacenPanel() {
+  return `<div class="panel"><div class="between"><h3>Pasillos del almacén</h3><button class="btn btn-g btn-sm" onclick="almacenForm()">${ic('sliders')} Cambiar</button></div>
+    <div class="log-rows">${almacenNums().map(n => { const ds = pasDuenos(n), k = ds.find(d => d !== 'usar');
+      const cuenta = ds.filter(d => d !== 'usar').reduce((t, d) => t + apMat(d).filter(m => colocado(d, m) && ubic(m).pas === n).length, 0);
+      const ir = ds[0] === 'usar' ? "go('pasillo')" : k ? `setPref({ tab: '${k}', aptab: 'material', pasN: { ...prefs.pasN, ${k}: ${n} } }); scrollTo(0, 0)` : '';
+      return logRow('Pasillo ' + n, ds.map(pasDuenoTxt).join(' y ') || 'Libre', '', ir, k ? ` ${cuenta} ${cuenta === 1 ? 'cosa colocada' : 'cosas colocadas'}` : ''); }).join('')}</div></div>`;
+}
+// Un desplegable por pasillo: de quién es. Solo se toca lo que se cambia (un pasillo compartido sigue compartido si no se toca)
+function almacenForm() {
+  const nums = almacenNums(2), antes = Object.fromEntries(nums.map(n => [n, pasDuenos(n)[0] || '']));
+  openForm('Pasillos del almacén', nums.map(n => ({ k: 'p' + n, label: `Pasillo ${n}${pasDuenos(n).length > 1 ? ' (compartido: ' + pasDuenos(n).map(pasDuenoTxt).join(' y ') + ')' : ''}`, value: antes[n],
+    options: [['', 'Libre'], ['usar', 'USAR'], ...Object.entries(APARTADOS).map(([k, a]) => [k, a.name])] })), v => {
+    const cambios = nums.filter(n => (v['p' + n] || '') !== antes[n]); if (!cambios.length) return;
+    let usar = usarPasillos(); const ap = Object.fromEntries(Object.keys(APARTADOS).map(k => [k, apPasillos(k)]));
+    cambios.forEach(n => { const d = v['p' + n] || '';
+      usar = usar.filter(x => x !== n); Object.keys(ap).forEach(k => { ap[k] = ap[k].filter(x => x !== n); });
+      if (d === 'usar') usar.push(n); else if (d) ap[d].push(n); });
+    Object.keys(ap).forEach(k => { if (ap[k].join() !== apPasillos(k).join()) stamp('meta', { id: 'appas-' + k, value: { ...pasCfg(k), nums: ap[k].sort((a, b) => a - b) } }); });
+    put('meta', { id: 'usarpas', value: usar.sort((a, b) => a - b) }, `Pasillos del almacén: ${cambios.map(n => `el ${n}, ${v['p' + n] ? pasDuenoTxt(v['p' + n]) : 'libre'}`).join('; ')}`);
+  }, `<p class="muted span2">Di qué especialidad hay en cada pasillo. Al cambiarlo no se borra nada: el material sigue apuntado en su apartado y, si se queda sin pasillo, pasa a «Sin colocar».</p>`);
 }

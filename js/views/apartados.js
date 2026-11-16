@@ -7,6 +7,8 @@ const apMiembros = k => { const a = APARTADOS[k]; return a.comun ? [] : operator
 // El material es el de js/views/material.js, con el apartado como dueño («ap:agua»)
 const apMat = k => matDe({ ap: k });
 const apPuede = k => matPuede('ap:' + k);
+// Lo que cuenta como material del apartado (sin lo que va a darse de baja)
+const apVivo = k => apMat(k).filter(matVivo);
 const apRevistas = k => matRevistas('ap:' + k);
 const apHabitual = k => matHabitual('ap:' + k);
 const apNota = k => get('meta', 'apnota-' + k)?.value || '';
@@ -14,9 +16,9 @@ const apNota = k => get('meta', 'apnota-' + k)?.value || '';
 const apDe = esp => Object.keys(APARTADOS).find(k => APARTADOS[k].esp === esp);
 
 function viewApartado(k) {
-  const a = APARTADOS[k], gente = apMiembros(k), pres = gente.filter(o => !esAusente(o)), mat = apMat(k), ok = mat.filter(matOk);
+  const a = APARTADOS[k], gente = apMiembros(k), pres = gente.filter(o => !esAusente(o)), mat = apVivo(k), ok = mat.filter(matOk), nec = needsAbiertas(k).length;
   const ult = apRevistas(k)[0], puede = apPuede(k), nota = apNota(k);
-  const tabs = [...(a.comun ? [] : [['equipo', 'users', 'Equipo', gente.length]]), ['material', 'box', 'Material', mat.length], ['notas', 'file', 'Notas', 0]];
+  const tabs = [...(a.comun ? [] : [['equipo', 'users', 'Equipo', gente.length]]), ['material', 'box', 'Material', mat.length], ['necesidades', 'clipboard', 'Necesidades', nec], ['notas', 'file', 'Notas', 0]];
   const tab = tabs.some(t => t[0] === prefs.aptab) ? prefs.aptab : tabs[0][0], fuera = mat.filter(m => m.holder && get('operators', m.holder)).length;
   const sub = p => [p.peloton, a.moto ? motoTxt(p.moto) : '', ...(a.esp ? opEquipos(p) : [espLabel(p) === ESP_NINGUNA ? '' : espLabel(p)])].filter(Boolean).join(' · ');
   const cuerpo = {
@@ -26,6 +28,7 @@ function viewApartado(k) {
           return m.length ? persPanel(t === 'S' ? 'Suplentes' : 'Titulares', m, sub) : ''; }).join('')
       : persPanel(a.largo, gente, sub),
     material: () => `${pasilloPanel(k)}<div class="panel">${matBloque('ap:' + k, `Apunta aquí el material de ${a.largo.toLowerCase()}: qué es, cuántos hay, dónde está y cuándo toca revisarlo.`)}</div>`,
+    necesidades: () => `<div class="panel">${needsBloque(k)}</div>`,
     notas: () => `<div class="panel">
         <div class="between sec-head"><h3>Notas</h3>${puede ? `<button class="btn btn-g btn-sm" onclick="apNotaForm('${k}')">${ic('pencil')} Editar</button>` : ''}</div>
         ${nota ? `<p class="ap-nota">${esc(nota)}</p>` : emptyState('file', 'Sin notas', 'Procedimientos, contactos, dónde se guarda cada cosa… lo que convenga tener a mano. Las ve todo el equipo.')}

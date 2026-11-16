@@ -35,11 +35,14 @@ function viewLogistica() {
   const caps = [...ESPECIALIDADES.map(e => [e, ...cuenta(o => opEsp(o) === e), apDe(e) ? irAp(apDe(e)) : irPers('esp')]),
     ...Object.entries(EQUIPOS).filter(([k]) => k !== 'moto').map(([k, l]) => [l, ...cuenta(o => (o.eq || []).includes(k)), APARTADOS[k] ? irAp(k) : irPers('equipos')])].filter(c => c[2]);
   // Material de cada apartado (Agua, Cuerdas…) y de cada vehículo: operativo del total
-  const matAp = [...Object.keys(APARTADOS).map(k => [APARTADOS[k].name, apMat(k), irAp(k, 'material')]), ...vehicles().map(v => [v.name, matDe({ veh: v.id }), `go('vehiculos'); vehicleView('${v.id}')`])].filter(([, m]) => m.length);
+  const matAp = [...Object.keys(APARTADOS).map(k => [APARTADOS[k].name, apVivo(k), irAp(k, 'material')]), ...vehicles().map(v => [v.name, matDe({ veh: v.id }).filter(matVivo), `go('vehiculos'); vehicleView('${v.id}')`])].filter(([, m]) => m.length);
   const [motoT, motoTt] = cuenta(o => o.moto?.tipo === 'T'), [motoS, motoSt] = cuenta(o => o.moto?.tipo === 'S');
   // Quién vuelve y quién falta en los próximos días
-  const vuelven = ops.filter(o => fuera(o) && o.aus.hasta && daysTo(o.aus.hasta) <= 7).sort((a, b) => a.aus.hasta.localeCompare(b.aus.hasta));
-  const previstas = ops.filter(o => o.aus && (o.aus.desde || '') > dia).sort((a, b) => a.aus.desde.localeCompare(b.aus.desde));
+  const vuelven = ops.filter(o => fuera(o) && ausDe(o, dia).hasta && daysTo(ausDe(o, dia).hasta) <= 7).sort((a, b) => ausDe(a, dia).hasta.localeCompare(ausDe(b, dia).hasta));
+  // Ausencias que empiezan en los próximos 30 días: la prevista de cada uno y las apuntadas en el cuadrante
+  const en30 = new Date(new Date(dia + 'T12:00').getTime() + 30 * 864e5).toISOString().slice(0, 10);
+  const previstas = ops.flatMap(o => [...(o.aus ? [o.aus] : []), ...(o.plan || [])].filter(a => (a.desde || '') > dia && a.desde <= en30).map(a => [o, a])).sort((x, y) => x[1].desde.localeCompare(y[1].desde));
+  const bajo = bajoMinimos(30), revs = revPendientes(), nec = needsAbiertas();
   // Vehículos y material (siempre a día de hoy)
   const flota = flotaEstado(), libres = flota.filter(x => x.libre), plazas = libres.reduce((s, x) => s + (+x.v.seats || 0), 0);
   const a = alerts(), gear = list('gear'), okGear = gear.filter(g => g.status === 'OPERATIVO').length;
@@ -58,7 +61,7 @@ function viewLogistica() {
         <div class="log-fig ${logCls(pres.length, ops.length)}"><b>${pres.length}</b><span>de ${ops.length} presentes ${esc(diaTxt)}</span></div>
         ${PELOTONES.filter(k => ops.some(o => o.peloton === k)).map(k => logMeter(k, ...cuenta(o => o.peloton === k), irPers('peloton'))).join('')}
         ${ops.some(o => !o.peloton) && ops.some(o => o.peloton) ? logMeter('Sin pelotón', ...cuenta(o => !o.peloton), irPers('peloton')) : ''}
-        ${aus.length ? `<div class="log-rows">${aus.map(o => logRow(conEmpleo(o), o.aus.hasta ? 'hasta ' + fmtDate(o.aus.hasta) : 'sin fecha', 'bad', `openPerson('${o.id}')`, ' ' + [o.aus.motivo || 'Ausente', o.aus.lugar].filter(Boolean).join(' · '))).join('')}</div>` : ''}
+        ${aus.length ? `<div class="log-rows">${aus.map(o => logRow(conEmpleo(o), ausDe(o, dia).hasta ? 'hasta ' + fmtDate(ausDe(o, dia).hasta) : 'sin fecha', 'bad', `openPerson('${o.id}')`, ' ' + [ausDe(o, dia).motivo || 'Ausente', ausDe(o, dia).lugar].filter(Boolean).join(' · '))).join('')}</div>` : ''}
         <div class="log-foot">${esHoy ? `<button class="btn btn-a" onclick="pasarLista()">${ic('check')} Pasar lista</button>` : ''}
           <button class="btn btn-g" onclick="shareText(sierParte(), 'Parte de personal')">${ic('chat')} Parte</button></div>
       </div>
@@ -68,10 +71,11 @@ function viewLogistica() {
         ${motoTt ? logMeter('Motosierristas', motoT, motoTt, irAp('moto'), motoSt ? ` + ${motoS} de ${motoSt} suplentes` : '') : ''}
         ${caps.length || motoTt ? '' : '<p class="muted">Aún no hay especialidades ni equipos apuntados en el personal.</p>'}
       </div>
-      ${vuelven.length || previstas.length ? `<div class="panel">
-        <h3>Próximos cambios</h3>
-        <div class="log-rows">${vuelven.map(o => logRow(conEmpleo(o), 'vuelve el ' + fmtDate(new Date(new Date(o.aus.hasta + 'T12:00').getTime() + 864e5).toISOString().slice(0, 10)), '', `openPerson('${o.id}')`, ' ' + (o.aus.motivo || ''))).join('')}
-          ${previstas.map(o => logRow(conEmpleo(o), 'desde el ' + fmtDate(o.aus.desde), 'warn', `openPerson('${o.id}')`, ' ' + (o.aus.motivo || 'Ausencia') + (o.aus.hasta ? ' hasta el ' + fmtDate(o.aus.hasta) : ''))).join('')}</div>
+      ${vuelven.length || previstas.length || bajo.length ? `<div class="panel">
+        <div class="between"><h3>Próximos cambios</h3><button class="link" onclick="setPref({ tab: 'personal', person: null, pview: 'cuadrante' }); scrollTo(0, 0)">Cuadrante</button></div>
+        <div class="log-rows">${[...new Map(bajo.map(b => [b.grupo, b])).values()].map(b => logRow(`${b.grupo} baja del mínimo`, `el ${fmtDate(b.dia)}`, 'bad', "setPref({ tab: 'personal', person: null, pview: 'cuadrante' }); scrollTo(0, 0)", ` ${b.n} de ${b.min}${bajo.filter(x => x.grupo === b.grupo).length > 1 ? ` · ${bajo.filter(x => x.grupo === b.grupo).length} días en 30` : ''}`)).join('')}
+          ${vuelven.map(o => logRow(conEmpleo(o), 'vuelve el ' + fmtDate(new Date(new Date(ausDe(o, dia).hasta + 'T12:00').getTime() + 864e5).toISOString().slice(0, 10)), '', `openPerson('${o.id}')`, ' ' + (ausDe(o, dia).motivo || ''))).join('')}
+          ${previstas.map(([o, a]) => logRow(conEmpleo(o), 'desde el ' + fmtDate(a.desde), 'warn', `planDe('${o.id}')`, ' ' + (a.motivo || 'Ausencia') + (a.hasta ? ' hasta el ' + fmtDate(a.hasta) : ''))).join('')}</div>
       </div>` : ''}
       <div class="panel">
         <div class="between"><h3>Vehículos</h3><button class="link" onclick="go('vehiculos')">Flota</button></div>
@@ -97,6 +101,12 @@ function viewLogistica() {
         <h3>Material de especialidades y vehículos</h3><p class="muted" style="margin-bottom:6px">Operativo del total apuntado en cada uno.</p>
         ${matAp.map(([nombre, m, ir]) => logMeter(nombre, m.filter(matOk).length, m.length, ir, m.some(x => x.review && daysTo(x.review) <= 30) ? ' revisión próxima' : '')).join('')}
       </div>` : ''}
+      ${revs.length ? `<div class="panel">
+        <h3>Revistas que tocan</h3>
+        <div class="log-rows">${revs.map(([o]) => logRow(duenoNombre(o), 'toca', 'warn', matIr(duenoDe(o)), ' ' + (REV_CADA.find(r => r[0] === revCada(o))?.[1].toLowerCase() || ''))).join('')}</div>
+      </div>` : ''}
+      <div class="panel">${needsBloque('')}</div>
+      ${almacenPanel()}
       ${cargos.length ? `<div class="panel">
         <div class="between"><h3>Quién tiene material</h3><button class="link" onclick="go('fuera')">Fuera</button></div>
         <div class="log-rows">${cargos.map(([who, gs]) => logRow(who, gs.length + (gs.length === 1 ? ' equipo' : ' equipos'), '', operators().find(o => o.name === who) ? `setPref({ tab: 'personal', person: '${operators().find(o => o.name === who)?.id}', ptab: 'mat' }); scrollTo(0, 0)` : "go('fuera')", ' ' + gs.slice(0, 2).map(g => g.name).join(', ') + (gs.length > 2 ? '…' : ''))).join('')}</div>
@@ -117,7 +127,7 @@ function listaHtml() {
     <div class="lista-res" aria-live="polite"><span>Presentes</span><b>${ops.length - n}<small style="display:inline">/${ops.length}</small></b></div>
     ${grupos.map(([t, m]) => `<div class="lista-grupo"><p class="lista-t"><span>${esc(t)}</span><span>${m.filter(o => !esAusente(o)).length}/${m.length}</span></p>
       <div class="lista-fichas">${m.map(o => { const f = esAusente(o); return `<button class="lista-f ${f ? 'aus' : ''}" aria-pressed="${!f}" aria-label="${esc(o.name)}: ${f ? 'ausente' : 'presente'}" onclick="listaToca('${o.id}')">
-        <b>${esc(o.name)}</b><small>${esc(f ? [o.aus.motivo || 'Ausente', o.aus.lugar].filter(Boolean).join(' · ') : o.empleo || 'Presente')}</small></button>`; }).join('')}</div></div>`).join('')}
+        <b>${esc(o.name)}</b><small>${esc(f ? [ausHoy(o).motivo || 'Ausente', ausHoy(o).lugar].filter(Boolean).join(' · ') : o.empleo || 'Presente')}</small></button>`; }).join('')}</div></div>`).join('')}
     <div class="row" style="margin-top:16px"><button class="btn btn-a" onclick="closeModal()">${ic('check')} Hecho</button>
       <button class="btn btn-g" onclick="shareText(sierParte(), 'Parte de personal')">${ic('chat')} Enviar el parte</button></div>
   </div>`;
@@ -126,7 +136,7 @@ function pasarLista() { openModal('Pasar lista', listaHtml()); }
 function listaToca(id) {
   const o = get('operators', id), f = esAusente(o), sheet = document.querySelector('#modal .sheet'), y = sheet?.scrollTop || 0;
   // Una ausencia prevista (aún sin empezar) conserva su motivo y su fecha de fin: solo se adelanta a hoy
-  put('operators', { ...o, aus: f ? null : { motivo: LISTA_MOTIVO, hasta: '', nota: '', lugar: LISTA_LUGAR.trim(), ...(ausPrevista(o) ? o.aus : {}), desde: todayISO() } }, `${o.name}: ${f ? 'presente' : 'ausente (' + LISTA_MOTIVO + ')'}`);
+  put('operators', f ? ponerPresente(o) : { ...o, aus: { motivo: LISTA_MOTIVO, hasta: '', nota: '', lugar: LISTA_LUGAR.trim(), ...(ausPrevista(o) ? o.aus : {}), desde: todayISO() } }, `${o.name}: ${f ? 'presente' : 'ausente (' + LISTA_MOTIVO + ')'}`);
   const body = $('listaBody'); if (!body) return;
   body.outerHTML = listaHtml(); if (sheet) sheet.scrollTop = y;
   document.querySelector(`#listaBody .lista-f[onclick*="${id}"]`)?.focus({ preventScroll: true });

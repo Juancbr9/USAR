@@ -1,7 +1,7 @@
-"""Prueba del permiso de flota: solo RODRI (ADMIN) añade, cambia o elimina material, cajas, consumibles, vehículos y
-extras de las salidas. El resto los usa (mover, sacar, revisión, stock) pero no ve los botones de alta ni de edición.
-Con usuario de Supabase hace falta además el rol de jefe: con una cuenta de miembro, RODRI ve la app como el resto.
-Y el servidor rechaza el material nuevo de un miembro sin atascar el resto de los cambios.
+"""Prueba de quién da de alta material, cajas, consumibles y vehículos: cualquiera del equipo (antes, solo RODRI y quien
+tenía permiso de logística). Con usuario de la base de datos, el jefe siempre puede y un miembro solo cuando la base de
+datos ya lo admite (registro «flotaabierta», que crea el cambio de supabase.sql); mientras tanto el servidor rechaza su
+material nuevo sin atascar el resto de los cambios.
 Uso: python3 tests/test_flota.py  (con la app en APP_URL y el servidor de prueba recién arrancado en MOCK_URL)"""
 import os, sys, json, urllib.request
 from playwright.sync_api import sync_playwright
@@ -50,32 +50,19 @@ with sync_playwright() as p:
     rodri = a.evaluate("operators().find(o => o.name === 'RODRI').id")
     como = lambda pg, op, name: (pg.evaluate(f"setPref({{ session: '{op}', activeOperator: '{name}' }})"), pg.wait_for_timeout(200))
 
-    # GRANADOS: sin botones de alta ni de edición, pero sí puede mover el material
-    b = botones(a)
-    assert not any(b[k] for k in ('material', 'caja', 'editar', 'eliminar', 'vehiculo', 'veh_editar', 'consumible')), b
-    assert b['mover'], 'el resto sigue moviendo el material'
-    # Aunque se llame a los formularios (QR, enlaces antiguos…), no se abren
-    n = a.evaluate("list('gear').length")
-    for f in ("gearForm()", "boxForm()", "consForm()", "vehicleForm()", f"removeItem('gear', list('gear')[0].id)"):
-        a.evaluate(f); a.wait_for_timeout(50)
-        assert a.locator('#modalForm, #extrasForm').count() == 0, f'{f} no debe abrirse'
-    assert a.evaluate("list('gear').length") == n, 'no se borra nada'
-    assert 'Solo RODRI' in a.inner_text('#toasts, .toast, body')
-    # El stock sí lo ajusta cualquiera
-    go(a, 'consumibles')
-    if a.evaluate("list('consumables').length"):
-        c0 = a.evaluate("list('consumables').sort(byName)[0].stock")
-        a.locator('#view button:has-text("+1")').first.click(); a.wait_for_timeout(100)
-        assert a.evaluate("list('consumables').sort(byName)[0].stock") == c0 + 1
-
-    # RODRI: todo
-    como(a, rodri, 'RODRI')
+    # Sin usuario de la base de datos, cualquiera del equipo (GRANADOS no es ADMIN) da de alta, edita y elimina
     b = botones(a); assert all(b.values()), b
+    go(a, 'contenedor'); a.click('#view button.btn-a:has-text("Material")'); a.click('#modal .add-mat [data-add=plus]')
+    a.fill('#modalForm [name=name]', 'Taladro nuevo de GRANADOS'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
+    assert a.evaluate("list('gear').some(g => g.name === 'Taladro nuevo de GRANADOS')") and a.evaluate("puedeFlota()")
+    # El permiso de logística ya no existe (no se pregunta en la ficha de nadie)
+    a.evaluate(f"setPref({{ session: '{rodri}', activeOperator: 'RODRI' }}); personForm(operators().find(o => o.name === 'DORTA').id)"); a.wait_for_selector('#modalForm')
+    assert a.locator('#modalForm input[name=logi]').count() == 0; a.keyboard.press('Escape'); a.wait_for_timeout(150)
     go(a, 'contenedor'); a.click('#view button.btn-a:has-text("Material")'); a.click('#modal .add-mat [data-add=plus]')
     a.fill('#modalForm [name=name]', 'Taladro nuevo de RODRI'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     assert a.evaluate("list('gear').some(g => g.name === 'Taladro nuevo de RODRI')")
 
-    # Con usuario de Supabase: RODRI con su cuenta de jefe edita; con su segunda cuenta (miembro) lo ve como el resto
+    # Con usuario de Supabase y la base de datos aún sin abrir: el jefe edita; un miembro lo ve sin botones de alta
     req = urllib.request.Request(MOCK + '/rest/v1/usar_members', method='POST', headers={'Content-Type': 'application/json'},
                                  data=json.dumps([{'email': 'juan@usar.es', 'role': 'jefe'}, {'email': 'juan+prueba@usar.es', 'role': 'miembro'}]).encode())
     urllib.request.urlopen(req)
@@ -102,6 +89,19 @@ with sync_playwright() as p:
     assert ('gear', 'G-COLADO') not in rows, 'el servidor no debe aceptar material nuevo de un miembro'
     assert rows[('gear', gid)]['data']['status'] == 'REVISIÓN', 'el cambio de estado del miembro sí llega'
     assert a.evaluate("Sync.status") == 'online', a.evaluate("Sync.error")
+
+    # Base de datos abierta (el cambio de supabase.sql): llega el registro «flotaabierta» y el miembro ya da de alta material
+    urllib.request.urlopen(MOCK + '/_abierto')
+    raw = urllib.request.Request(MOCK + '/_raw', method='POST', headers={'Content-Type': 'application/json'},
+                                 data=json.dumps({'kind': 'meta', 'id': 'flotaabierta', 'data': {'id': 'flotaabierta', 'value': True, '_u': 1}, 'deleted': False}).encode())
+    urllib.request.urlopen(raw)
+    a.evaluate("Sync.pull()"); a.wait_for_function("flotaAbierta()", timeout=15000)
+    assert a.evaluate("Sync.role") == 'miembro' and a.evaluate("puedeFlota()")
+    b = botones(a); assert all(b.values()), b
+    a.evaluate("put('gear', { id: 'G-MIEMBRO', name: 'Del miembro', door: 1, status: 'OPERATIVO' })")
+    a.wait_for_function("!Sync.pending", timeout=15000); a.wait_for_timeout(300)
+    assert ('gear', 'G-MIEMBRO') in {(r['kind'], r['id']) for r in dump()} and a.evaluate("Sync.status") == 'online', a.evaluate("Sync.error")
+    go(a, 'ajustes'); assert a.locator('text=los miembros y los PIN los lleva el jefe').count() == 1
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

@@ -235,9 +235,14 @@ const opName = id => get('operators', id)?.name || 'Reserva almacén';
 // Especialidad de cada persona; las fichas de antes de la SIER (sin el dato) son del equipo USAR
 const opEsp = o => o?.esp ?? 'USAR';
 const usarOps = () => operators().filter(o => opEsp(o) === 'USAR');
-// Ausente un día: la ausencia ya ha empezado ese día y no ha terminado (así se pueden apuntar las previstas)
-const ausenteEl = (o, dia) => !!o?.aus && (o.aus.desde || '') <= dia && (!o.aus.hasta || o.aus.hasta >= dia);
-const esAusente = o => ausenteEl(o, todayISO());
+// Ausencias de una persona: la que tiene en curso o prevista (aus) y las apuntadas en el cuadrante (plan: varias, cada una
+// con su inicio y su fin). ausDe da la que le toca un día dado (o null si ese día está)
+const ausDe = (o, dia) => { if (!o) return null; const a = o.aus;
+  if (a && (a.desde || '') <= dia && (!a.hasta || a.hasta >= dia)) return a;
+  return (o.plan || []).find(p => p.desde <= dia && p.hasta >= dia) || null; };
+const ausenteEl = (o, dia) => !!ausDe(o, dia);
+const ausHoy = o => ausDe(o, todayISO());
+const esAusente = o => !!ausHoy(o);
 const ausPrevista = o => !!o?.aus && (o.aus.desde || '') > todayISO();
 // Orden de la hoja de la sección: por pelotón y, dentro, por empleo
 const ordenSier = (a, b) => (PELOTONES.indexOf(a.peloton || '') + 1 || 99) - (PELOTONES.indexOf(b.peloton || '') + 1 || 99)
@@ -269,7 +274,7 @@ const epiQty = e => e.qty === '' || e.qty == null ? 1 : Math.max(0, Math.round(+
 function stamp(kind, rec) { rec._u = Date.now(); db[kind][rec.id] = rec; Sync.queue(kind, rec); }
 // ref: a qué registro se refiere (p. ej. «gear:G-12»), para el historial de cada equipo y caja
 function addLog(action, ref = '') { stamp('logs', { id: uid('L'), ts: Date.now(), operator: prefs.activeOperator, action, ...(ref ? { ref } : {}) }); }
-const LOG_REF = ['gear', 'boxes', 'consumables', 'epis'];
+const LOG_REF = ['gear', 'boxes', 'consumables', 'epis', 'matesp'];
 function put(kind, rec, msg) { stamp(kind, rec); if (msg) addLog(msg, LOG_REF.includes(kind) ? kind + ':' + rec.id : ''); commit(); }
 function putMany(kind, recs, msg) { recs.forEach(r => stamp(kind, r)); if (msg) addLog(msg); commit(); }
 function remove(kind, id, msg) { stamp(kind, { id, _del: true }); if (msg) addLog(msg); commit(); }

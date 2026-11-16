@@ -27,7 +27,18 @@
   Cada material puede tener hueco en un pasillo (`pas` n.º de pasillo, `lado` I/D, `mod`, `niv`; `js/views/pasillo.js`) y
   persona a la que está asignado (`holder`; sale en su ficha). Los pasillos del almacén van por número y tienen estantería
   a izquierda y derecha: Parque 1 y 2, USAR 3 (su propio dibujo), Agua 4, Cuerdas 5, Motosierras 6; todo configurable en la app.
-- Confianza: cualquiera del equipo rellena el material de cualquier apartado o vehículo (lo pidió el usuario). Solo siguen
-  restringidos a logística (`puedeFlota`) el alta de material de USAR y los modelos y matrículas de vehículos.
+- Confianza: cualquiera del equipo rellena todo (material de cualquier apartado, vehículo o USAR, modelos y matrículas);
+  lo pidió el usuario, no volver a restringirlo. Con usuario de la base de datos, `puedeFlota` espera al registro
+  `meta/flotaabierta`, que crea el cambio de políticas de `supabase.sql` (hasta entonces el servidor solo deja al jefe).
+- Material (`matesp`): además de estado, hueco y persona, lleva `caduca` (fin de vida útil), `fab`, foto (`Img`, clave
+  `mat:<id>`) e historial (registro de cambios con ref `matesp:<id>`). El estado `BAJA` («Para dar de baja») no cuenta
+  como material (`matVivo`). Cada dueño tiene inventario imprimible y CSV, etiquetas QR (`#m=<id>` abre la ficha;
+  `#h=<apartado>.<pas>.<lado>.<mod>.<niv>` abre un hueco) y aviso de revista cada N días (`meta/revcada`).
+- Qué especialidad hay en cada pasillo: Logística → «Pasillos del almacén» (`almacenForm`, en `js/views/pasillo.js`).
+- Necesidades (`js/views/necesidades.js`, registros `needs`): lo que falta o hay que pedir, por apartado, USAR, vehículos
+  o general; pestaña en cada apartado y panel en Logística.
 - Situación del personal: cada persona está «En base» o ausente con motivo, lugar y fechas (`aus`); se ve en Personal →
   «Situación», se cambia en su ficha o con «Pasar lista», y una ausencia con `desde` futuro es solo prevista.
+  Además, cada persona guarda en `plan` todas sus ausencias con fechas (vacaciones, permisos, cursos…); se ven y se
+  apuntan en Personal → «Vacaciones» (`js/views/cuadrante.js`), con mínimos por especialidad (`meta/minimos`). Para saber
+  si alguien falta un día, usar siempre `ausDe`/`ausenteEl`/`ausHoy` (`js/data.js`), que miran `aus` y `plan`.
