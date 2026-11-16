@@ -31,25 +31,24 @@ with sync_playwright() as p:
     assert a.locator('#modalForm input[type=file][capture=environment]').count() == 1 and a.locator('#modalForm input[type=file]:not([capture])').count() == 1
     a.keyboard.press('Escape')
 
-    # Áreas: color de cabecera, menú sin repeticiones y franja de activación
+    # Áreas y menú sin repeticiones
     sesion.menu(a, 'Revisión')
     assert a.evaluate("document.documentElement.dataset.area") == 'log' and a.locator('.crumb').count() == 0
     # En el móvil no hay barra abajo: todo va por el menú de tres rayas
     assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
     # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (USAR → Revisión)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
-    assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['Actividades', 'USAR', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
-    # Personal y Vehículos (de toda la sección) van sueltos, sin desplegar nada; lo de USAR, dentro de su grupo
+    assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['USAR', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
+    # Lo de toda la sección y los apartados van sueltos, sin desplegar nada; lo de USAR, dentro de su grupo
     tops = [t.split('\n')[0] for t in a.locator('#drawer .dr-item:not(.sub)').all_inner_texts()]
-    assert tops == ['Inicio', 'Logística', 'Personal', 'Vehículos', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras'], tops
+    assert tops == ['Inicio', 'Logística', 'Personal', 'Vehículos', 'Calendario', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras'], tops
     assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 1 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
-    assert a.locator('#drawer .dr-item:has-text("Calendario")').count() == 0, 'Actividades está plegada'
-    a.click('#drawer .dr-group-head:has-text("Actividades")')
-    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['Todas las actividades', 'Calendario'] and a.locator('#drawer .dr-item:has-text("Almacén")').count() == 0, 'un grupo abierto a la vez'
+    # Ya no hay actividades (intervenciones, ejercicios, maniobras ni convoyes)
+    assert a.locator('#drawer :text("Actividades"), #drawer :text("Intervenciones")').count() == 0 and a.evaluate("!VIEWS.actividades && !VIEWS.operaciones")
     # Alistamiento y Vencimientos ya no están en el menú (los vencimientos van en Inicio)
     assert a.locator('#drawer .dr-item:has-text("Alistamiento"), #drawer .dr-item:has-text("Vencimientos")').count() == 0
     a.click('#drawer .dr-group-head:has-text("Ajustes")')
-    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['General', 'Listas y opciones', 'Manual de uso']
+    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['General', 'Listas y opciones', 'Manual de uso'], 'un grupo abierto a la vez'
     a.keyboard.press('Escape'); assert a.locator('#drawer').is_hidden()
     a.evaluate("go('logistica')"); assert a.evaluate("prefs.tab") == 'contenedor', 'las antiguas portadas llevan a su primera sección'
     sesion.menu(a, 'Personal'); assert a.evaluate("document.documentElement.dataset.area") == 'team'
@@ -60,37 +59,30 @@ with sync_playwright() as p:
     a.go_back(); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'revision', a.evaluate("prefs.tab")
     a.click('#menuBtn'); a.go_back(); a.wait_for_timeout(200); assert a.locator('#drawer').is_hidden() and a.evaluate("prefs.tab") == 'revision'
     a.go_forward(); a.wait_for_timeout(200)
-    assert a.locator('#actbar').count() == 0
-    a.evaluate("put('missions', { id: 'M-T', title: 'Simulacro', type: 'ejercicio', status: 'active', startedAt: Date.now(), teams: [], vehicles: [], gear: [] })"); a.wait_for_timeout(150)
-    assert a.locator('#actbar.ex').count() == 1 and 'EJERCICIO EN CURSO' in a.inner_text('#actbar')
-    a.click('#actbar button'); a.wait_for_timeout(150); assert a.evaluate("prefs.mission") == 'M-T'
-    assert a.locator('#actbar').count() == 0, 'dentro de la propia operación la franja no se repite'
-    a.evaluate("go('avisos')"); a.wait_for_timeout(100); assert a.locator('#actbar').count() == 0 and a.locator('.panel.live').count() == 1
-    a.evaluate("remove('missions', 'M-T')"); a.wait_for_timeout(100); assert a.locator('#actbar').count() == 0
+    assert a.locator('#actbar, #fab').count() == 0
 
     # Manual con capturas
     sesion.menu(a, 'Manual de uso', 300)
     n = a.locator('article.man').count(); print('Secciones del manual:', n); assert n >= 18
+    assert a.locator('#man-operacion, #man-worksites, #man-bic, #man-maniobras').count() == 0
     imgs = a.evaluate("[...document.querySelectorAll('.man-fig img')].map(i => i.getAttribute('src'))")
     missing = [s for s in imgs if not (ROOT / s).exists()]; assert not missing, missing
     a.locator('.man-fig img').first.scroll_into_view_if_needed(); a.wait_for_timeout(400)
     assert a.evaluate("document.querySelector('.man-fig img').naturalWidth") > 0
-    a.fill('#view input[type=search]', 'cadena de custodia'); a.wait_for_timeout(500)
-    assert a.locator('article.man').count() >= 1 and a.locator('#man-bic').count() == 1
+    a.fill('#view input[type=search]', 'puntas de lanza'); a.wait_for_timeout(500)
+    assert a.locator('article.man').count() >= 1 and a.locator('#man-vehiculos').count() == 1
     a.screenshot(path=f'{OUT}/manual.png')
 
-    # Tablet en horizontal / PC: barra lateral y pestañas en columna
+    # Tablet en horizontal / PC: barra lateral
     d = br.new_context(viewport={'width': 1280, 'height': 800}); b = d.new_page()
     b.on('pageerror', lambda e: problems.append(f'PC ERROR {e}')); b.on('dialog', lambda x: x.accept())
     b.goto(APP); b.wait_for_selector('#view > *')
     assert b.evaluate("getComputedStyle(document.getElementById('nav')).position") == 'fixed'
-    for g in ['Actividades', 'USAR', 'Ajustes']:
-        assert b.locator(f'#nav .dr-group-head:has-text("{g}")').is_visible(), 'la barra lateral va por áreas desplegables'
-    b.click('#nav .dr-group-head:has-text("Actividades")'); b.wait_for_timeout(150)
-    assert b.locator('#nav .dr-item:has-text("Calendario")').is_visible(), 'al tocar un área se ven sus secciones'
-    sesion.menu(b, 'Intervenciones'); b.click('button:has-text("Nueva intervención")'); b.click('#modal .item:has-text("En blanco")')
-    b.fill('[name=title]', 'Prueba PC'); b.click('#modalForm button:has-text("Guardar")'); b.wait_for_timeout(300)
-    assert b.evaluate("getComputedStyle(document.querySelector('.mlayout')).display") == 'grid'
+    for g in ['USAR', 'Ajustes']:
+        assert b.locator(f'#nav .dr-group-head:has-text("{g}")').is_visible(), 'la barra lateral lleva los grupos desplegables'
+    b.click('#nav .dr-group-head:has-text("USAR")'); b.wait_for_timeout(150)
+    assert b.locator('#nav .dr-item:has-text("Almacén")').is_visible(), 'al tocar un grupo se ven sus secciones'
+    sesion.menu(b, 'Vehículos'); assert b.locator('#nav .dr-item.on b').inner_text() == 'Vehículos'
     assert b.evaluate("document.documentElement.scrollWidth <= innerWidth"), 'no debe haber scroll horizontal'
     b.screenshot(path=f'{OUT}/pc.png')
     br.close()

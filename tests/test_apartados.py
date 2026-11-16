@@ -1,5 +1,6 @@
 """Prueba de los apartados de especialidades y equipos (Agua, Cuerdas, RPAS, SVA y Motosierras): menú, su gente, su
 material (alta, lista habitual, edición y baja), la revista, las notas y cómo salen en Logística, Inicio y vencimientos.
+También el material de cada vehículo (el mismo sistema, con el vehículo como dueño).
 Uso: python3 tests/test_apartados.py  (con la app servida en APP_URL)"""
 import os, sys, pathlib, datetime
 from playwright.sync_api import sync_playwright
@@ -79,19 +80,19 @@ with sync_playwright() as p:
 
     # Inicio: el material en revisión de un apartado sale en los avisos; su revisión, en los vencimientos
     a.evaluate("go('avisos')"); a.wait_for_timeout(200)
-    av = a.inner_text('#view .area-panel:has(h3:has-text("Material de especialidades"))'); assert 'Remos' in av and 'Agua · En revisión' in av.replace('\n', ' '), av
+    av = a.inner_text('#view .area-panel:has(h3:has-text("Material en revisión o averiado"))'); assert 'Remos' in av and 'Agua · En revisión' in av.replace('\n', ' '), av
     assert a.evaluate("expiries().some(x => x.what === 'Chalecos de rescate · Agua' && x.kind === 'Revisión')")
     # Vencimientos resumidos: 5 y el botón para ver todos
     tot = a.evaluate("expiries().filter(x => daysTo(x.date) <= 30).length")
     if tot > 6:
         assert a.locator('#venc .list .item').count() == 5; a.click(f'#venc button:has-text("Ver los {tot}")'); a.wait_for_timeout(150)
         assert a.locator('#venc .list .item').count() == tot and 'Chalecos de rescate · Agua' in a.inner_text('#venc')
-    a.click('#view .area-panel:has(h3:has-text("Material de especialidades")) .item'); a.wait_for_timeout(200)
+    a.click('#view .area-panel:has(h3:has-text("Material en revisión o averiado")) .item'); a.wait_for_timeout(200)
     assert a.evaluate("prefs.tab") == 'agua' and a.locator('#view .ctab.on').inner_text().startswith('Material')
 
     # Logística: capacidades llevan al apartado y el material de cada apartado tiene su barra
     a.evaluate("go('recursos')"); a.wait_for_timeout(200)
-    esp = ' '.join(a.inner_text('#view .panel:has(h3:text-is("Material de especialidades"))').split()); assert f'Agua revisión próxima {n - 1}/{n}' in esp, esp
+    esp = ' '.join(a.inner_text('#view .panel:has(h3:text-is("Material de especialidades y vehículos"))').split()); assert f'Agua revisión próxima {n - 1}/{n}' in esp, esp
     a.click('#view .panel:has(h3:text-is("Capacidades")) .meter:has-text("Res. Terrestre")'); a.wait_for_timeout(200)
     assert a.evaluate("prefs.tab") == 'cuerdas' and a.inner_text('#view h2') == 'Cuerdas' and a.locator('#view .pers-panel .item').count() == 2
 
@@ -112,6 +113,35 @@ with sync_playwright() as p:
         a.click('#view .list .item >> nth=0'); a.wait_for_timeout(150); assert a.locator('#modal [name=name]').count() == 0, 'no abre el formulario'
         a.evaluate("setPref({ tab: 'cuerdas' })"); a.wait_for_timeout(150); assert a.locator('#view button:has-text("Empezar con lo habitual")').count() == 1, 'el suyo sí'
     a.evaluate("setPref({ session: 'OP-01' })")
+
+    # Material de un vehículo: en su ficha, con su lista habitual, alta por matrícula, revista y avisos
+    vid = a.evaluate("(() => { const v = vehicles().find(v => (v.units || []).length > 1) || vehicles()[0]; return v.id; })()")
+    vn = a.evaluate(f"get('vehicles', '{vid}').name"); placa = a.evaluate(f"get('vehicles', '{vid}').units[0].plate")
+    a.evaluate(f"go('vehiculos'); vehicleView('{vid}')"); a.wait_for_selector('#modal .veh-mat')
+    assert 'Aún no hay material apuntado' in a.inner_text('#modal .veh-mat')
+    a.click('#modal button:has-text("Empezar con lo habitual")'); a.wait_for_selector('#modal .veh-mat .list .item')
+    nv = a.evaluate("VEH_HABITUAL.length"); assert a.locator('#modal .veh-mat .list .item').count() == nv and 'Puntas de lanza' in a.inner_text('#modal .veh-mat')
+    a.click('#modal .veh-mat .item:has-text("Mangueras de 45 mm")'); a.wait_for_selector('#modal [name=qty]')
+    a.fill('[name=qty]', '4'); a.fill('[name=place]', 'Cofre izquierdo'); a.select_option('[name=unit]', label=placa); save()
+    a.wait_for_selector('#modal .veh-mat'); fila = a.inner_text('#modal .veh-mat .item:has-text("Mangueras de 45 mm")')
+    assert '× 4' in fila and 'Cofre izquierdo' in fila and placa in fila, fila   # tras guardar se vuelve a la ficha del vehículo
+    a.click('#modal .veh-mat button:has-text("Material")'); a.wait_for_selector('#modal [name=name]'); a.fill('[name=name]', 'Motobomba portátil'); save(); a.wait_for_selector('#modal .veh-mat')
+    assert a.evaluate(f"matDe({{ veh: '{vid}' }}).length") == nv + 1
+    a.click('#modal .veh-mat button:has-text("Pasar revista")'); a.wait_for_selector('#modal input[name=ok]')
+    a.uncheck('#modal .check-row:has-text("Calzos") input'); a.fill('[name=nota]', 'Falta un calzo'); save(); a.wait_for_selector('#modal .veh-mat')
+    assert 'En revisión' in a.inner_text('#modal .veh-mat .item:has-text("Calzos")') and 'Fallos: Calzos' in a.inner_text('#modal .veh-mat')
+    assert a.evaluate(f"matRevistas('veh:{vid}')[0].fails") == ['Calzos'] and a.evaluate("apRevistas('agua').length") == 2, 'cada dueño guarda sus revistas'
+    a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    assert f'{nv + 1} de material' in a.inner_text(f'#view .veh-item:has-text("{vn}")')
+    # Sale en los avisos de Inicio, en Logística y en el buscador
+    a.evaluate("go('avisos')"); a.wait_for_timeout(200)
+    av = ' '.join(a.inner_text('#view .area-panel:has(h3:has-text("Material en revisión o averiado"))').split()); assert 'Calzos' in av and vn in av and 'Remos' in av, av
+    a.evaluate("go('recursos')"); a.wait_for_timeout(200)
+    esp = ' '.join(a.inner_text('#view .panel:has(h3:text-is("Material de especialidades y vehículos"))').split()); assert f'{vn} {nv}/{nv + 1}' in esp, esp
+    a.click('[aria-label=Buscar]'); a.fill('#search', 'motobomba'); a.wait_for_timeout(300); assert vn in a.inner_text('#results') and 'Motobomba portátil' in a.inner_text('#results')
+    a.evaluate("clearSearch(); toggleSearch()")
+    # Borrar el vehículo deja de contar su material
+    assert a.evaluate(f"matTodo().some(m => m.veh === '{vid}')") is True
 
     # Modo noche y PC
     a.evaluate("setPref({ theme: 'dark', tab: 'agua', aptab: 'material' }); applyTheme()"); a.wait_for_timeout(200); seen('agua de noche'); wide('agua de noche')

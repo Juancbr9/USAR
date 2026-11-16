@@ -8,24 +8,10 @@ const CATALOGS = {
     'Cartilla internacional de vacunación', 'Reconocimiento médico', 'Certificado de curso', 'Seguro de accidentes', 'Otro']],
   quals: ['Cualificaciones y cursos', ['Rescatador USAR', 'Espacios confinados', 'Rescate vertical', 'Apuntalamiento', 'Primeros auxilios / SVB',
     'Guía canino', 'Búsqueda técnica', 'Materiales peligrosos (NRBQ)', 'Conductor de vehículos pesados', 'Operador de radio', 'Salvaguarda de patrimonio']],
-  risks: ['Riesgos', RISK_CATALOG],
-  hazards: ['Peligros de la zona', HAZARDS],
-  buildUse: ['Usos de edificio', BUILD_USE],
-  construction: ['Tipos de construcción', CONSTRUCTION],
-  collapse: ['Tipos de colapso', COLLAPSE],
-  vMethods: ['Cómo se localiza una víctima', V_METHODS],
-  vHanded: ['A quién se entrega una víctima', V_HANDED],
   gearFuncs: ['Funciones del material', GEAR_FUNCS],
   opFuncs: ['Funciones del personal', ['Jefe de equipo', 'Rescatador', 'Sanitario', 'Búsqueda técnica', 'Búsqueda canina', 'Estructuras / apuntalamiento',
     'Corte y penetración', 'Rescate vertical', 'Espacios confinados', 'Materiales peligrosos', 'Logística', 'Comunicaciones', 'Seguridad', 'Conductor']],
-  boxModels: ['Modelos de caja', ['Peli 1450', 'Peli 1550', 'Peli 1600', 'Peli 1610', 'Peli 1620', 'Peli 1650', 'Peli 1660', 'Peli 1690', 'Peli 1730', 'Peli 1780', 'Peli 0450', 'Peli 0500', 'Peli 0550', 'Caja de madera', 'Caja de plástico', 'Bolsa / petate']],
-  commFuncs: ['Funciones de radio', ['Mando', 'Táctico', 'Seguridad', 'Sanitario', 'Logística', 'Coordinación externa']],
-  threats: ['Amenazas para el patrimonio', ['Incendio', 'Erupción volcánica (lava)', 'Ceniza volcánica', 'Inundación', 'Terremoto', 'Temporal / viento', 'Derrumbe']],
-  herTypes: ['Tipos de bien cultural', ['Pintura (lienzo o tabla)', 'Escultura / imagen', 'Orfebrería', 'Textil / ornamentos', 'Libros y documentos', 'Mobiliario', 'Retablo / elemento fijo', 'Otro']],
-  protection: ['Protección del inmueble', ['Bien de Interés Cultural (BIC)', 'Bien catalogado', 'Conjunto histórico', 'Sin protección específica']],
-  needs: ['Necesidades de la población', ['Agua', 'Comida', 'Refugio', 'Saneamiento', 'Atención médica', 'Seguridad', 'Ropa y abrigo']],
-  destinations: ['Destinos de salida', ['Puesto de mando', 'Worksite', 'Hospital', 'Base de operaciones', 'Avituallamiento', 'Reunión de coordinación']],
-  diary: ['Frases rápidas del diario', ['Llegada a zona', 'Zona balizada', 'Inicio de búsqueda', 'Víctima localizada', 'Relevo de equipo', 'Réplica: se para el trabajo']]
+  boxModels: ['Modelos de caja', ['Peli 1450', 'Peli 1550', 'Peli 1600', 'Peli 1610', 'Peli 1620', 'Peli 1650', 'Peli 1660', 'Peli 1690', 'Peli 1730', 'Peli 1780', 'Peli 0450', 'Peli 0500', 'Peli 0550', 'Caja de madera', 'Caja de plástico', 'Bolsa / petate']]
 };
 
 const optSlug = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);

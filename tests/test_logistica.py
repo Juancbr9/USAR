@@ -1,5 +1,5 @@
 """Prueba de Logística: lo disponible de personal (hoy y otro día, con ausencias previstas), capacidades, vehículos y
-material; «Pasar lista»; y el Inicio nuevo (operatividad, fuerza de hoy y accesos).
+material; «Pasar lista»; y el Inicio (operatividad, una tarjeta por especialidad, fuerza de hoy y accesos).
 Uso: python3 tests/test_logistica.py  (con la app servida en APP_URL)"""
 import os, sys, pathlib, datetime
 from playwright.sync_api import sync_playwright
@@ -36,7 +36,10 @@ with sync_playwright() as p:
     # Inicio: saludo con el nombre, operatividad con sus tres barras, fuerza de hoy y accesos
     a.evaluate("go('avisos')"); a.wait_for_timeout(200)
     assert 'Granados' in a.inner_text('.hero .hello') and a.locator('.hero-bar').count() == 3 and a.locator('.hero-pct b').inner_text().endswith('%')
-    assert a.locator('.dash-kpis .dash-kpi').count() == 4
+    # Una tarjeta por especialidad o equipo: USAR con su emblema y sus 13; el resto con los suyos
+    assert a.locator('.esp-tiles .esp-tile').count() == 6 and a.locator('.esp-tile >> nth=0').locator('img.esp-art').count() == 1
+    t = ' '.join(a.inner_text('.esp-tile >> nth=0').split()); assert t.startswith('USAR') and '13/13 presentes' in t and 'material' in t, t
+    t = ' '.join(a.inner_text('.esp-tile:has-text("Agua")').split()); assert '2/2 presentes' in t and '0/0 material' in t, t
     f = a.inner_text('.panel:has(h3:text-is("Fuerza de hoy"))'); assert f'de {total} presentes' in f and 'PIEN 1' in f and '2/2' in f.replace('\n', ''), f
     assert a.locator('.dash-quick .dash-q').all_inner_texts() == ['Pasar lista', 'Parte', 'Logística', 'Revista']
     seen('inicio'); wide('inicio'); a.screenshot(path=f'{OUT}/logistica-inicio.png', full_page=True)
@@ -53,7 +56,7 @@ with sync_playwright() as p:
     for x in ['USAR 13/13', 'Res. Terrestre 2/2', 'Res. Acuático 2/2', 'RPAS 1/1', 'SVA 2/2', 'Motosierristas + 1 de 1 suplentes 2/2']:
         assert x in ' '.join(caps.split()), (x, caps)
     assert 'matrículas disponibles' in panel('Vehículos') or 'Aún no hay matrículas' in panel('Vehículos')
-    assert 'equipos operativos' in panel('Material') and 'Fungible bajo mínimo' in panel('Material')
+    assert 'equipos operativos' in panel('Material de USAR') and 'Fungible bajo mínimo' in panel('Material de USAR')
     seen('logística'); wide('logística')
 
     # Pasar lista: se toca a quien falta (con su motivo) y vuelve a tocarse para marcarlo presente
@@ -107,9 +110,9 @@ with sync_playwright() as p:
     veh = ' '.join(panel('Vehículos').split()); assert f'ITV caducada {n_itv}' in veh and 'plazas' in veh, veh
     assert f"{a.evaluate('flotaEstado().filter(x => x.libre).length')} de {a.evaluate('flotaEstado().length')} matrículas disponibles" in veh, veh
     antes = a.evaluate("flotaEstado().filter(x => x.libre).length"); assert a.evaluate("flotaEstado().find(x => x.u.id === 'U-T1').libre") is False and antes >= 1
-    mat = ' '.join(panel('Material').split()); assert 'Prestado a personas 1' in mat, mat
+    mat = ' '.join(panel('Material de USAR').split()); assert 'Prestado a personas 1' in mat, mat
     quien = ' '.join(panel('Quién tiene material').split()); assert 'DORTA' in quien and '1 equipo' in quien, quien
-    a.click('#view .panel:has(h3:text-is("Material")) .log-row:has-text("En revisión")'); a.wait_for_timeout(150); assert a.evaluate("prefs.tab") == 'revision'
+    a.click('#view .panel:has(h3:text-is("Material de USAR")) .log-row:has-text("En revisión")'); a.wait_for_timeout(150); assert a.evaluate("prefs.tab") == 'revision'
 
     # Modo noche y escritorio: sin desbordes
     a.evaluate("setPref({ theme: 'dark' }); applyTheme(); go('recursos')"); a.wait_for_timeout(200); seen('logística de noche'); wide('logística de noche')

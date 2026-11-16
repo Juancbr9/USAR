@@ -13,12 +13,11 @@ const logRow = (label, value, cls = '', onclick = '', sub = '') => {
   const tagName = onclick ? 'button' : 'div';
   return `<${tagName} class="log-row ${cls} ${typeof value === 'number' ? '' : 'txt'}" ${onclick ? `onclick="${onclick}"` : ''}><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span><b>${esc(String(value))}</b></${tagName}>`;
 };
-// Matrículas de la flota con su estado: en una salida en curso, con fallos en la última revista o con la ITV caducada
+// Matrículas de la flota con su estado: con fallos en la última revista o con la ITV caducada
 function flotaEstado() {
-  const enSalida = new Set(list('missions').filter(m => m.status === 'active').flatMap(m => (m.vehicles || []).map(x => x.plate).filter(Boolean)));
   return vehicles().flatMap(v => (v.units || []).map(u => {
-    const fallo = !!lastVcheck(u.id)?.fails.length, itv = !!u.itv && daysTo(u.itv) < 0, fuera = enSalida.has(u.plate);
-    return { v, u, fallo, itv, fuera, libre: !fallo && !itv && !fuera };
+    const fallo = !!lastVcheck(u.id)?.fails.length, itv = !!u.itv && daysTo(u.itv) < 0;
+    return { v, u, fallo, itv, libre: !fallo && !itv };
   }));
 }
 // Material prestado a personas (sin contar lo que sale con una actividad), agrupado por quién lo tiene
@@ -34,8 +33,8 @@ function viewLogistica() {
   const irAp = (k, aptab = 'equipo') => `setPref({ tab: '${k}', aptab: '${aptab}' }); scrollTo(0, 0)`;
   const caps = [...ESPECIALIDADES.map(e => [e, ...cuenta(o => opEsp(o) === e), apDe(e) ? irAp(apDe(e)) : irPers('esp')]),
     ...Object.entries(EQUIPOS).filter(([k]) => k !== 'moto').map(([k, l]) => [l, ...cuenta(o => (o.eq || []).includes(k)), APARTADOS[k] ? irAp(k) : irPers('equipos')])].filter(c => c[2]);
-  // Material de cada apartado (Agua, Cuerdas…): operativo del total
-  const matAp = Object.keys(APARTADOS).map(k => [k, apMat(k)]).filter(([, m]) => m.length);
+  // Material de cada apartado (Agua, Cuerdas…) y de cada vehículo: operativo del total
+  const matAp = [...Object.keys(APARTADOS).map(k => [APARTADOS[k].name, apMat(k), irAp(k, 'material')]), ...vehicles().map(v => [v.name, matDe({ veh: v.id }), `go('vehiculos'); vehicleView('${v.id}')`])].filter(([, m]) => m.length);
   const [motoT, motoTt] = cuenta(o => o.moto?.tipo === 'T'), [motoS, motoSt] = cuenta(o => o.moto?.tipo === 'S');
   // Quién vuelve y quién falta en los próximos días
   const vuelven = ops.filter(o => fuera(o) && o.aus.hasta && daysTo(o.aus.hasta) <= 7).sort((a, b) => a.aus.hasta.localeCompare(b.aus.hasta));
@@ -43,7 +42,7 @@ function viewLogistica() {
   // Vehículos y material (siempre a día de hoy)
   const flota = flotaEstado(), libres = flota.filter(x => x.libre), plazas = libres.reduce((s, x) => s + (+x.v.seats || 0), 0);
   const a = alerts(), gear = list('gear'), okGear = gear.filter(g => g.status === 'OPERATIVO').length;
-  const enAct = gear.filter(g => g.out?.mission).length, exp = expiries(), venc = exp.filter(x => daysTo(x.date) <= 30).length, cargos = cargosPorPersona();
+  const exp = expiries(), venc = exp.filter(x => daysTo(x.date) <= 30).length, cargos = cargosPorPersona();
   const diaTxt = esHoy ? 'hoy' : 'el ' + new Date(dia + 'T00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return `
@@ -77,18 +76,16 @@ function viewLogistica() {
         <div class="between"><h3>Vehículos</h3><button class="link" onclick="go('vehiculos')">Flota</button></div>
         ${flota.length ? `<div class="log-fig ${logCls(libres.length, flota.length)}"><b>${libres.length}</b><span>de ${flota.length} matrículas disponibles${plazas ? ` · ${plazas} plazas` : ''}</span></div>
         <div class="log-rows">
-          ${logRow('En una salida en curso', flota.filter(x => x.fuera).length, '', "go('actividades')")}
           ${logRow('Con fallos en la última revista', flota.filter(x => x.fallo).length, flota.some(x => x.fallo) ? 'bad' : '', "go('vehiculos')")}
           ${logRow('ITV caducada', flota.filter(x => x.itv).length, flota.some(x => x.itv) ? 'bad' : '', "go('vehiculos')")}
           ${logRow('ITV en los próximos 30 días', flota.filter(x => x.u.itv && daysTo(x.u.itv) >= 0 && daysTo(x.u.itv) <= 30).length, '', "go('vehiculos')")}
         </div>` : `<p class="muted">Aún no hay matrículas apuntadas en los vehículos.</p>`}
       </div>
       <div class="panel">
-        <div class="between"><h3>Material</h3><button class="link" onclick="go('contenedor')">Almacén</button></div>
+        <div class="between"><h3>Material de USAR</h3><button class="link" onclick="go('contenedor')">Almacén</button></div>
         <div class="log-fig ${logCls(okGear, gear.length)}"><b>${okGear}</b><span>de ${gear.length} equipos operativos</span></div>
         <div class="log-rows">
           ${logRow('Prestado a personas', a.out.length, '', "go('fuera')")}
-          ${logRow('En actividades', enAct, '', "go('fuera')")}
           ${logRow('En revisión o averiado', a.review.length + a.broken.length, a.broken.length ? 'bad' : a.review.length ? 'warn' : '', "go('revision')")}
           ${logRow('Fungible bajo mínimo', a.low.length, a.low.length ? 'bad' : '', a.low.length ? 'pedidoForm()' : "go('consumibles')", a.low.length ? ' toca para preparar el pedido' : '')}
           ${logRow('EPI por revisar', a.epi.length, a.epi.length ? 'warn' : '', "go('epi')")}
@@ -96,8 +93,8 @@ function viewLogistica() {
         </div>
       </div>
       ${matAp.length ? `<div class="panel">
-        <h3>Material de especialidades</h3><p class="muted" style="margin-bottom:6px">Operativo del total apuntado en cada apartado.</p>
-        ${matAp.map(([k, m]) => logMeter(APARTADOS[k].name, m.filter(x => (x.status || 'OPERATIVO') === 'OPERATIVO').length, m.length, irAp(k, 'material'), m.some(x => x.review && daysTo(x.review) <= 30) ? ' revisión próxima' : '')).join('')}
+        <h3>Material de especialidades y vehículos</h3><p class="muted" style="margin-bottom:6px">Operativo del total apuntado en cada uno.</p>
+        ${matAp.map(([nombre, m, ir]) => logMeter(nombre, m.filter(matOk).length, m.length, ir, m.some(x => x.review && daysTo(x.review) <= 30) ? ' revisión próxima' : '')).join('')}
       </div>` : ''}
       ${cargos.length ? `<div class="panel">
         <div class="between"><h3>Quién tiene material</h3><button class="link" onclick="go('fuera')">Fuera</button></div>

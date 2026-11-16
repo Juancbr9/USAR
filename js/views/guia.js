@@ -199,3 +199,37 @@ document.addEventListener('click', e => {
   const d = sum.parentElement;
   if (!d.open) document.querySelectorAll('details.guide[open]').forEach(x => { if (x !== d) x.open = false; });
 });
+
+/* ---------- Señales acústicas (el móvil hace de bocina) y matriz de riesgos ---------- */
+let audioCtx = null;
+function playSignal(seq) {
+  try {
+    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume?.();
+    let t = audioCtx.currentTime + .05;
+    seq.forEach(([on, off]) => {
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = 'square'; osc.frequency.value = 2400;
+      gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(.5, t + .02);
+      gain.gain.setValueAtTime(.5, t + on / 1000 - .03); gain.gain.linearRampToValueAtTime(0, t + on / 1000);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + on / 1000 + .02);
+      t += (on + off) / 1000;
+    });
+  } catch {}
+  haptic(seq.flat());
+}
+
+function signalButtons(mid) {
+  return `<div class="signals">${SIGNALS.map(([id, name, desc]) => `
+    <button class="signal ${id}" onclick="emitSignal('${mid}', '${id}')">
+      <span class="sig-name">${name}</span><span class="sig-desc">${desc}</span>
+      <span class="sig-pat">${SIGNALS.find(s => s[0] === id)[3].map(([on]) => `<i style="width:${Math.round(on / 60)}px"></i>`).join('')}</span>
+    </button>`).join('')}</div>`;
+}
+
+function emitSignal(mid, id) { playSignal(SIGNALS.find(s => s[0] === id)[3]); }
+function riskMatrix() {
+  return `<table class="matrix"><tr><th></th>${CONS.map(c => `<th>${c}</th>`).join('')}</tr>
+    ${PROB.map((p, i) => `<tr><th>${p}</th>${CONS.map((_, j) => { const lv = riskLevel(i, j); return `<td class="${lv[1]}">${lv[0]}</td>`; }).join('')}</tr>`).join('')}</table>`;
+}

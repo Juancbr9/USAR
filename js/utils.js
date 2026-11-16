@@ -62,11 +62,11 @@ function applyTheme() {
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'dark' ? '#0B0D0F' : theme === 'sun' ? '#000000' : '#14171A');
 }
 
-// Mantiene la pantalla encendida durante una operación en curso o una revista
+// Mantiene la pantalla encendida durante una revista
 let wakeLock = null;
 async function updateWakeLock() {
   const needed = document.visibilityState === 'visible' && (
-    !!prefs.draft || (prefs.tab === 'operaciones' && get('missions', prefs.mission)?.status === 'active'));
+    !!prefs.draft);
   try {
     if (needed && !wakeLock && 'wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
@@ -90,3 +90,12 @@ const waSec = (icon, title) => ['', `${icon} ${waB(title)}`];
 
 const initials = name => (name || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 const avatar = (name, cls = '') => `<span class="avatar ${cls}" aria-hidden="true">${esc(initials(name))}</span>`;
+const fmtHour = ts => new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+// Descarga un texto como archivo
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast(`Descargado ${name}`);
+}

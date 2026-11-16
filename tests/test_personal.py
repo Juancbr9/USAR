@@ -57,9 +57,9 @@ with sync_playwright() as p:
     assert 'Permiso de trabajo en altura' in a.evaluate("catalog('docTypes')")
     a.keyboard.press('Escape')
 
-    # Recordar el último valor: el tipo de bien cultural y la frase rápida del diario editable
-    a.evaluate("prefs.last = { herType: 'Orfebrería' }")
-    assert a.evaluate("(() => { const f = [{ k: 'type', catalog: 'herTypes', carry: 'herType' }]; openForm('x', f, () => {}); const v = document.querySelector('#modalForm [name=type]').value; closeModal(); return v; })()") == 'Orfebrería'
+    # Recordar el último valor de un desplegable
+    a.evaluate("prefs.last = { herType: 'Peli 1600' }")
+    assert a.evaluate("(() => { const f = [{ k: 'type', catalog: 'boxModels', carry: 'herType' }]; openForm('x', f, () => {}); const v = document.querySelector('#modalForm [name=type]').value; closeModal(); return v; })()") == 'Peli 1600'
 
     # Vencimientos y búsqueda
     more('Inicio'); a.click('#venc .chip:has-text("1 año")'); a.wait_for_timeout(150)

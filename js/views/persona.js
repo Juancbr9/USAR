@@ -18,12 +18,10 @@ const personPhoto = (o, cls = '') => o.photo ? `<img class="avatar-img ${cls}" d
 function viewPerson(o) {
   const r = readiness(o.id), md = medical(o.id), docs = docsOf(o.id), issues = readinessIssues(o.id);
   const epis = list('epis').filter(e => e.holder === o.id), epiBad = epis.filter(e => epiState(e).cls !== 'ok');
-  const ms = list('missions').filter(m => missionPeople(m).includes(o.id)).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  const hours = ms.reduce((s, m) => s + (presence(m).find(p => p.op === o.id) ? presenceTotal(presence(m).find(p => p.op === o.id)) : 0), 0);
   const f = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
   // Pestañas: cada cosa en su sitio, sin una página interminable (se recuerda la última)
   const nMat = gearWith(o).length + boxesWith(o).length;
-  const tabs = [['datos', 'shield', 'Datos'], ['docs', 'file', 'Documentos', docs.length], ['epi', 'hardhat', 'EPI', epiBad.length], ['mat', 'box', 'Material', nMat], ['act', 'history', 'Actividades', ms.length]];
+  const tabs = [['datos', 'shield', 'Datos'], ['docs', 'file', 'Documentos', docs.length], ['epi', 'hardhat', 'EPI', epiBad.length], ['mat', 'box', 'Material', nMat]];
   const tab = tabs.some(t => t[0] === prefs.ptab) ? prefs.ptab : 'datos';
   return `
     <button class="link" onclick="setPref({ person: null })">${ic('back', 'i-sm')} Todo el personal</button>
@@ -92,12 +90,7 @@ function viewPerson(o) {
         <small>${esc([boxItems(b.id).length + ' equipos', 'Desde ' + fmtWhen(b.out.since)].join(' · '))}</small></div></button>
         <button class="btn btn-g btn-sm" onclick="returnBox('${b.id}')">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}${gs.map(g => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
         <small>${esc([boxCode(g) && 'Caja ' + boxCode(g), 'Desde ' + fmtWhen(g.out.since), g.out.note].filter(Boolean).join(' · '))}</small></div></button>
-        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : `<div class="panel">${emptyState('box', 'No lleva material', 'Lo que se le dé desde Material (soltándolo en «Persona») sale aquí.')}</div>`)(gearWith(o), boxesWith(o))}` : ''}
-    ${tab === 'act' ? `      <div class="panel">
-        <h3 class="sec-title">${ic('history')} Historial</h3>
-        <p>${ms.length} operaciones · ${fmtDur(hours)} en zona</p>
-        ${ms.length ? `<div class="list" style="margin-top:8px">${ms.slice(0, 6).map(m => `<button class="item" onclick="openMission('${m.id}')"><div><b>${esc(m.title)}</b><small>${mtypeName(m)} · ${fmtDT(m.date)} · ${esc(missionRole(m, o.id))}</small></div>${ic('chev', 'i-sm')}</button>`).join('')}</div>` : ''}
-      </div>` : ''}`;
+        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : `<div class="panel">${emptyState('box', 'No lleva material', 'Lo que se le dé desde Material (soltándolo en «Persona») sale aquí.')}</div>`)(gearWith(o), boxesWith(o))}` : ''}`;
 }
 
 // Campos de la organización de la sección, comunes al alta y a la ficha
@@ -208,7 +201,7 @@ function expiries() {
   });
   list('epis').filter(e => e.expires).forEach(e => out.push({ date: e.expires, what: `${epiLabel(e)} de ${opName(e.holder)}`, kind: 'EPI', go: `epiForm('${e.id}')` }));
   list('gear').filter(g => g.service).forEach(g => out.push({ date: g.service, what: g.name, kind: 'Mantenimiento', go: `gearDetail('${g.id}')` }));
-  list('matesp').filter(m => m.review && APARTADOS[m.ap]).forEach(m => out.push({ date: m.review, what: `${m.name} · ${APARTADOS[m.ap].name}`, kind: 'Revisión', go: `setPref({ tab: '${m.ap}', aptab: 'material' }); apMatForm('${m.ap}', '${m.id}')` }));
+  matTodo().filter(m => m.review).forEach(m => out.push({ date: m.review, what: `${m.name} · ${matDueno(m)}`, kind: 'Revisión', go: matIr(m) }));
   list('vehicles').forEach(v => (v.units || []).filter(u => u.itv).forEach(u => out.push({ date: u.itv, what: `${v.name} ${u.plate}${u.cita ? ' · cita ' + u.cita : ''}`, kind: 'ITV', go: `vehicleForm('${v.id}'); unitForm('${v.id}', '${u.id}')` })));
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }

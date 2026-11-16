@@ -75,7 +75,6 @@ with sync_playwright() as p:
     a.goto(APP); a.wait_for_selector('#view > *'); a.evaluate("setPref({ guide: false })")
     a.evaluate("window.print = () => {}")
     esc = lambda: (a.keyboard.press('Escape'), a.wait_for_timeout(150))
-    mtab = lambda n: (a.click(f'.tab:has-text("{n}")'), a.wait_for_timeout(200))
     save = lambda: (a.click('#modalForm button:has-text("Guardar")'), a.wait_for_timeout(300))
     menu = lambda n: sesion.menu(a, n, 200)
     tall = lambda h: (a.set_viewport_size({'width': 390, 'height': h}), a.wait_for_timeout(150))
@@ -118,81 +117,15 @@ with sync_playwright() as p:
     ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
     a.evaluate("prefs.menuOpen = ['usar']; renderDrawer()"); tall(1220); a.wait_for_timeout(200)
-    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-item:has-text("Logística")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
-                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Revisión") .dr-dot', 'r', {'d': 30}), ('#drawer .dr-item:has-text("Agua")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
+    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-item:has-text("Logística")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
+                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Calendario")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}),
+                    ('#drawer .dr-item:has-text("Revisión") .dr-dot', 'r', {'d': 30}), ('#drawer .dr-item:has-text("Agua")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
 
-    # ---------- Operación de ejemplo ----------
-    menu('Intervenciones'); a.click('button:has-text("Nueva intervención")'); a.wait_for_timeout(200)
-    ann(a, 'op-plantillas', [('#modal .item:has-text("Colapso estructural")', 'i'), ('#modal .item:has-text("En blanco")', 'i')])
-    a.click('#modal .item:has-text("Colapso estructural")'); a.wait_for_timeout(200)
-    a.fill('[name=title]', 'Derrumbe vivienda Calle Real'); a.fill('[name=location]', 'Calle Real 12, Telde'); a.fill('[name=meeting]', 'Plaza de San Juan'); a.fill('[name=channel]', 'TETRA 2'); save()
-    # Material sugerido: en una intervención de prueba que aún no lleva nada
-    mid0 = a.evaluate("prefs.mission")
-    a.evaluate("stamp('missions', { id: 'M-SUG', type: 'intervencion', status: 'prep', title: 'Derrumbe en Telde', date: localNow(), chief: 'OP-01', emergency: 'vertical', container: false, gear: [], teams: [], vehicles: [] }); commit(); openMission('M-SUG', 'material')"); a.wait_for_timeout(250)
-    sp = '#view .panel:has-text("Material sugerido")'
-    tall(1300); ann(a, 'op-sugerido', [(f'{sp} select', 'i'), (f'{sp} .checks', 'i')], scroll=sp, top=120); tall(760)
-    a.evaluate(f"remove('missions', 'M-SUG'); openMission('{mid0}', 'resumen')"); a.wait_for_timeout(200)
-    a.click('button:has-text("Iniciar")'); a.wait_for_timeout(300)
-    a.evaluate("""(() => { const m = mget(prefs.mission);
-      saveMission(m, { zone: { height: 9, door: 'Esquina lado 1 con lado 2', meeting: 'Plaza de San Juan', escape: 'Calle Real hacia la plaza', safe: 'Aparcamiento norte', relevo: 60, par: 30, cut: ['Gas', 'Electricidad'], hazards: ['Colapso secundario', 'Polvo'] },
-        func: { seguridad: 'OP-05', puerta: 'OP-13', vigia: 'OP-04', byr: 'OP-01', sanitario: 'OP-12' }, extras: [{ name: 'Grupo electrógeno pequeño', qty: 2 }, { name: 'Puntales de madera', qty: 4 }],
-        risks: [{ name: 'Colapso secundario o derrumbe', p: 1, c: 2, measures: 'Vigía y apuntalamiento previo' }, { name: 'Polvo e inhalación', p: 2, c: 0, measures: 'FFP3' }],
-        checks: { 'activacion.0': true, 'activacion.1': true, 'activacion.2': true, 'activacion.3': true, 'activacion.4': true, 'activacion.5': true, 'informacion.0': true, 'informacion.1': true } }); })()""")
-    a.click('.tab:has-text("Personal")'); a.wait_for_timeout(150); a.click('button:has-text("Entran todos")'); a.wait_for_timeout(200)
-    a.locator('.item:has-text("DORTA") button:has-text("Sale")').click(); a.wait_for_timeout(200)
-    ann(a, 'op-personal', [('.panel:has-text("Control de personal") .status, .panel:has-text("Control de personal") .grid >> nth=0', 'i'),
-                           ('button:has-text("Entran todos")', 'r', {'d': 24}), ('.panel:has-text("Control de personal") .item >> nth=0', 'i')], scroll='.panel:has-text("Control de personal") .status, .panel:has-text("Control de personal") .grid >> nth=0', top=230)
-    mtab('Resumen'); tall(1350)
-    ann(a, 'op-resumen', [('.tabs', 'b', {'d': 26, 'fx': .2}), ('.phase.now summary', 'l', {'d': 0}), ('.phase.now .check-row >> nth=0', 'l', {'d': 0}), ('.phase.now button:has-text("Pasar a")', 't', {'d': 30, 'ox': 60})], scroll='.phase.now', top=200); tall(760)
-    mtab('Material'); tall(1000); a.evaluate("scrollTo(0, document.querySelector('#view .tabs').getBoundingClientRect().top + scrollY - 140)"); a.wait_for_timeout(200)
-    ann(a, 'op-material', [('.mat-banner', 'i'), ('#view button:has-text("Extra")', 'i'), ('#view button:has-text("Elegir material")', 'i'), ('#view .panel .grid .well >> nth=0', 'i')]); tall(760)
-    a.evaluate("missionVehicleForm(prefs.mission)"); a.wait_for_timeout(200); a.select_option('[name=id]', label='Amarok'); a.fill('[name=plate]', '7712 GTR')
-    a.check('input[name=gear][value=B-901]'); a.check('input[name=gear][value=B-902]')
-    ann(a, 'op-vehiculo', [('#modalForm .lbl:has([name=id])', 'i'), ('#modalForm .lbl:has([name=plate])', 'i'), ('#modalForm .lbl:has(input[name=gear])', 't', {'d': 20})], scroll='#modalForm .lbl:has([name=plate])', top=200); save()
-    a.click('#fab'); a.wait_for_timeout(200)
-    ann(a, 'fab', [('#modal button:has-text("Nota de voz"), #modal .action:has-text("Nota"), #modal .item:has-text("Nota")', 'i'), ('#modal :is(button,a):has-text("Fichar")', 'i'), ('#modal :is(button,a):has-text("Señales")', 'i')]); esc()
-    mtab('Seguridad')
-    ann(a, 'op-seguridad', [('.panel:has-text("Zona de trabajo") b:has-text(" m")', 'b', {'d': 30}), ('.panel:has-text("Zona de trabajo") button:has-text("Editar")', 'l', {'d': 30})], scroll='.panel:has-text("Zona de trabajo")')
-    a.evaluate("openSignals(prefs.mission)"); a.wait_for_timeout(200)
-    ann(a, 'senales', [('#modal button:has-text("Evacuación")', 'i')]); esc()
-    # Worksites
-    mtab('Worksites')
-    a.evaluate("""(() => { const mid = prefs.mission;
-      put('worksites', { id: 'WS-E1', mission: mid, sector: 'A', num: 1, sub: '', code: 'A-1', status: 'active', address: 'Calle Real 12', lat: '27.9945', lon: '-15.4170', use: 'Vivienda', construction: 'Hormigón armado', floors: 2, collapse: 'Inclinado', damage: 70, missing: 2, live: 1, hazards: 'Gas', cat: 'A', asr: [{ team: 'USAR-242', level: 2, date: todayISO() }, { team: 'USAR-242', level: 3, date: todayISO() }], ops: ['A', 'B', 'C'], eval: {}, created: Date.now() });
-      put('worksites', { id: 'WS-E2', mission: mid, sector: 'A', num: 2, sub: '', code: 'A-2', status: 'pending', address: 'Calle Real 14', lat: '27.9951', lon: '-15.4162', use: 'Comercial', collapse: 'Total (pancake)', cat: 'C', asr: [{ team: 'USAR-242', level: 2, date: todayISO() }], eval: {}, created: Date.now() });
-      put('victims', { id: 'VI-E1', mission: mid, worksite: 'WS-E1', n: 1, state: 'viva', status: 'rescate', method: 'Llamada y escucha', floor: 'Planta 1', position: 'Cuadrante B, cocina', located: Date.now() - 95 * 6e4, rescueStart: Date.now() - 50 * 6e4, color: 'amarillo', crush: true });
-      put('confined', { id: 'EC-E1', mission: mid, place: 'Sótano 1, cuadrante B', worksite: 'WS-E1', status: 'prep', litres: 6, bar: 300, entrants: ['OP-06', 'OP-07'], backup: ['OP-08'], guard: ['OP-09'], readings: [{ ts: Date.now() - 6e5, o2: '18', lel: '6', co: '12', h2s: '0', by: 'AGUIAR' }, { ts: Date.now() - 1e5, o2: '20.4', lel: '2', co: '8', h2s: '0', by: 'AGUIAR' }], created: Date.now() });
-    })()""")
-    a.wait_for_timeout(200)
-    ann(a, 'ws-lista', [('.ws-card >> nth=0', 't', {'d': 26})], scroll='.ws-card', top=120)
-    a.evaluate("triageWizard('WS-E2')"); a.wait_for_timeout(200); shot(a, 'ws-triaje'); esc()
-    a.click('.ws-card:has-text("A-1")'); a.wait_for_timeout(200)
-    ann(a, 'ws-ficha', [('.panel:has-text("Marcaje en la fachada") svg >> nth=0', 'i')], scroll='.panel:has-text("Marcaje en la fachada")')
-    a.evaluate("victimDetail('VI-E1')"); a.wait_for_timeout(200); shot(a, 'victima'); esc()
-    a.evaluate("confinedDetail('EC-E1')"); a.wait_for_timeout(200); shot(a, 'confinado'); esc()
-    a.click('button:has-text("Todos los worksites")'); mtab('Informes'); shot(a, 'informes')
-    menu('Inicio'); a.evaluate("scrollTo(0, 0)")
-    tall(1150); a.evaluate("scrollTo(0, 0)")
-    ann(a, 'inicio', [('.hero', 'i'), ('.panel.live', 'i'), ('#view .area-panel >> nth=0', 'i')])
+    # ---------- Inicio ----------
+    a.evaluate("scrollTo(0, 0)"); tall(1150); a.evaluate("scrollTo(0, 0)")
+    ann(a, 'inicio', [('.hero', 'i'), ('.esp-tiles', 'i'), ('#view .area-panel >> nth=0', 'i')])
     tall(760)
-
-    # ---------- Patrimonio ----------
-    menu('Ejercicios'); a.click('button:has-text("Nuevo ejercicio")'); a.click('#modal .item:has-text("Salvaguarda de patrimonio")'); a.wait_for_timeout(200)
-    a.fill('[name=title]', 'Simulacro Convento de San Francisco'); a.fill('[name=location]', 'Garachico'); save()
-    eta = (datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M')
-    a.evaluate(f"""(() => {{ const m = mget(prefs.mission); saveMission(m, {{ bic: {{ building: 'Antiguo Convento de San Francisco, Garachico', protection: 'Bien de Interés Cultural (BIC)', threat: 'Erupción volcánica (lava)', eta: '{eta}', owner: 'Párroco, 600 000 000', depot: 'Casa de la Cultura de Icod', depotContact: 'Técnico del Cabildo' }} }});
-      const mk = (n, name, type, place, p, status, extra = {{}}) => put('heritage', {{ id: 'BC-E' + n, mission: m.id, n, name, type, place, p, status, val: '3', risk: '3', move: p === 'IS' ? 'no' : 'facil', custody: [], ...extra }});
-      mk(1, 'Imagen de San Francisco', 'Escultura / imagen', 'Altar mayor', 'P1', 'deposito', {{ box: 'Caja 1', custody: [{{ status: 'documentado', ts: Date.now() - 36e5, by: 'CABRERA' }}, {{ status: 'embalado', ts: Date.now() - 30e5, by: 'AGUIAR', note: 'Caja 1' }}, {{ status: 'traslado', ts: Date.now() - 25e5, by: 'MANOLO' }}, {{ status: 'deposito', ts: Date.now() - 12e5, by: 'LENIS', note: 'Recibe técnico del Cabildo' }}] }});
-      mk(2, 'Cáliz de plata', 'Orfebrería', 'Sacristía', 'P1', 'embalado', {{ box: 'Caja 2' }});
-      mk(3, 'Libro de bautismos (s. XVIII)', 'Libros y documentos', 'Archivo', 'P2', 'documentado');
-      mk(4, 'Retablo mayor', 'Retablo / elemento fijo', 'Presbiterio', 'IS', 'insitu', {{ insitu: 'Cubierto con manta ignífuga y lámina' }});
-      mk(5, 'Lienzo de la Inmaculada', 'Pintura (lienzo o tabla)', 'Capilla lado 2', 'P2', 'pendiente');
-    }})()""")
-    mtab('Patrimonio')
-    ann(a, 'bic', [('.flow', 'b', {'d': 26})], scroll='.flow', top=140)
-    a.evaluate("heritageDetail('BC-E1')"); a.wait_for_timeout(200)
-    ann(a, 'bic-bien', [('#modal .custody', 'i')], scroll='#modal .custody', top=60); esc()
 
     # ---------- Contenedor ----------
     a.evaluate("go('contenedor'); setPref({ cside: 'izq' })"); a.wait_for_timeout(250)
@@ -294,8 +227,7 @@ with sync_playwright() as p:
     d = br.new_context(viewport={'width': 1280, 'height': 800}, device_scale_factor=1, locale='es-ES')
     b = d.new_page(); b.goto(APP); b.wait_for_selector('#view > *')
     b.evaluate("(data => { localStorage.setItem(KEY.db, data); })", a.evaluate("localStorage.getItem(KEY.db)"))
-    mid = a.evaluate("list('missions').find(m => m.status === 'active').id")
-    b.evaluate(f"localStorage.setItem(KEY.prefs, JSON.stringify({{ tab: 'operaciones', mission: '{mid}', mtab: 'worksites', guide: false }}))")
+    b.evaluate("localStorage.setItem(KEY.prefs, JSON.stringify({ tab: 'avisos', guide: false }))")
     b.reload(); b.wait_for_selector('#view > *'); b.wait_for_timeout(400)
     b.screenshot(path=str(OUT / 'pc.jpg'), type='jpeg', quality=74); made.add('pc'); print('✓ pc')
     br.close()

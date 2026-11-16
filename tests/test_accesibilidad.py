@@ -76,18 +76,14 @@ with sync_playwright() as p:
     for need in [':focus-visible', 'prefers-reduced-motion']:
         if need not in css: problems.append(f'falta {need} en styles.css')
 
-    a.evaluate("""(() => { const t = Date.now();
-      stamp('missions', { id: 'M-A', type: 'ejercicio', scope: 'usar', status: 'active', started: t, date: localNow(), title: 'Ejercicio de prueba', chief: 'OP-01', teams: [], vehicles: [{ key: 'MV-1', id: 'V-AMAROK', plate: '1234 ABC', driver: 'OP-02', crew: [], gear: ['B-901'] }], container: true, phase: 1 });
-      stamp('worksites', { id: 'W-A', mission: 'M-A', code: 'A-1', name: 'Edificio', status: 'active', cat: 'A' });
-      stamp('victims', { id: 'V-A', mission: 'M-A', worksite: 'W-A', n: 1, state: 'viva', status: 'localizada', located: t });
+    a.evaluate("""(() => {
       stamp('events', { id: 'E-A', type: 'Formación', title: 'Apuntalamiento', start: todayISO() + 'T09:00', end: todayISO() + 'T13:00', people: ['OP-01'] });
       commit(); })()""")
     pages = [(f"go('{t}')", t) for t in a.evaluate("Object.keys(VIEWS)")]
-    pages += [(f"openMission('M-A', '{t}')", 'op-' + t) for t in a.evaluate("MTABS.map(t => t[0])")]
     pages += [("openPerson('OP-01')", 'persona'), ("go('contenedor')", 'dibujo'), ("go('revision')", 'revisión'), ("go('armarios')", 'armarios'), ("go('pasillo')", 'pasillo'),
               ("toggleDrawer(true)", 'menú')]
     modals = [("gearDetail('G-B19-5')", 'ficha equipo'), ("boxDetail('K-H2')", 'ficha caja'), ("personForm('OP-01')", 'editar persona'),
-              ("missionVehicleForm('M-A')", 'vehículo'), ("eventForm()", 'evento'), ("epiForm(list('epis')[0].id)", 'EPI'), ("victimDetail('V-A')", 'víctima'), ("revForm('G-B19-5')", 'revisión form'), ("novForm('gear', 'G-B19-5')", 'nota')]
+              ("vehicleView(vehicles()[0].id)", 'vehículo'), ("matForm('ap:agua')", 'material'), ("eventForm()", 'evento'), ("epiForm(list('epis')[0].id)", 'EPI'), ("revForm('G-B19-5')", 'revisión form'), ("novForm('gear', 'G-B19-5')", 'nota')]
     results = {}
     for theme in ['light', 'dark', 'sun']:
         a.evaluate(f"setPref({{ theme: '{theme}' }}); applyTheme()")
