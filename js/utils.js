@@ -59,7 +59,7 @@ function applyTheme() {
   root.dataset.theme = theme === 'sun' ? 'light' : theme;
   if (theme === 'sun') root.dataset.sun = '1'; else delete root.dataset.sun;
   root.classList.toggle('big', !!prefs.big);
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'dark' ? '#0E1611' : theme === 'sun' ? '#000000' : '#22382A');
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'dark' ? '#0B0D0F' : theme === 'sun' ? '#000000' : '#14171A');
 }
 
 // Mantiene la pantalla encendida durante una operación en curso o una revista

@@ -1,6 +1,7 @@
 'use strict';
 // SIER 242 · Orden de la app: cada cosa en un solo sitio, con el color de su área para saber siempre dónde estás.
 //   Inicio                → resumen del día, avisos y vencimientos
+//   Logística (azul)      → lo disponible ahora mismo: personal, capacidades, vehículos y material; pasar lista
 //   Actividades (rojo)    → una sola lista (intervenciones, ejercicios, maniobras y convoyes) y el calendario
 //   Personal (petróleo)   → toda la sección: pelotones, especialidades, equipos y presentes
 //   Vehículos (azul)      → flota, ITV y revista de salida
@@ -17,13 +18,14 @@ const AREAS = {
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'ops', 'personal', 'vehiculos', 'usar', 'help'];
+const MENU = ['avisos', 'recursos', 'ops', 'personal', 'vehiculos', 'usar', 'help'];
 // Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
 // las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
 const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };
 // [id, icono, título, descripción, área, grupo, oculta (no sale en el menú: se llega desde otra pantalla)]
 const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
+  ['recursos', 'gauge', 'Logística', 'Lo disponible ahora o el día que elijas: personal, capacidades, vehículos y material', 'log'],
   ['actividades', 'radio', 'Todas las actividades', 'Intervenciones, ejercicios, maniobras y convoyes', 'ops'],
   ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'ops'],
   // Cada tipo se abre desde «Todas las actividades» (los nombres antiguos llevan ahí, ya filtrada)

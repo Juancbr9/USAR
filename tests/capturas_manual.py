@@ -118,7 +118,7 @@ with sync_playwright() as p:
     ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
     a.evaluate("prefs.menuOpen = ['usar']; renderDrawer()"); tall(1100); a.wait_for_timeout(200)
-    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
+    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-item:has-text("Logística")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
                     ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Revisión") .dr-dot', 'r', {'d': 30}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
 
@@ -201,11 +201,15 @@ with sync_playwright() as p:
                            ('.tok-box[data-box="K-H12"]', 'r', {'d': 14}), ('.cv-cell[data-door="1"] .tok-gear >> nth=0', 'r', {'d': 14}), ('.cv-cell[data-door="10"]', 'l', {'d': 20})], scroll='.cvi', top=260)
     # Arrastrando: se captura a mitad de camino y luego se deshace
     a.evaluate("document.querySelector('.cv').scrollIntoView({ block: 'center' })"); a.wait_for_timeout(200)
-    s = a.locator('.tok-box[data-box="K-H30"]').bounding_box(); t = a.locator('.cv-cell[data-door="8"]').bounding_box()
+    # Una caja que se vea en el dibujo y un hueco distinto del suyo
+    bid = a.evaluate("[...document.querySelectorAll('.cv .tok-box')].find(e => e.getBoundingClientRect().width > 0).dataset.box")
+    door0 = a.evaluate(f"get('boxes', '{bid}').door")
+    dest = a.evaluate(f"[...document.querySelectorAll('.cv .cv-cell[data-door]')].map(e => +e.dataset.door).filter(d => d && d !== {door0} && document.querySelector(`.cv .cv-cell[data-door='${{d}}']`).getBoundingClientRect().width > 0).pop()")
+    s = a.locator(f'.cv .tok-box[data-box="{bid}"]').first.bounding_box(); t = a.locator(f'.cv .cv-cell[data-door="{dest}"]').first.bounding_box()
     a.mouse.move(s['x'] + 12, s['y'] + 12); a.mouse.down(); a.mouse.move(s['x'] + 30, s['y'] + 30, steps=4)
     a.mouse.move(t['x'] + t['width'] / 2, t['y'] + t['height'] / 2 + 10, steps=12); a.wait_for_timeout(150)
     ann(a, 'cont-arrastrar', [('.tok-ghost', 't', {'d': 34, 'box': False}), ('.drop-on', 'b', {'d': 30, 'box': False})])
-    a.mouse.up(); a.wait_for_timeout(200); a.evaluate("moveBox('K-H30', 5)"); a.wait_for_timeout(200)
+    a.mouse.up(); a.wait_for_timeout(200); a.evaluate(f"moveBox('{bid}', {door0})"); a.wait_for_timeout(200)
     a.locator('.cv-cell[data-door="7"]').click(position={'x': 30, 'y': 8}); a.wait_for_timeout(250)
     ann(a, 'cont-hueco', [('#modal .cell-box >> nth=0', 'i'), ('#modal .list', 'i'), ('#modal button:has-text("Material aquí")', 't', {'d': 26})])
     esc()
@@ -229,7 +233,8 @@ with sync_playwright() as p:
     ann(a, 'nota', [('#modalForm .lbl:has([name=text])', 'i')]); esc(); tall(760)
     # Armarios
     a.evaluate("['B-901', 'B-902'].forEach((id, i) => stamp('gear', { ...get('gear', id), door: 211 + i * 12 })); commit(); go('armarios')"); a.wait_for_timeout(250); tall(1100)
-    ann(a, 'armarios', [('.arm-cab >> nth=0', 'i'), ('.arm-shelf[data-door="211"]', 'r', {'d': 14}), ('#alm-armarios .panel:nth-child(2) .item >> nth=0', 'i')])
+    a.evaluate("[1, 2, 3].forEach(n => document.querySelector(`.arm-list[data-arm='${n}'] .item`) || document.querySelector('.arm-list .item') || armToggle(n))"); a.wait_for_timeout(250)
+    ann(a, 'armarios', [('.arm-cab >> nth=0', 'i'), ('.arm-shelf[data-door="211"]', 'r', {'d': 14}), ('.arm-list .item >> nth=0', 'i')])
     # Entrega con firma
     a.evaluate("go('entregas'); loanForm()"); a.wait_for_timeout(250); tall(1300)
     a.fill('[name=to]', 'Cabo 1º Pérez Gil'); a.fill('[name=unit]', 'BIEM II'); a.fill('#modalForm input[type=search]', 'botiq'); a.wait_for_timeout(100); a.click('#modalForm .check-row:visible >> nth=0')
@@ -263,12 +268,17 @@ with sync_playwright() as p:
     # ---------- Equipo ----------
     a.evaluate("go('personal')"); a.wait_for_timeout(250)
     ann(a, 'personal-lista', [('#view button.btn-a:has-text("Persona")', 'r', {'d': 24}), ('#view button:has-text("Tarjetas QR")', 'r', {'d': 24}), ('#view .sier-res', 'i'), ('#view .pers-views', 'i')])
+    a.evaluate("go('recursos')"); a.wait_for_timeout(250)
+    ann(a, 'logistica', [('#view input[type=date]', 'b', {'d': 30}), ('#view .log-fig >> nth=0', 'i'), ('#view button:has-text("Pasar lista")', 'r', {'d': 24})])
+    a.evaluate("go('personal')"); a.wait_for_timeout(250)
     a.evaluate("openPerson('OP-01')"); a.wait_for_timeout(500); tall(1000)
-    ann(a, 'persona', [('#view a:has-text("Llamar")', 'i'), ('#view button:has-text("Editar datos")', 'r', {'d': 20}), ('#view button:has-text("Documento")', 'l', {'d': 20})], scroll='#view a:has-text("Llamar")', top=200)
+    ann(a, 'persona', [('#view a:has-text("Llamar")', 'i'), ('#view button:has-text("Editar datos")', 'r', {'d': 20}), ('#view .ctab:has-text("Documentos")', 'b', {'d': 30})], scroll='#view a:has-text("Llamar")', top=200)
+    a.evaluate("setPref({ ptab: 'epi' })"); a.wait_for_timeout(250)
     ann(a, 'persona-epi', [('.panel:has-text("EPI asignado") .sec-head .tag', 'l', {'d': 20}), ('.panel:has-text("EPI asignado") .item >> nth=0', 'i')], scroll='.panel:has-text("EPI asignado")', top=150)
     tall(760); a.click('#view button:has-text("Editar datos")'); a.wait_for_timeout(250)
     ann(a, 'persona-baja', [('#modalForm .lbl:has([name=name])', 'i'), ('#modalForm [data-photo], #modalForm .photo-field', 'i'), ('#modal button:has-text("Dar de baja")', 'i'), ('#modal button:has-text("Eliminar")', 'i')], scroll='#modal button:has-text("Dar de baja")', top=400); esc()
-    a.click('#view button:has-text("Documento")'); a.wait_for_timeout(200); a.select_option('[name=type]', 'Carné de conducir')
+    a.evaluate("setPref({ ptab: 'docs' })"); a.wait_for_timeout(250)
+    a.click('#view button.btn-a:has-text("Documento")'); a.wait_for_timeout(200); a.select_option('[name=type]', 'Carné de conducir')
     ann(a, 'documento', [('#modalForm .photo-field >> nth=0', 'i')], scroll='#modalForm .photo-field', top=200); esc()
     a.evaluate("setPref({ tab: 'calendario' })"); a.wait_for_timeout(200); shot(a, 'calendario')
     a.evaluate("setPref({ tab: 'avisos', vwin: 365 })"); a.wait_for_timeout(200); shot(a, 'vencimientos', '#venc')
