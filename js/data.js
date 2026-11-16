@@ -235,7 +235,10 @@ const opName = id => get('operators', id)?.name || 'Reserva almacén';
 // Especialidad de cada persona; las fichas de antes de la SIER (sin el dato) son del equipo USAR
 const opEsp = o => o?.esp ?? 'USAR';
 const usarOps = () => operators().filter(o => opEsp(o) === 'USAR');
-const esAusente = o => !!o?.aus && (!o.aus.hasta || o.aus.hasta >= todayISO());
+// Ausente un día: la ausencia ya ha empezado ese día y no ha terminado (así se pueden apuntar las previstas)
+const ausenteEl = (o, dia) => !!o?.aus && (o.aus.desde || '') <= dia && (!o.aus.hasta || o.aus.hasta >= dia);
+const esAusente = o => ausenteEl(o, todayISO());
+const ausPrevista = o => !!o?.aus && (o.aus.desde || '') > todayISO();
 // Orden de la hoja de la sección: por pelotón y, dentro, por empleo
 const ordenSier = (a, b) => (PELOTONES.indexOf(a.peloton || '') + 1 || 99) - (PELOTONES.indexOf(b.peloton || '') + 1 || 99)
   || (EMPLEOS.indexOf(a.empleo || '') + 1 || 99) - (EMPLEOS.indexOf(b.empleo || '') + 1 || 99) || a.name.localeCompare(b.name, 'es');

@@ -207,20 +207,26 @@ function viewAvisos() {
   // Operatividad de la unidad: media de material operativo, personal al día y vehículos sin fallos en su última revista
   const units = vehicles().flatMap(v => v.units || []), vOk = units.filter(u => !lastVcheck(u.id)?.fails.length).length;
   const parts = [pct, ops.length ? alDia / ops.length * 100 : 100, units.length ? vOk / units.length * 100 : 100], ready = Math.round(parts.reduce((s, x) => s + x, 0) / 3);
-  const R = 34, C = 2 * Math.PI * R;
 
   return `
-    ${enMantenimiento() ? mantenimientoPanel() : ''}
     <div class="hero">
-      <div class="hero-row"><div class="grow">
-        <p class="hero-date">${esc(today)}</p>
-        <p class="hello">${hello}, ${esc(prefs.activeOperator)}</p>
-        <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo el material está en orden.`}</p></div>
-        <div class="ring ${ready >= 90 ? 'ok' : ready >= 75 ? 'warn' : 'bad'}" role="img" aria-label="Operatividad de la unidad: ${ready} %" title="Material ${Math.round(parts[0])} % · Personal ${Math.round(parts[1])} % · Vehículos ${Math.round(parts[2])} %">
-          <svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="${R}" class="ring-bg"/><circle cx="40" cy="40" r="${R}" class="ring-fg" style="--c:${C.toFixed(1)}; --off:${(C * (1 - ready / 100)).toFixed(1)}"/></svg>
-          <b data-count="${ready}" data-suf="%">${ready}%</b><small>operativa</small></div>
+      <p class="hero-date">${esc(today)}</p>
+      <p class="hello">${hello}, ${esc(nombreBonito(prefs.activeOperator))}</p>
+      <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo el material está en orden.`}</p>
+      <div class="hero-ops" role="img" aria-label="Operatividad de la unidad: ${ready} %. Material ${Math.round(parts[0])} %, personal ${Math.round(parts[1])} %, vehículos ${Math.round(parts[2])} %">
+        <div class="hero-pct ${ready >= 90 ? 'ok' : ready >= 75 ? 'warn' : 'bad'}"><b data-count="${ready}" data-suf="%">${ready}%</b><small>operativa</small></div>
+        <div class="hero-bars">${[['Material', parts[0]], ['Personal', parts[1]], ['Vehículos', parts[2]]].map(([l, v]) =>
+          `<div class="hero-bar"><span>${l}</span><i><u class="${v >= 90 ? '' : v >= 75 ? 'warn' : 'bad'}" style="width:${Math.round(v)}%"></u></i><b>${Math.round(v)}%</b></div>`).join('')}</div>
       </div>
     </div>
+
+    <div class="dash-kpis">
+      ${kpi('box', 'Material operativo', [pct, '%'], `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
+      ${kpi('wrench', 'En revisión', [a.review.length + a.broken.length], a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
+      ${kpi('users', 'Personal al día', [alDia, '/' + ops.length], 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
+      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} ${late === 1 ? 'caducado' : 'caducados'}` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); document.getElementById('venc')?.scrollIntoView({ behavior: 'smooth' })")}
+    </div>
+    ${enMantenimiento() ? mantenimientoPanel() : ''}
 
     ${active.map(m => {
       const inZone = presence(m).filter(p => p.state === 'in').length, vs = victimsOf(m.id), ws = worksitesOf(m.id);
@@ -241,12 +247,7 @@ function viewAvisos() {
 
     ${next ? `<button class="item next-out" onclick="openMission('${next.id}')"><div><small>Próxima salida</small><b>${esc(next.title)}</b><small>${fmtDT(next.date)}${next.location ? ', ' + esc(next.location) : ''}</small></div><span class="tag warn">En preparación</span></button>` : ''}
 
-    <div class="dash-kpis">
-      ${kpi('box', 'Material operativo', [pct, '%'], `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
-      ${kpi('wrench', 'En revisión', [a.review.length + a.broken.length], a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
-      ${kpi('users', 'Personal al día', [alDia, '/' + ops.length], 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
-      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} ${late === 1 ? 'caducado' : 'caducados'}` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); document.getElementById('venc')?.scrollIntoView({ behavior: 'smooth' })")}
-    </div>
+    ${fuerzaPanel()}
 
     ${total ? `<div class="grid g2">
       ${section('Averiados', 'bad', a.broken.map(g => row(`gearDetail('${g.id}')`, g.name, revLine(g, where), '', artMini(g))))}
@@ -279,6 +280,24 @@ function viewAvisos() {
     </div>`;
 }
 
+// «GRANADOS» → «Granados» (los nombres se guardan en mayúsculas)
+const nombreBonito = n => String(n || '').toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+// Inicio: la fuerza de hoy (presentes por pelotón) y los accesos de cada día
+function fuerzaPanel() {
+  const ops = operators(), pres = ops.filter(o => !esAusente(o)), pels = PELOTONES.filter(k => ops.some(o => o.peloton === k));
+  const q = (icon, label, onclick) => `<button class="dash-q" onclick="${onclick}"><span class="dash-q-i">${ic(icon, 'i-lg')}</span>${label}</button>`;
+  return `<div class="dash-cols">
+    <div class="panel">
+      <div class="between"><h3>Fuerza de hoy</h3><button class="link" onclick="go('recursos')">Logística</button></div>
+      <div class="log-fig ${logCls(pres.length, ops.length)}"><b>${pres.length}</b><span>de ${ops.length} presentes</span></div>
+      ${pels.map(k => logMeter(k, pres.filter(o => o.peloton === k).length, ops.filter(o => o.peloton === k).length, "go('recursos')")).join('')}
+    </div>
+    <div class="dash-quick">
+      ${q('check', 'Pasar lista', 'pasarLista()')}${q('chat', 'Parte', "shareText(sierParte(), 'Parte de personal')")}
+      ${q('gauge', 'Logística', "go('recursos')")}${q('clipboard', 'Revista', "go('revista')")}
+    </div>
+  </div>`;
+}
 // Estado vacío: icono en un círculo, una frase y, si hace falta, el botón para empezar
 const errorState = () => `<div class="panel">${emptyState('alert', 'Esta pantalla no se ha podido abrir', 'Tus datos están a salvo. Vuelve a Inicio o recarga la app; si se repite, avisa al jefe.',
   `<div class="row" style="justify-content:center; margin-top:12px"><button class="btn btn-a" onclick="go('avisos')">${ic('home')} Ir a Inicio</button><button class="btn btn-g" onclick="location.reload()">${ic('refresh')} Recargar</button></div>`)}</div>`;

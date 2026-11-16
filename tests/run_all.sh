@@ -47,6 +47,7 @@ run test_mejoras.py
 run test_patrimonio.py
 run test_personal.py
 run test_sier.py
+run test_logistica.py
 start_mock; run test_campo.py
 run test_contenedor.py
 run test_manual.py

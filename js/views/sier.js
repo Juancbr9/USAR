@@ -79,11 +79,13 @@ function ausenciaForm(id) {
   const o = get('operators', id), a = o.aus || {};
   openForm(`${o.name}: ausencia`, [
     { k: 'motivo', label: 'Motivo', value: a.motivo || MOTIVOS_AUSENCIA[0], options: MOTIVOS_AUSENCIA.map(m => [m, m]), required: true, wide: true },
-    { k: 'hasta', label: 'Hasta (ese día incluido; vacío: hasta que se marque presente)', type: 'date', value: a.hasta || '', wide: true },
+    { k: 'desde', label: 'Desde (hoy, o una fecha futura si es una ausencia prevista)', type: 'date', value: ausPrevista(o) || esAusente(o) ? a.desde || todayISO() : todayISO(), required: true },
+    { k: 'hasta', label: 'Hasta (ese día incluido; vacío: hasta que se marque presente)', type: 'date', value: a.hasta || '' },
     { k: 'nota', label: 'Nota', value: a.nota || '', wide: true }
-  ], v => put('operators', { ...o, aus: { motivo: v.motivo, hasta: v.hasta || '', nota: v.nota || '', desde: a.desde || todayISO() } }, `${o.name}: ausente (${v.motivo}${v.hasta ? ' hasta ' + fmtDate(v.hasta) : ''})`));
+  ], v => put('operators', { ...o, aus: { motivo: v.motivo, hasta: v.hasta || '', nota: v.nota || '', desde: v.desde || todayISO() } }, `${o.name}: ${v.desde > todayISO() ? 'ausencia prevista desde el ' + fmtDate(v.desde) : 'ausente'} (${v.motivo}${v.hasta ? ' hasta ' + fmtDate(v.hasta) : ''})`));
 }
-function marcarPresente(id) { const o = get('operators', id); put('operators', { ...o, aus: null }, `${o.name}: presente`); }
+function marcarPresente(id) { const o = get('operators', id); put('operators', { ...o, aus: null }, `${o.name}: ${ausPrevista(o) ? 'ausencia prevista anulada' : 'presente'}`); }
+const ausPrevTxt = o => ausPrevista(o) ? `${o.aus.motivo || 'Ausencia'} del ${fmtDate(o.aus.desde)}${o.aus.hasta ? ' al ' + fmtDate(o.aus.hasta) : ''}` : '';
 // Parte de personal para WhatsApp: totales por pelotón y los ausentes con su motivo
 function sierParte() {
   const ops = operators().sort(ordenSier), aus = ops.filter(esAusente);

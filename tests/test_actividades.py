@@ -20,7 +20,7 @@ with sync_playwright() as p:
 
     # Menú: el área Actividades tiene una sola lista (con filtro por tipo) y el calendario
     a.click('#menuBtn'); a.click('#drawer .dr-group-head:has-text("Actividades")')
-    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item').all_inner_texts()[1:3]] == ['Todas las actividades', 'Calendario'], a.locator('#drawer .dr-item').all_inner_texts()
+    assert [t.split('\n')[0] for t in a.locator('#drawer .dr-item').all_inner_texts()[2:4]] == ['Todas las actividades', 'Calendario'], a.locator('#drawer .dr-item').all_inner_texts()
     a.keyboard.press('Escape')
     sesion.menu(a, 'Todas las actividades'); assert a.evaluate("document.documentElement.dataset.area") == 'ops'
     # Un solo botón «Nueva» que pregunta el tipo; con un filtro puesto, crea ese tipo directamente

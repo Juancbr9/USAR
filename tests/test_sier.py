@@ -32,10 +32,10 @@ with sync_playwright() as p:
 
     # Marca: la app es SIER 242
     assert a.title() == 'SIER 242' and 'SIER' in a.inner_text('.topbar .wordmark')
-    # Menú: Inicio, Actividades, Personal, Vehículos, USAR (con lo suyo dentro) y Ajustes
+    # Menú: Inicio, Logística, Actividades, Personal, Vehículos, USAR (con lo suyo dentro) y Ajustes
     a.click('#menuBtn'); a.wait_for_timeout(150)
     tops = [x.strip().split('\n')[0] for x in a.locator('#drawer .dr-item:not(.sub) b, #drawer .dr-group-head b').all_inner_texts()]
-    assert tops == ['Inicio', 'Actividades', 'Personal', 'Vehículos', 'USAR', 'Ajustes'], tops
+    assert tops == ['Inicio', 'Logística', 'Actividades', 'Personal', 'Vehículos', 'USAR', 'Ajustes'], tops
     a.click('#drawer .dr-group-head:has-text("USAR")'); a.wait_for_timeout(100)
     dentro = a.locator('#drawer .dr-group[data-area=usar] .dr-item.sub b').all_inner_texts()
     assert dentro == ['Almacén', 'Fuera', 'Revisión', 'Revista', 'EPI', 'Guía de campo', 'Apuntalamientos'], dentro

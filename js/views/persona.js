@@ -37,6 +37,7 @@ function viewPerson(o) {
         ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}
       </div>
       ${esAusente(o) ? `<div class="callout bad" style="margin-top:12px"><p>${ic('alert', 'i-sm')} Ausente: ${esc(ausTxt(o))}${o.aus.nota ? ' · ' + esc(o.aus.nota) : ''}</p></div>` : ''}
+      ${ausPrevista(o) ? `<div class="callout" style="margin-top:12px"><p>${ic('calendar', 'i-sm')} Ausencia prevista: ${esc(ausPrevTxt(o))}${o.aus.nota ? ' · ' + esc(o.aus.nota) : ''} <button class="link" onclick="marcarPresente('${o.id}')">Anular</button></p></div>` : ''}
       ${issues.length ? `<div class="stack" style="margin-top:12px">${issues.map(([cls, t]) => `<span class="tag ${cls}">${esc(t)}</span>`).join(' ')}</div>` : ''}
       <div class="row carne-acts" style="margin-top:12px">
         ${o.phone ? `<a class="btn btn-a" href="tel:${esc(o.phone.replace(/\s/g, ''))}">${ic('phone')} Llamar</a>

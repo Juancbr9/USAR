@@ -12,7 +12,7 @@ function wallSvg(w, h, inner, label) {
     <defs><pattern id="brick" width="60" height="30" patternUnits="userSpaceOnUse">
       <rect width="60" height="30" fill="#b9bdb6"/><path d="M0 .5h60M0 15.5h60M30 0v15M.5 15v15" stroke="#a5aaa2" stroke-width="1.5"/></pattern></defs>
     <rect width="${w}" height="${h}" rx="8" fill="url(#brick)"/>
-    <g fill="${PAINT}" stroke="${PAINT}" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800">${inner}</g>
+    <g fill="${PAINT}" stroke="${PAINT}" font-family="IBM Plex Sans Condensed, Arial Narrow, sans-serif" font-weight="700">${inner}</g>
   </svg>`;
 }
 
@@ -72,7 +72,7 @@ function rcmSvg(letter, team, iso) {
 function orientationSvg() {
   return `<svg viewBox="0 0 240 220" class="mark-svg" role="img" aria-label="Lados y cuadrantes de una estructura" xmlns="http://www.w3.org/2000/svg">
     <rect width="240" height="220" rx="8" fill="var(--sunk)"/>
-    <g font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" fill="var(--ink)" text-anchor="middle">
+    <g font-family="IBM Plex Sans Condensed, Arial Narrow, sans-serif" font-weight="700" fill="var(--ink)" text-anchor="middle">
       <rect x="50" y="40" width="140" height="130" fill="var(--surface)" stroke="var(--ink)" stroke-width="3"/>
       <path d="M120 40v130M50 105h140" stroke="var(--line-2)" stroke-width="2" stroke-dasharray="5 4"/>
       <rect x="102" y="88" width="36" height="34" fill="var(--yellow-soft)" stroke="var(--warn)" stroke-width="2"/>
