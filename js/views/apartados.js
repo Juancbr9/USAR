@@ -16,7 +16,7 @@ const apDe = esp => Object.keys(APARTADOS).find(k => APARTADOS[k].esp === esp);
 
 function apMatRow(k, m) {
   const [txt, cls] = AP_ESTADOS[m.status] || AP_ESTADOS.OPERATIVO, n = m.review ? daysTo(m.review) : null;
-  return `<button class="item" onclick="apMatForm('${k}', '${m.id}')"><div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted">× ${+m.qty}</span>` : ''}</b>
+  return `<button class="item" onclick="apMatForm('${k}', '${m.id}')"><div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
     <small>${esc([m.place || 'Sin sitio apuntado', m.serial ? 'n.º ' + m.serial : '', m.notes].filter(Boolean).join(' · '))}</small></div>
     <span class="row tags" style="justify-content:flex-end">${n != null && n <= 30 ? `<span class="tag ${n < 0 ? 'bad' : 'warn'}">${n < 0 ? 'Revisión pasada' : n === 0 ? 'Revisión hoy' : `Revisión en ${n} d`}</span>` : ''}
       ${cls === 'ok' ? '' : `<span class="tag ${cls}">${txt}</span>`}</span></button>`;
