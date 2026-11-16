@@ -214,8 +214,6 @@ with sync_playwright() as p:
     assert b.evaluate("[get('gear', 'B-901').door, get('gear', 'B-901').where, /Nave del parque/.test(get('gear', 'B-901').notes)]") == [0, '', True]
     assert b.evaluate("get('consumables', sessionStorage.getItem('cid')).door") == 0 and b.evaluate("get('meta', 'almbase').value") == 1
     assert b.evaluate("list('gear').filter(g => g.status !== 'OPERATIVO' && !g.vehicle && !g.out).every(g => g.door === ESCALON && !g.box)")
-    # Fuera del contenedor no sale con «el contenedor completo»
-    assert gid not in b.evaluate("missionGearIds({ container: true })")
     # Borrar una caja deja su material suelto en el mismo sitio
     b.evaluate("boxDetail('K-3')"); b.click('#modal button:has-text("Editar")'); b.click('#modal button:has-text("Eliminar caja")'); b.wait_for_timeout(200)
     assert b.evaluate("[!!get('boxes', 'K-3'), get('gear', 'B-204').box, get('gear', 'B-204').door]") == [False, '', 4]

@@ -2,7 +2,7 @@
 // SIER 242 · Orden de la app: cada cosa en un solo sitio, con el color de su área para saber siempre dónde estás.
 //   Inicio                → resumen del día, avisos y vencimientos
 //   Logística (azul)      → lo disponible ahora mismo: personal, capacidades, vehículos y material; pasar lista
-//   Actividades (rojo)    → una sola lista (intervenciones, ejercicios, maniobras y convoyes) y el calendario
+//   Calendario            → ejercicios, formación y guardias, con asistencia
 //   Personal (petróleo)   → toda la sección: pelotones, especialidades, equipos y presentes
 //   Vehículos (azul)      → flota, ITV y revista de salida
 //   USAR                  → lo propio del equipo USAR: material (almacén, fuera, revisión y revista), EPI,
@@ -12,13 +12,13 @@
 
 const AREAS = {
   home: { name: 'Inicio', icon: 'home', desc: 'Resumen del día, avisos y vencimientos' },
-  ops: { name: 'Actividades', icon: 'radio', desc: 'Intervenciones, ejercicios, maniobras, convoyes y calendario', hub: 'operaciones' },
+  ops: { name: 'Calendario', icon: 'calendar', desc: 'Ejercicios, formación y guardias' },
   log: { name: 'Material', icon: 'case', desc: 'Almacén, lo que está fuera, revisión y revista', hub: 'logistica' },
   team: { name: 'Personal', icon: 'users', desc: 'Toda la sección: pelotones, especialidades, equipos y EPI', hub: 'equipo' },
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'recursos', 'ops', 'personal', 'vehiculos', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS), 'help'];
+const MENU = ['avisos', 'recursos', 'personal', 'vehiculos', 'calendario', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS), 'help'];
 // Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
 // las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
 const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };
@@ -26,16 +26,10 @@ const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor
 const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
   ['recursos', 'gauge', 'Logística', 'Lo disponible ahora o el día que elijas: personal, capacidades, vehículos y material', 'log'],
-  ['actividades', 'radio', 'Todas las actividades', 'Intervenciones, ejercicios, maniobras y convoyes', 'ops'],
   ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'ops'],
-  // Cada tipo se abre desde «Todas las actividades» (los nombres antiguos llevan ahí, ya filtrada)
-  ['intervenciones', 'alert', 'Intervenciones', 'Salidas reales', 'ops', '', true],
-  ['ejercicios', 'flag', 'Ejercicios', 'Simulacros y prácticas', 'ops', '', true],
-  ['maniobras', 'tent', 'Maniobras', 'Traslado de personal, vehículos y material, alojamientos y planning diario', 'ops', '', true],
-  ['convoy', 'route', 'Convoyes', 'Movimiento de un sitio a otro, solo ida o ida y vuelta', 'ops', '', true],
   // Todo el material guardado en una sola página: contenedor, pasillo, armarios, escalón y fungible
   ['contenedor', 'box', 'Almacén', 'Contenedor, pasillo, armarios, escalón y fungible', 'log', 'mat'],
-  ['fuera', 'out', 'Fuera', 'Lo que tiene cada uno, lo prestado con firma y lo que está en actividades', 'log', 'mat'],
+  ['fuera', 'out', 'Fuera', 'Lo que tiene cada uno y lo prestado con firma', 'log', 'mat'],
   ['revision', 'wrench', 'Revisión', 'En el escalón, en el taller y novedades', 'log', 'mat'],
   ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log', 'mat'],
   // Apartados de esa página (no salen sueltos en el menú; llevan a la página, a su altura)
@@ -59,7 +53,7 @@ const SECTIONS = [
 ];
 const HUBS = { logistica: 'log', equipo: 'team', mas: 'help' };
 const sectionOf = tab => SECTIONS.find(s => s[0] === tab);
-const areaOf = tab => HUBS[tab] || sectionOf(tab)?.[4] || (tab === 'operaciones' ? 'ops' : 'home');
+const areaOf = tab => HUBS[tab] || sectionOf(tab)?.[4] || 'home';
 
 /* ---------- Estado de cada sección para las tarjetas de las áreas ---------- */
 function sectionStatus(id) {
@@ -87,7 +81,6 @@ function sectionStatus(id) {
 // Vencimientos está en Inicio y Alistamiento se quitó.
 const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', puestos: 'personal', despliegue: 'personal', vencimientos: 'avisos' };
 // Cada tipo de actividad se ve en «Todas las actividades», ya filtrada por él
-const ACT_FILTER = { intervenciones: 'intervencion', ejercicios: 'ejercicio', maniobras: 'maniobra', convoy: 'convoy' };
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
 // Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
 const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];
@@ -103,35 +96,17 @@ const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || UNID
 const vehFails = v => (v.units || []).some(u => lastVcheck(u.id)?.fails.length) ? '<span class="tag bad">Fallo en revista</span>' : '';
 const itvSoon = v => { const n = Math.min(...(v.units || []).filter(u => u.itv).map(u => daysTo(u.itv))); return n < 0 ? '<span class="tag bad">ITV caducada</span>' : n <= 30 ? '<span class="tag warn">ITV pronto</span>' : ''; };
 function viewVehiculos() {
-  const active = list('missions').filter(m => m.status === 'active');
   return `
     <div class="panel">
-      <div class="between sec-head"><div><h2>Vehículos</h2><p class="muted">En cada actividad se añaden los que salen, con matrícula y carga.</p></div>
+      <div class="between sec-head"><div><h2>Vehículos</h2><p class="muted">La flota con sus matrículas, la ITV, la revista de salida y el material que lleva cada uno.</p></div>
         ${puedeFlota() ? `<button class="btn btn-a" onclick="vehicleForm()">${ic('plus')} Modelo</button>` : ''}</div>
       <div class="grid g3">${vehicles().map(v => {
-        const out = active.flatMap(m => (m.vehicles || []).filter(x => x.id === v.id)).length;
+        const nm = matDe({ veh: v.id }).length;
         return `<button onclick="vehicleView('${v.id}')" class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
-          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small>
-          ${out ? `<span class="tag bad">${out} en salida</span>` : vehFails(v)}${itvSoon(v)}</div></button>`; }).join('')
+          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', nm ? nm + ' de material' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small>
+          ${vehFails(v)}${itvSoon(v)}</div></button>`; }).join('')
         || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
     </div>`;
-}
-
-/* ---------- Barra de activación en curso ---------- */
-function renderActivationBar() {
-  // En Inicio y dentro de la propia operación ya se ve que está en curso: ahí la franja no se repite
-  const live = list('missions').find(x => x.status === 'active');
-  const m = prefs.tab === 'avisos' || (prefs.tab === 'operaciones' && prefs.mission === live?.id) ? null : live;
-  let bar = $('actbar');
-  if (!m) { bar?.remove(); document.body.classList.remove('activated'); return; }
-  if (!bar) { bar = Object.assign(document.createElement('div'), { id: 'actbar' }); document.querySelector('.topbar').appendChild(bar); }
-  const inZone = presence(m).filter(p => p.state === 'in').length;
-  const ex = m.type === 'ejercicio';
-  bar.className = 'actbar ' + (ex ? 'ex' : 'real');
-  document.body.classList.add('activated');
-  bar.innerHTML = `<div class="wrap"><span class="act-dot"></span><b>${ex ? 'EJERCICIO EN CURSO' : 'ACTIVACIÓN EN CURSO'}</b>
-    <span class="act-title">${esc(m.title)}</span><span class="act-meta">${esc(phaseOf(m).short)} · ${inZone} en zona · desde ${m.startedAt ? fmtHour(m.startedAt) : '—'}</span>
-    <button onclick="openMission('${m.id}')">Abrir</button></div>`;
 }
 
 // Marca el área actual en la página (colores de la cabecera, barra y botones)

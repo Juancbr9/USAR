@@ -1,6 +1,6 @@
 """Prueba de «Apuntalar arcos»: crear un arco con las medidas A–G, ver el alzado, el fondo, la lista de cortes (marcar
-piezas cortadas), las cerchas, el plan de corte y el montaje; madera y opciones; aviso de jambas desplomadas; unirlo a un
-worksite y a su vigilancia estructural; enviar, imprimir, volver atrás y borrar. Todo en el móvil, sin salirse de ancho.
+piezas cortadas), las cerchas, el plan de corte y el montaje; madera y opciones; aviso de jambas desplomadas;
+enviar, imprimir, volver atrás y borrar. Todo en el móvil, sin salirse de ancho.
 Uso: python3 tests/test_arcos.py  (con la app servida en APP_URL)"""
 import os, sys, pathlib
 from playwright.sync_api import sync_playwright
@@ -106,21 +106,8 @@ with sync_playwright() as p:
     a.click('#view button:has-text("Hoja de corte")'); pr = a.evaluate("window._printed")
     assert 'Lista de cortes' in pr and 'Camón CE1' in pr, pr[:300]
 
-    # Unirlo a un worksite y a su vigilancia estructural
-    a.evaluate("""(() => { stamp('missions', { id: 'M-ARC', title: 'Sismo', type: 'ejercicio', status: 'active', startedAt: Date.now(), teams: [], vehicles: [], gear: [] });
-      stamp('worksites', { id: 'W-ARC', mission: 'M-ARC', code: 'A-1', name: 'Iglesia', status: 'active', cat: 'B' }); commit(); })()""")
-    a.click('#view button:has-text("Medidas")'); a.select_option('#modalForm [name=ws]', 'W-ARC'); save()
-    a.click('#view .arc-ws button:has-text("Vigilar")'); a.wait_for_timeout(200)
-    mon = a.evaluate("get('worksites', 'W-ARC').monitors")
-    assert len(mon) == 1 and mon[0]['type'] == 'Apuntalamiento' and mon[0]['every'] == 12 and mon[0]['arc'] == aid, mon
-    assert a.locator('#view .arc-ws button:has-text("Vigilar")').count() == 0
-    a.click('#view .arc-ws button:has-text("Abrir")'); a.wait_for_timeout(250)
-    assert a.evaluate("prefs.ws") == 'W-ARC'
-    a.click('#view button:has-text("Arco apuntalado")'); a.wait_for_timeout(200)
-    assert a.evaluate("prefs.tab") == 'arcos' and a.evaluate("prefs.arc") == aid, 'desde el worksite se abre el arco'
-
-    # Atrás del móvil: vuelve al worksite; desde la guía también se llega
-    a.go_back(); a.wait_for_timeout(250); assert a.evaluate("prefs.ws") == 'W-ARC', a.evaluate("prefs.tab")
+    # Ya no hay worksites: el arco no pide ninguno. Desde la guía también se llega a la lista
+    a.click('#view button:has-text("Medidas")'); a.wait_for_selector('#modalForm [name=name]'); assert a.locator('#modalForm [name=ws]').count() == 0; a.keyboard.press('Escape'); a.wait_for_timeout(150)
     a.evaluate("go('guia')"); a.wait_for_timeout(150); a.click('#g-apuntalamiento summary'); a.click('#view button:has-text("Apuntalar un arco")'); a.wait_for_timeout(150)
     assert a.evaluate("prefs.tab") == 'arcos' and not a.evaluate("prefs.arc"), 'el menú y la guía abren la lista'
     assert a.locator('#view .list .item:has-text("Arco del pasillo")').count() == 1

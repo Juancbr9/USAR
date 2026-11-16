@@ -14,19 +14,13 @@ problems = []
 SEED = r"""(() => {
   const P = `"'><img src=x onerror=__xss('h')><svg onload=__xss('s')>{{7*7}}\${__xss('t')}`;
   const LONG = 'Aleksandra Wiśniewska-Kowalczyk de la Santísima Trinidad 🚒🧯 bartholomew.fitzgerald@northwind-industries-holdings.example.com';
-  const t = Date.now(), mid = 'M-XSS', ws = 'W-XSS';
+  const t = Date.now();
   const mk = (kind, rec) => stamp(kind, { _u: t, ...rec });
-  mk('missions', { id: mid, type: 'intervencion', scope: 'usar', status: 'active', started: t - 36e5, date: localNow(), title: P + LONG, location: P, meeting: P,
-    chief: 'OP-01', channel: P, objective: P, safety: P, contacts: P, notes: P, summary: P, extras: [{ name: P, qty: 99999 }],
-    teams: [{ id: 'T-1', name: P, func: P, zone: P, leader: 'OP-02', members: ['OP-03'] }], roles: { 'OP-03': P },
-    vehicles: [{ key: 'MV-1', id: 'V-AMAROK', plate: P, driver: 'OP-04', crew: ['OP-05'], gear: ['B-901'] }], gear: [], container: true, phase: 2 });
-  mk('missions', { id: 'M-BIC', type: 'intervencion', scope: 'bic', status: 'prep', date: localNow(), title: P, location: P, threat: P, depot: P, chief: 'OP-01', teams: [], vehicles: [] });
-  mk('worksites', { id: ws, mission: mid, code: 'A-1', name: P, address: P, notes: P, hazards: P, status: 'active', cat: 'A', asr: [{ level: 2, note: P, ts: t }] });
-  mk('victims', { id: 'V-XSS', mission: mid, worksite: ws, n: 1, located: t, state: 'viva', injury: P, notes: P, position: P, info: P, status: 'rescate', ts: t });
-  mk('confined', { id: 'C-XSS', mission: mid, worksite: ws, place: P, status: 'inside', start: t, bar: 300, litres: 6, readings: [{ ts: t, o2: 20.9, note: P }] });
-  mk('heritage', { id: 'H-XSS', mission: 'M-BIC', name: P, place: P, notes: P, owner: P, type: P, status: 'pendiente', priority: 1, custody: [{ status: 'pendiente', ts: t, by: P, note: P }] });
-  mk('mlog', { id: 'ML-XSS', mission: mid, text: P, ts: t, by: P });
-  mk('outings', { id: 'S-XSS', mission: mid, who: ['OP-01'], dest: P, radio: P, out: t, eta: t + 36e5 });
+  mk('matesp', { id: 'ME-XSS', ap: 'agua', name: P + LONG, qty: 99999, place: P, serial: P, notes: P, status: 'REVISIÓN', review: todayISO() });
+  mk('matesp', { id: 'ME-XSS2', veh: 'V-XSS', unit: P, name: P, qty: 2, place: P, serial: P, notes: P, status: 'AVERIADO', review: todayISO() });
+  mk('meta', { id: 'apnota-agua', value: P + LONG });
+  mk('meta', { id: 'aprev-agua', value: [{ ts: t, by: P, total: 1, fails: [P], nota: P }] });
+  mk('meta', { id: 'vehrev-V-XSS', value: [{ ts: t, by: P, total: 1, fails: [P], nota: P }] });
   mk('events', { id: 'E-XSS', type: 'Formación', title: P + LONG, place: P, notes: P, start: todayISO() + 'T09:00', end: todayISO() + 'T13:00', people: ['OP-01'] });
   mk('docs', { id: 'D-XSS', op: 'OP-01', type: P, number: P, notes: P, expires: todayISO() });
   mk('vehicles', { id: 'V-XSS', name: P + LONG, seats: 99999, notes: P });
@@ -35,11 +29,11 @@ SEED = r"""(() => {
   mk('gear', { id: 'G-XSS3', name: P, door: 302, where: P, shelf: 'A', status: 'REVISIÓN', rev: { state: 'taller', since: todayISO(), where: P, reason: P }, nov: { text: P, ts: t, by: P } });
   mk('gear', { id: 'G-XSS2', name: P, door: 0, shelf: 'A', status: 'OPERATIVO', out: { who: P, since: t, note: P } });
   mk('consumables', { id: 'CO-XSS', name: P + LONG, stock: 0, min: 99999, unit: P, place: P });
-  mk('templates', { id: 'TPL-XSS', name: P, type: 'intervencion', objective: P, teams: [], vehicles: [] });
-  ['OP-01', 'OP-02'].forEach(id => { const o = get('operators', id); mk('operators', { ...o, name: id === 'OP-02' ? P : o.name, role: P, cell: id === 'OP-02' ? P : o.cell, phone: '"><img src=x onerror=__xss(\'tel\')>', email: P }); });
+  ['OP-01', 'OP-02'].forEach(id => { const o = get('operators', id); mk('operators', { ...o, name: id === 'OP-02' ? P : o.name, role: P, cell: id === 'OP-02' ? P : o.cell, phone: '"><img src=x onerror=__xss(\'tel\')>', email: P,
+    empleo: P, peloton: id === 'OP-02' ? P : 'PIEN 1', esp: 'Res. Acuático', eq: ['sva'], moto: { tipo: 'T', eq: P, aut: P }, aus: { motivo: P, nota: P, desde: todayISO(), hasta: '' } }); });
   mk('readiness', { id: 'OP-01', fullName: P, passportNo: P, passportExp: todayISO(), emergencyName: P, emergencyPhone: P });
   mk('epis', { id: 'EPI-XSS', type: 'otro', name: P, holder: 'OP-01', size: P, status: 'REVISAR', notes: P });
-  addLog(P); commit(); setPref({ activeOperator: get('operators', 'OP-01').name, mission: null });
+  addLog(P); commit(); setPref({ activeOperator: get('operators', 'OP-01').name });
 })()"""
 
 with sync_playwright() as p:
@@ -64,16 +58,16 @@ with sync_playwright() as p:
 
     for tab in a.evaluate("Object.keys(VIEWS)"):
         at(f'pantalla {tab}', f"go('{tab}')")
-    for mid in ['M-XSS', 'M-BIC']:
-        for mt in a.evaluate("MTABS.map(t => t[0])"):
-            at(f'{mid}/{mt}', f"openMission('{mid}', '{mt}')")
+    for ap in a.evaluate("Object.keys(APARTADOS)"):
+        for pt in ['equipo', 'material', 'notas']:
+            at(f'{ap}/{pt}', f"setPref({{ tab: '{ap}', aptab: '{pt}' }})")
+    for pt in ['datos', 'docs', 'epi', 'mat']: at(f'persona OP-01/{pt}', f"openPerson('OP-01'); setPref({{ ptab: '{pt}' }})")
     at('persona OP-01', "openPerson('OP-01')"); at('persona OP-02', "openPerson('OP-02')")
     calls = ["gearDetail('G-XSS')", "gearDetail('G-XSS3')", "revForm('G-XSS3')", "novForm('gear', 'G-XSS3')", "cellModal(302)", "gearDetail('G-XSS2')", "boxDetail('K-XSS')", "eventDetail('E-XSS')", "docDetail('D-XSS')",
-             "victimDetail('V-XSS')", "worksiteDetail(get('worksites', 'W-XSS'))", "confinedDetail('C-XSS')", "heritageDetail('H-XSS')",
-             "vehicleForm('V-XSS')", "missionVehicleForm('M-XSS', 'MV-1')", "personForm('OP-02')", "epiForm('EPI-XSS')", "eventForm('E-XSS')",
-             "printMission('M-XSS')", "printBoxLabels()", "printPersonCards()",
-             "printManifest()", "printLabels(3)", "printHeritageLabels('M-BIC')", "printHandover('M-BIC')",
-             "missionText(mget('M-XSS'))", "go('contenedor'); setPref({ cside: 'izq' })", "go('revision')", "go('armarios')", "go('pasillo')", "go('otros')"]
+             "vehicleView('V-XSS')", "vehicleForm('V-XSS')", "matForm('veh:V-XSS', 'ME-XSS2')", "matRevista('veh:V-XSS')", "matForm('ap:agua', 'ME-XSS')", "matRevista('ap:agua')", "apNotaForm('agua')",
+             "personForm('OP-02')", "ausenciaForm('OP-02')", "pasarLista()", "sierParte()", "epiForm('EPI-XSS')", "eventForm('E-XSS')",
+             "printBoxLabels()", "printPersonCards()", "printManifest()", "printLabels(3)",
+             "go('contenedor'); setPref({ cside: 'izq' })", "go('revision')", "go('armarios')", "go('pasillo')", "go('otros')"]
     for js in calls:
         at(js, f"closeModal(); {js}")
     # Buscador con código
@@ -95,8 +89,6 @@ with sync_playwright() as p:
     assert not a.evaluate("get('gear', \"G-1');__xss('id');//\")"), 'un identificador con comillas no debe entrar'
     for tab in a.evaluate("Object.keys(VIEWS)"):
         at(f'manipulado {tab}', f"go('{tab}')")
-    for mt in a.evaluate("MTABS.map(t => t[0])"):
-        at(f'manipulado M-XSS/{mt}', f"openMission('M-XSS', '{mt}')")
     for js in calls: at('manipulado ' + js, f"closeModal(); {js}")
     at('manipulado persona', "closeModal(); openPerson('OP-01')")
 
@@ -111,8 +103,9 @@ with sync_playwright() as p:
         a.evaluate(f"closeModal(); clearSearch(); go('{tab}')"); a.wait_for_timeout(150)
         w = a.evaluate("document.documentElement.scrollWidth")
         if w > 392: problems.append(f'{tab}: la página se sale de ancho ({w}px)')
-    a.evaluate("openMission('M-XSS', 'resumen')"); a.wait_for_timeout(150)
-    if a.evaluate("document.documentElement.scrollWidth") > 392: problems.append('operación: la página se sale de ancho')
+    for js, nombre in [("openPerson('OP-02')", 'ficha de persona'), ("setPref({ tab: 'agua', aptab: 'material' })", 'material de un apartado')]:
+        a.evaluate(js); a.wait_for_timeout(150)
+        if a.evaluate("document.documentElement.scrollWidth") > 392: problems.append(f'{nombre}: la página se sale de ancho')
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

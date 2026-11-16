@@ -1,6 +1,6 @@
-"""Prueba de las herramientas de campo: modo sol y botones grandes, botón «+», nota rápida, fotos por worksite,
-tarjetas QR y fichaje por lectura, escáner con cámara simulada, calendario con asistencia y .ics, mapa con calles,
-y acceso con usuario y permisos (jefe / miembro) contra el servidor de prueba.
+"""Prueba de las herramientas del móvil: modo sol y botones grandes, tarjetas QR del personal, escáner con cámara
+simulada (tarjetas y etiquetas de material), calendario con asistencia y .ics, y acceso con usuario y permisos
+(jefe / miembro) contra el servidor de prueba, con fotos que viajan de un móvil a otro.
 Uso: python3 tests/test_campo.py  (con la app en APP_URL y el servidor de prueba en MOCK_URL)"""
 import os, sys, json, pathlib, urllib.request
 from playwright.sync_api import sync_playwright
@@ -26,7 +26,6 @@ with sync_playwright() as p:
     a.goto(APP); a.wait_for_selector('#view > *')
     a.evaluate("window.print = () => {}")
     save = lambda: (a.click('#modalForm button:has-text("Guardar")'), a.wait_for_timeout(300))
-    mtab = lambda n: (a.click(f'.tab:has-text("{n}")'), a.wait_for_timeout(150))
     more = lambda n: sesion.menu(a, n)
 
     # Modo sol y botones grandes
@@ -39,38 +38,20 @@ with sync_playwright() as p:
     a.screenshot(path=f'{OUT}/campo-sol.png')
     a.click('.seg-row button:has-text("Claro")'); assert a.evaluate("!document.documentElement.dataset.sun")
 
-    # Operación en curso con worksite: botón «+», nota, foto
-    sesion.menu(a, 'Intervenciones'); a.click('button:has-text("Nueva intervención")'); a.click('#modal .item:has-text("En blanco")')
-    a.fill('[name=title]', 'Derrumbe Puerto de la Cruz'); save()
-    mtab('Personal'); a.click('button:has-text("Crear por células")'); a.click('button:has-text("Iniciar")'); a.wait_for_timeout(200)
-    mtab('Worksites'); a.click('button.btn-a:has-text("Worksite")'); a.fill('[name=pos]', '28.4136, -16.5480'); save(); a.wait_for_timeout(300)
-    a.click('.tri-a:has-text("Sí")'); a.click('.tri-a:has-text("menos de 12")'); a.click('#modal button:has-text("Hecho")')
-    assert a.locator('#fab').count() == 1, 'debe aparecer el botón «+» con la operación en curso'
-    a.click('#fab'); assert a.locator('.qa').count() == 8
-    a.click('.qa:has-text("Nota")'); a.fill('#noteForm [name=t]', 'Grieta nueva en lado 2'); a.click('#noteForm button.btn-a'); a.wait_for_timeout(200)
-    assert 'Grieta nueva en lado 2' in a.evaluate("list('mlog').map(e => e.text).join()")
-    a.evaluate("""(async () => { const b = await (await fetch('icon-512.png')).blob();
-      await savePhoto(prefs.mission, prefs.ws, new File([b], 'f.png', { type: 'image/png' })); })()"""); a.wait_for_timeout(800)
-    w = a.evaluate("get('worksites', prefs.ws)"); assert len(w['photos']) == 1 and w['photos'][0]['lat'] == 28.3725, w.get('photos')
-    a.wait_for_timeout(300); assert a.evaluate("document.querySelector('.gal img')?.src?.startsWith('data:image')"), 'la foto no aparece en la galería'
-    a.screenshot(path=f'{OUT}/campo-fotos.png', full_page=True)
+    # Ya no hay operación en curso: ni botón «+» ni franja
+    assert a.locator('#fab, #actbar').count() == 0
 
-    # Mapa con calles
-    a.click('button:has-text("Todos los worksites")'); a.click('button:has-text("Mapa con calles")'); a.wait_for_timeout(300)
-    assert a.locator('#map .map-tiles img').count() > 0 and a.locator('#map .pin').count() == 1
-    src = a.get_attribute('#map .map-tiles img', 'src'); assert src.startswith('https://tile.openstreetmap.org/'), src
-    a.click('.map-ctl button[aria-label=Acercar]'); a.keyboard.press('Escape')
-
-    # Tarjetas QR y fichaje por lectura
-    a.evaluate("printPersonCards()"); assert a.locator('#print .pcard svg').count() == 13
-    a.evaluate("openScanner(prefs.mission)"); a.wait_for_timeout(1200)
+    # Tarjetas QR del personal y escáner: leer la tarjeta de alguien abre su ficha; la etiqueta de un equipo, la suya
+    a.evaluate("printPersonCards()"); assert a.locator('#print .pcard svg').count() == 13 and 'SIER 242' in a.inner_text('#print .pcard >> nth=0')
+    a.evaluate("openScanner()"); a.wait_for_timeout(1200)
     assert a.evaluate("!!document.querySelector('#scanVideo')?.srcObject"), 'la cámara (simulada) no arrancó'
-    a.evaluate("handleScan(prefs.mission, 'USAR242-P:OP-02')"); a.wait_for_timeout(200)
-    assert 'ENTRA' in a.text_content('#scanResult')
-    a.evaluate("handleScan(prefs.mission, 'USAR242-P:OP-02')"); a.wait_for_timeout(200)
-    assert 'SALE' in a.text_content('#scanResult')
-    a.keyboard.press('Escape'); a.wait_for_timeout(200)
+    a.evaluate("handleScan('', 'no es de la app')"); a.wait_for_timeout(150); assert 'No es una tarjeta del equipo' in a.text_content('#scanResult')
+    a.evaluate("handleScan('', 'USAR242-P:OP-02')"); a.wait_for_timeout(300)
+    assert a.evaluate("prefs.tab") == 'personal' and a.evaluate("prefs.person") == 'OP-02' and a.locator('#modal').is_hidden()
     assert a.evaluate("!scanStream"), 'la cámara debe apagarse al cerrar'
+    gid = a.evaluate("list('gear')[0].id"); a.evaluate(f"openScanner(); handleScan('', location.origin + '/#g={gid}')"); a.wait_for_timeout(300)
+    assert a.locator('#modal .fx-hero').count() == 1, 'la etiqueta de un equipo abre su ficha'
+    a.keyboard.press('Escape'); a.wait_for_timeout(200)
 
     # Calendario: evento, asistencia, horas y .ics
     more('Calendario'); a.click('button:has-text("Evento")'); a.select_option('[name=type]', 'Formación'); a.fill('[name=title]', 'Apuntalamiento en T')
@@ -109,9 +90,10 @@ with sync_playwright() as p:
     b.evaluate("Sync.signIn('rescate@usar.es', 'secreto2')"); b.wait_for_timeout(2500)
     assert b.evaluate("Sync.role") == 'miembro'
     assert b.evaluate("get('readiness', 'OP-03')?.passportNo") == 'X1', 'el miembro debe recibir la documentación'
-    assert b.evaluate("list('missions').length") >= 1, 'el miembro sí recibe las operaciones'
-    # Las fotos también viajan: la de un worksite hecha en A llega a B
-    key = a.evaluate("list('worksites').find(w => (w.photos || []).length).photos[0].key")
+    # Las fotos también viajan: la de una persona puesta en A llega a B
+    key = 'op:OP-03'
+    a.evaluate("""(async () => { const b = await (await fetch('icon-192.png')).blob(), d = await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+      await Img.put('op:OP-03', d); put('operators', { ...get('operators', 'OP-03'), photo: true }); })()"""); a.wait_for_timeout(1200)
     for _ in range(20):
         b.wait_for_timeout(1000); b.evaluate("Sync.pull()")
         if b.evaluate(f"Img.get('{key}').then(x => !!x)"): break

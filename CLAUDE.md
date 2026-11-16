@@ -1,7 +1,9 @@
 # SIER 242 (antes USAR 242) · Instrucciones para el agente
 
 - Responder en español.
-- La app es de toda la SIER 242; USAR es una parte (grupo «USAR» del menú). El repositorio es **público**: nunca poner en el
+- La app es de toda la SIER 242 y es de logística: dónde está cada persona, qué material tiene y el material de cada
+  especialidad y de cada vehículo. USAR es una parte (grupo «USAR» del menú). Ya no hay actividades (intervenciones,
+  ejercicios, maniobras, convoyes, worksites, víctimas…): se quitaron a petición del usuario; no volver a añadirlas. El repositorio es **público**: nunca poner en el
   código ni en las pruebas nombres completos ni teléfonos del personal (se cargan en la app con Personal → «Importar»).
 - El usuario es RODRI (acceso completo; ver `ADMIN` en `js/config.js`).
 - Antes de subir cambios: `bash tests/run_all.sh` (todas las pruebas en verde).
@@ -17,5 +19,8 @@
   `--yellow`), tipografía IBM Plex (Sans, Sans Condensed y Mono para cifras), títulos sin mayúsculas ni cursiva y sin sombras
   en reposo. Las capturas del manual se regeneran con `python3 tests/capturas_manual.py`.
 - Apartados de especialidades y equipos: se definen en `APARTADOS` (`js/config.js`) y todos usan la misma pantalla
-  (`js/views/apartados.js`: equipo, material —registros `matesp`—, revista y notas). Para añadir uno nuevo basta una
-  entrada más en `APARTADOS` (sale solo en el menú, en Logística y en los vencimientos). USAR conserva sus pantallas propias.
+  (`js/views/apartados.js`: equipo, material, revista y notas). Para añadir uno nuevo basta una entrada más en `APARTADOS`
+  (sale solo en el menú, en Inicio, en Logística y en los vencimientos). Su icono propio va en `img/esp/<apartado>.webp`
+  y se apunta en `ESP_ART`. USAR conserva sus pantallas propias (contenedor, pasillo, armarios…).
+- Material de apartados y vehículos: registros `matesp` con dueño (`ap` o `veh`), en `js/views/material.js`; el dueño se
+  pasa como texto (`'ap:agua'`, `'veh:V-…'`).

@@ -25,6 +25,8 @@ const APARTADOS = {
   moto: { name: 'Motosierras', largo: 'Equipo motosierrista', icon: 'saw', moto: true,
     habitual: ['Motosierra', 'Espadas de repuesto', 'Cadenas de repuesto', 'Pantalón anticorte', 'Casco forestal', 'Guantes anticorte', 'Bidón combinado', 'Lima y afilador', 'Cuñas'] }
 };
+// Apartados que ya tienen su icono propio en img/esp/<apartado>.webp (los demás usan el dibujo de línea)
+const ESP_ART = [];
 const MOTIVOS_AUSENCIA = ['Permiso', 'Baja médica', 'Curso', 'Comisión de servicio', 'Guardia o servicio', 'Asuntos propios', 'Otro'];
 const STATUS_TAG = { 'OPERATIVO': 'ok', 'REVISIÓN': 'warn', 'AVERIADO': 'bad' };
 // Huecos del contenedor, como en las hojas pegadas en él. Cada lateral: 4 columnas; en las dos del centro hay tres huecos

@@ -104,7 +104,6 @@ function eventDetail(id) {
     <div class="row" style="margin-bottom:14px">
       <button class="btn btn-g btn-sm" onclick="open('https://wa.me/?text=' + encodeURIComponent(eventText(get('events', '${id}'))), '_blank')">${ic('chat', 'i-sm')} Convocar</button>
       <button class="btn btn-g btn-sm" onclick="downloadIcs('${id}')">${ic('calendar', 'i-sm')} Añadir a mi calendario</button>
-      ${/ejercicio/i.test(e.type) ? `<button class="btn btn-g btn-sm" onclick="eventToMission('${id}')">${ic('flag', 'i-sm')} Crear el ejercicio</button>` : ''}
       <button class="btn btn-g btn-sm" onclick="eventForm('${id}')">${ic('pencil', 'i-sm')} Editar</button>
     </div>
     <h3 class="sub" style="margin-top:0">Asistencia</h3>
@@ -130,13 +129,5 @@ function downloadIcs(id) {
   const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SIER 242//ES', 'BEGIN:VEVENT', `UID:${e.id}@usar242`, `DTSTAMP:${f(new Date().toISOString())}`,
     `DTSTART:${f(e.start)}`, `DTEND:${f(e.end || e.start)}`, `SUMMARY:${clean(UNIDAD + ' · ' + (e.title || e.type))}`, `LOCATION:${clean(e.place)}`, `DESCRIPTION:${clean(e.notes)}`,
     'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:SIER 242', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-  download(`usar242-${dayKey(e.start)}.ics`, ics, 'text/calendar');
-}
-function eventToMission(id) {
-  const e = get('events', id);
-  const rec = { id: uid('M'), status: 'prep', type: 'ejercicio', title: e.title || 'Ejercicio', date: e.start, location: e.place || '', meeting: '', channel: '',
-    objective: e.notes || '', chief: e.people?.[0] || '', teams: [], vehicles: [], gear: [], roles: {}, safety: '', contacts: '', notes: '', summary: '', scope: 'usar' };
-  put('missions', rec, `Ejercicio creado desde el calendario: ${rec.title}`);
-  put('events', { ...e, mission: rec.id });
-  closeModal(); openMission(rec.id);
+  download(`sier242-${dayKey(e.start)}.ics`, ics, 'text/calendar');
 }

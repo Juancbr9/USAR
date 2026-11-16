@@ -2,7 +2,7 @@
 // USAR 242 · Apuntalar arcos: cuadro (solera, puntales y cumbrera) y cercha (el arco de camones) a la medida.
 // Con las medidas A–G da el dibujo, la lista de cortes con rótulos, el trazado de cada camón sobre el tablón,
 // cómo sacar las piezas de las barras y el orden de montaje. El cálculo está en js/arcos.js (ARCO).
-// Cada arco se guarda en «arcs» y se comparte con el equipo; puede ir unido a un worksite (vigilancia cada 12 h).
+// Cada arco se guarda en «arcs» y se comparte con el equipo.
 
 const ARC_DEF = { seccion: '10x10', tablonAncho: 20, tablonGrueso: 7, riostra: 'tabla 15×2,5', stockViga: 400, stockTablon: 400, paso: false,
   correas: true, cumbreraDoble: true, holguraLateral: 4, holguraArco: 2, huecoCunas: 4, sepMax: 120, anchoCorrea: 15, grosorCorrea: 2.5 };
@@ -36,7 +36,6 @@ function arcCalc(a) {
   if (arcMissing(a).length) return null;
   try { return ARCO.calcular(arcInput(a)); } catch (e) { setTimeout(() => { throw e; }); return { error: 'No se ha podido calcular este arco. Revisa las medidas.' }; }
 }
-const arcWs = a => a.ws ? get('worksites', a.ws) : null;
 
 /* ---------- Lista de arcos ---------- */
 function viewArcos() {
@@ -49,9 +48,9 @@ function viewArcos() {
       <div class="between sec-head"><div><h2>Apuntalar arcos</h2>
         <p class="muted">Cuadro y cercha a la medida del arco: dibujo, lista de cortes con rótulos, plantilla de cada camón y montaje. Según el Manual de Campo USAR y los temas de apuntalamiento de la UME.</p></div>
         <button class="btn btn-a" onclick="arcForm()">${ic('plus')} Arco</button></div>
-      ${arcs.length ? `<div class="list">${arcs.map(x => { const r = arcCalc(x), ws = arcWs(x), pend = arcPending(x, r);
+      ${arcs.length ? `<div class="list">${arcs.map(x => { const r = arcCalc(x), pend = arcPending(x, r);
         return `<button class="item" onclick="openArc('${x.id}')"><div class="grow"><b>${esc(x.name || 'Arco')}</b>
-          <small>${r && !r.error ? `${ARC_TIPO[r.A.tipo]} · luz ${arcF(r.inp.Larr)} cm · ${r.nf} pórticos` : 'Faltan medidas'}${ws ? ` · worksite ${esc(ws.code)}` : ''}${x.team ? ' · ' + esc(x.team) : ''}</small></div>
+          <small>${r && !r.error ? `${ARC_TIPO[r.A.tipo]} · luz ${arcF(r.inp.Larr)} cm · ${r.nf} pórticos` : 'Faltan medidas'}${x.team ? ' · ' + esc(x.team) : ''}</small></div>
           ${!r || r.error ? '<span class="tag warn">Medidas</span>' : pend ? `<span class="tag info">${pend} por cortar</span>` : '<span class="tag ok">Cortado</span>'}</button>`; }).join('')}</div>`
         : emptyState('wrench', 'Ningún arco todavía', 'Mide el arco (A–G) y pulsa «Arco»: la app calcula las piezas.',
           `<button class="btn btn-g" onclick="arcExample()">Ver un ejemplo</button>`)}
@@ -73,14 +72,12 @@ function arcExample() {
 /* ---------- Formularios ---------- */
 function arcForm(id) {
   const a = id ? get('arcs', id) : null;
-  const wss = list('worksites').filter(w => w.status !== 'closed' || w.id === a?.ws).sort((x, y) => String(x.code).localeCompare(String(y.code)));
   openForm(a ? 'Medidas del arco' : 'Nuevo arco', [
     { k: 'name', label: 'Nombre', value: a?.name, required: true, wide: true, placeholder: 'Ej: Arco del pasillo, planta baja' },
     ...ARC_MEDIDAS.map(([l, k, t]) => ({ k, label: `${l} · ${t} (cm)${k === 'hq' ? ' · opcional' : ''}`, type: 'number', value: a?.[k] ?? '', required: !['hq', 'Lsuelo'].includes(k) })),
-    { k: 'ws', label: 'Worksite', value: a?.ws || '', options: [['', 'Sin worksite'], ...wss.map(w => [w.id, `${w.code}${w.name ? ' · ' + w.name : ''} (${mget(w.mission)?.title || 'operación'})`])] },
     { k: 'team', label: 'Equipo (va en el rótulo)', value: a?.team, carry: 'arcTeam', placeholder: 'Ej: Equipo 1' }
   ], v => {
-    const rec = { ...ARC_DEF, ...(a || { id: uid('AR'), created: Date.now(), by: prefs.activeOperator, done: {} }), name: v.name, ws: v.ws, team: v.team };
+    const rec = { ...ARC_DEF, ...(a || { id: uid('AR'), created: Date.now(), by: prefs.activeOperator, done: {} }), name: v.name, team: v.team };
     ARC_MEDIDAS.forEach(([, k]) => { rec[k] = arcNum(v[k]) ?? ''; });
     if (!rec.Lsuelo && rec.Larr) rec.Lsuelo = rec.Larr;
     put('arcs', rec, `${a ? 'Medidas del arco' : 'Arco nuevo'} «${rec.name}»`);
@@ -123,20 +120,10 @@ function arcDone(id, code, on) {
   const a = get('arcs', id); if (!a) return;
   put('arcs', { ...a, done: { ...(a.done || {}), [code]: on } });
 }
-// Vigilancia estructural del worksite: el apuntalamiento se revisa cada 12 h y tras cada réplica
-function arcMonitor(id) {
-  const a = get('arcs', id), w = a && arcWs(a);
-  if (!w) return;
-  if ((w.monitors || []).some(x => x.arc === a.id)) return toast('Ya está en la vigilancia del worksite');
-  const rec = { id: uid('VG'), type: 'Apuntalamiento', place: `Arco «${a.name}»`, every: MONITOR_TYPES.Apuntalamiento, arc: a.id,
-    checks: [{ ts: Date.now(), value: 'Montado', by: prefs.activeOperator }] };
-  put('worksites', { ...w, monitors: [...(w.monitors || []), rec] }, `${w.code}: vigilancia del arco ${a.name}`);
-  toast('Añadido a la vigilancia: revisar cada 12 h');
-}
 
 /* ---------- Ficha del arco ---------- */
 function arcDetail(a) {
-  const r = arcCalc(a), ws = arcWs(a), tab = ARC_TABS.some(([t]) => t === prefs.arcTab) ? prefs.arcTab : 'alzado';
+  const r = arcCalc(a), tab = ARC_TABS.some(([t]) => t === prefs.arcTab) ? prefs.arcTab : 'alzado';
   const head = `
     <button class="link" onclick="setPref({ arc: null })">${ic('back', 'i-sm')} Todos los arcos</button>
     <div class="panel">
@@ -149,10 +136,6 @@ function arcDetail(a) {
         <button class="btn btn-g btn-sm" onclick="printArc('${a.id}')">${ic('printer', 'i-sm')} Hoja de corte</button>` : ''}
         <button class="btn btn-bad btn-sm" onclick="arcDelete('${a.id}')">${ic('trash', 'i-sm')} Borrar</button>
       </div>
-      ${ws ? `<div class="item arc-ws"><div class="grow"><b>Worksite ${esc(ws.code)}${ws.name ? ' · ' + esc(ws.name) : ''}</b>
-        <small>${(ws.monitors || []).some(x => x.arc === a.id) ? 'En la vigilancia estructural: revisar cada 12 h y tras una réplica' : 'Añádelo a la vigilancia para que avise cada 12 h'}</small></div>
-        ${(ws.monitors || []).some(x => x.arc === a.id) ? '' : `<button class="btn btn-a btn-sm" onclick="arcMonitor('${a.id}')">${ic('gauge', 'i-sm')} Vigilar</button>`}
-        <button class="btn btn-g btn-sm" onclick="setPref({ tab: 'operaciones', mission: '${ws.mission}', mtab: 'worksites', ws: '${ws.id}' }); scrollTo(0, 0)">Abrir</button></div>` : ''}
     </div>`;
   if (!r) return head + `<div class="panel" style="margin-top:12px">${emptyState('pencil', 'Faltan medidas', `Mide y apunta: ${arcMissing(a).map(([l, , t]) => l + ' (' + t.toLowerCase() + ')').join(', ')}.`,
     `<button class="btn btn-a" onclick="arcForm('${a.id}')">${ic('pencil')} Medidas</button>`)}<h3 class="sec-title" style="margin-top:16px">${ic('pencil')} Qué medir</h3>${arcMeasureGuide()}</div>`;
@@ -248,7 +231,7 @@ const ARC_TAB_VIEW = {
       <li><b>Atar los pórticos.</b> ${r.nf > 1 ? `Los ${r.nf} pórticos, con riostras longitudinales (RL) y diagonales (RD).` : 'Un solo pórtico: arriostra bien y comprueba que no se mueve fuera de su plano.'}</li>
       <li><b>Poner en carga.</b> ${r.nCorr ? 'Coloca las correas sobre los camones. ' : ''}Rellena todos los huecos entre camones e intradós con calzos desde las dos caras; después aprieta por igual las cuñas de los puntales, clávalas y cierra las medias pletinas. No levantes el arco: solo contacto.</li>
       <li><b>Arriostrar y comprobar.</b> ${r.paso ? 'Sin X para dejar paso: revisa jabalcones y riostras longitudinales' : 'Riostras en X por las dos caras, clavadas a solera, puntales y cumbrera'}${r.Hp > 180 ? '; riostra horizontal a media altura' : ''}. Comprueba con el nivel.</li>
-      <li><b>Revisar.</b> Cada 12 horas (en el cambio de turno) y siempre después de una réplica.${arcWs(a) ? '' : ' Si el arco está en un worksite, únelo en «Medidas» y añádelo a la vigilancia.'}</li>
+      <li><b>Revisar.</b> Cada 12 horas (en el cambio de turno) y siempre después de una réplica.</li>
     </ol>
     <table class="ref"><tr><th>Regla</th><th>Fuente</th></tr>${[
       ['Puntales en los extremos con jabalcones; uno intermedio por cada 1,50 m de luz', 'M8 p.7'],
@@ -267,9 +250,8 @@ const ARC_TAB_VIEW = {
 function arcText(id) {
   const a = get('arcs', id), r = a && arcCalc(a);
   if (!r || r.error) return '';
-  const ws = arcWs(a);
   return [...waHead('🏛️', 'APUNTALAMIENTO DE ARCO', a.name), `${ARC_TIPO[r.A.tipo]} · luz ${arcF(r.inp.Larr)} cm · arranque ${arcF(r.Hmin)} cm · clave ${arcF(r.inp.Hclave)} cm · fondo ${arcF(r.inp.fondo)} cm`,
-    `${r.nf} pórticos · ${2 + r.nInter} puntales y ${2 * r.n} camones por cercha${ws ? ` · worksite ${ws.code}` : ''}${a.team ? ` · ${a.team}` : ''}`,
+    `${r.nf} pórticos · ${2 + r.nInter} puntales y ${2 * r.n} camones por cercha${a.team ? ` · ${a.team}` : ''}`,
     ...waSec('🪚', 'CORTES (cm)'), ...r.piezas.map(p => `${waB(p.code)} ${p.nombre} · ${p.seccion} · ${p.largo} × ${p.cant}`),
     ...waSec('🔩', 'PLETINAS, CUÑAS Y CLAVOS'), ...r.pletinas.map(p => `${p.code} ${p.nombre} × ${p.cant}`), `W Pares de cuñas ${r.cunas.medida} × ${r.cunas.cant}`, `Z Calzos finos × ${r.calzos}`, `Clavos 6,5 cm ≈ ${r.nClavos}`,
     ...(r.warnings.length ? [...waSec('⚠️', 'AVISOS'), ...r.warnings.map(w => '• ' + w.txt)] : [])].join('\n');

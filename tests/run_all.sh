@@ -40,11 +40,6 @@ run() {
 run test_nombres.py
 run test_qr.py
 start_mock; run test_sincronizacion.py
-run test_operaciones.py
-run test_fichaje_plantillas.py
-run test_metodo.py
-run test_mejoras.py
-run test_patrimonio.py
 run test_personal.py
 run test_sier.py
 run test_logistica.py
@@ -60,7 +55,6 @@ run test_bloqueo.py
 run test_material2.py
 run test_mantenimiento.py
 start_mock; run test_flota.py
-run test_actividades.py
 run test_iphone.py
 run test_matriculas.py
 run test_arrastre.py

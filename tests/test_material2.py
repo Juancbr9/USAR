@@ -1,6 +1,5 @@
 """Prueba de: entregas a personal de fuera (firma con el dedo, fotos, devolución), revista eligiendo qué se revista
-(correcto, fallo, taller, otro sitio, baja, no se revista), material de una salida con su destino (contenedor o vehículo),
-coordenadas en lat/lon, UTM y MGRS, unidades en Ajustes, desplegables del worksite y menú de Material.
+(correcto, fallo, taller, otro sitio, baja, no se revista) y menú de Material.
 Uso: python3 tests/test_material2.py  (con la app servida en APP_URL)"""
 import os, sys, pathlib
 from playwright.sync_api import sync_playwright
@@ -82,7 +81,7 @@ with sync_playwright() as p:
     # Los nombres antiguos (pasillo, armarios, otros, fungible, fuera) llevan a esta página
     for t in ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles']:
         a.evaluate(f"go('avisos'); go('{t}')"); a.wait_for_timeout(100); assert a.evaluate("prefs.tab") == 'contenedor', t
-    # Fuera: lo que lleva cada persona (se devuelve desde aquí), lo prestado con firma y lo de actividades, en una lista
+    # Fuera: lo que lleva cada persona (se devuelve desde aquí) y lo prestado con firma, en una lista
     gf = a.evaluate("const g = list('gear').find(g => !g.out && !g.box && g.door >= 1 && g.door <= 20); giveTo(JSON.stringify({ gear: g.id }), 'OP-02'); g.id")
     a.evaluate("go('fuera')"); a.wait_for_timeout(150)
     assert a.locator('.fuera-grp:has-text("CABRERA")').count() == 1 and a.inner_text('.fuera-kpis span >> nth=0').startswith('1')
@@ -142,62 +141,10 @@ with sync_playwright() as p:
     r = a.evaluate("list('inspections').sort((a, b) => b.date - a.date)[0]")
     assert r['reason'] == 'Mensual' and len(r['fails']) == 1 and len(r['other']) == 3 and 'izquierdo' in r['scope'], r
 
-    # ---------- Material de la salida con su destino ----------
-    a.evaluate("""(() => { stamp('missions', { id: 'M-1', type: 'ejercicio', scope: 'usar', status: 'prep', date: localNow(), title: 'Maniobra', chief: 'OP-01', teams: [],
-      vehicles: [{ key: 'MV-1', id: 'V-AMAROK', plate: '1234 ABC', driver: 'OP-02', crew: [], gear: [] }], container: true, gear: [] }); commit(); openMission('M-1', 'material'); })()""")
-    a.wait_for_timeout(200); a.click('button:has-text("Elegir material")')
-    a.click('#gearPickForm label:has-text("Solo lo que marque")')
-    a.check('#gearPickForm input[name=gear][value=G-B19-5]'); a.select_option('#gearPickForm [name="dest-G-B19-5"]', 'MV-1')
-    a.check('#gearPickForm input[name=gear][value=B-901]')
-    a.click('#gearPickForm button:has-text("Guardar material")'); a.wait_for_timeout(200)
-    m = a.evaluate("mget('M-1')")
-    assert not m['container'] and m['gear'] == ['B-901'] and m['vehicles'][0]['gear'] == ['G-B19-5'], m
-    a.click('button:has-text("Extra")')
-    a.fill('#extraRows .extra-row >> nth=0 >> [name=name]', 'Puntales de madera'); a.fill('#extraRows .extra-row >> nth=0 >> [name=qty]', '4')
-    a.select_option('#extraRows .extra-row >> nth=0 >> [name=in]', 'MV-1')
-    a.click('#extrasForm button:has-text("Otra línea")'); a.fill('#extraRows .extra-row >> nth=1 >> [name=name]', 'Grupo electrógeno')
-    a.click('#extrasForm button:has-text("Guardar")'); a.wait_for_timeout(200)
-    assert a.evaluate("mget('M-1').extras") == [{'name': 'Puntales de madera', 'qty': 4, 'in': 'MV-1'}, {'name': 'Grupo electrógeno', 'qty': 1}]
-    assert a.locator('.mat-veh:has-text("Amarok"):has-text("4 × Puntales de madera"):has-text("Escalera plegable")').count() == 1
-    txt = a.evaluate("missionText(mget('M-1'))"); assert 'En Amarok · 1234 ABC: Escalera plegable, 4 × Puntales de madera' in txt and 'Extra: Grupo electrógeno' in txt, txt
-
-    # ---------- Actividades: una sola lista; «Nueva» pregunta el tipo con cuatro botones grandes ----------
-    a.evaluate("go('operaciones')"); a.wait_for_timeout(150)
-    assert a.evaluate("prefs.tab") == 'actividades' and 'En preparación' in a.inner_text('#view')
-    a.click('#view button:has-text("Nueva")'); assert a.locator('#modal .op-tile').count() == 4 and a.locator('#modal .op-tile svg').count() == 4
-    a.keyboard.press('Escape')
-
-    # ---------- Coordenadas ----------
-    mg = a.evaluate("toMGRS(28.1235, -15.4363)"); assert mg == '28R DS 57150 10960', mg
-    back = a.evaluate("parseCoord('28R DS 57150 10960')"); assert abs(back[0] - 28.1235) < 1e-3 and abs(back[1] + 15.4363) < 1e-3, back
-    back = a.evaluate("parseCoord('28R 457151 3110960')"); assert abs(back[0] - 28.1235) < 1e-4, back
-    assert a.evaluate("parseCoord('28,1235; -15,4363')") == [28.1235, -15.4363]
-    a.evaluate("go('ajustes')"); a.wait_for_timeout(150)
-    a.evaluate("document.querySelector('.aj-more').open = true"); a.wait_for_timeout(100)   # las unidades van plegadas en Ajustes
-    a.select_option('.aj-more select >> nth=0', 'mgrs'); a.select_option('.aj-more select >> nth=1', 'km')
-    assert a.evaluate("[prefs.coordFmt, prefs.distUnit, fmtDist(250)]") == ['mgrs', 'km', '0,25 km']
-    # Worksite: desplegables, coordenadas en MGRS y varios riesgos
-    a.evaluate("openMission('M-1', 'worksites')"); a.wait_for_timeout(150); a.click('button.btn-a:has-text("Worksite")')
-    assert 'I' not in a.evaluate("[...document.querySelectorAll('#modalForm [name=sector] option')].map(o => o.value)")
-    a.select_option('[name=sector]', 'B'); a.select_option('[name=sub]', 'a'); a.fill('[name=pos]', '28R DS 57150 10960')
-    a.check('input[name=hazards][value="Gas"]'); a.check('input[name=hazards][value="Amianto"]'); a.fill('[name=hazards__new]', 'Perro suelto'); save()
-    a.keyboard.press('Escape'); a.wait_for_timeout(300)
-    w = a.evaluate("list('worksites').find(w => w.mission === 'M-1')")
-    assert w['code'] == 'B-1a' and abs(float(w['lat']) - 28.1235) < 1e-3 and w['hazards'] == 'Gas, Amianto, Perro suelto', w
-    a.evaluate(f"closeModal(); setPref({{ ws: '{w['id']}' }})"); a.wait_for_timeout(200)
-    assert '28R DS 57150 10960' in a.inner_text('#view'), 'la ficha muestra las coordenadas en MGRS'
-    a.evaluate("setPref({ coordFmt: 'latlon', distUnit: 'm' })")
-
-    # ---------- Funciones avanzadas siempre activas e indicativo fijo: sin opción en Ajustes ----------
-    a.evaluate("closeModal(); setPref({ ws: null }); openMission('M-1', 'seguridad')"); a.wait_for_timeout(200)
-    assert 'espacios confinados' in a.inner_text('#view').lower(), 'confinados siempre visible'
-    a.evaluate("openMission('M-1', 'informes')"); a.wait_for_timeout(200)
-    assert 'posiciones (kml)' in a.inner_text('#view').lower(), 'exportar siempre visible'
-    a.evaluate("missionForm(null, 'intervencion')"); a.wait_for_timeout(150)
-    assert a.locator('#modalForm [name=scope]').count() == 1, 'ámbito BIC siempre disponible'
+    # ---------- Indicativo fijo y sin opciones de funciones avanzadas ni de unidades en Ajustes ----------
     a.evaluate("closeModal(); put('meta', { id: 'teamcode', value: 'ESP-9' }); go('ajustes')"); a.wait_for_timeout(200)
     txt = a.inner_text('#view').lower()
-    assert 'funciones avanzadas' not in txt and 'indicativo' not in txt, 'sin opciones de avanzadas ni indicativo'
+    assert 'funciones avanzadas' not in txt and 'indicativo' not in txt and 'coordenadas' not in txt, 'sin opciones de avanzadas, indicativo ni unidades'
     assert a.evaluate("teamCode()") == 'USAR-242', 'el indicativo es fijo'
     br.close()
 

@@ -1,7 +1,6 @@
 """Matrículas de la flota (hoja de vehículos y pizarra de ITV): cada modelo guarda las suyas con ITV, cita, destino,
-titular y suplente. Una matrícula se pasa a otro modelo (ATB M1/M2) y cambia su dibujo; la ITV sale en Vencimientos y en
-una actividad se sugieren las matrículas del modelo elegido. La autobomba Renault viene vacía y el módulo se elige en cada
-actividad (o se ve con cada módulo); los modelos con módulo de antes pasan a ella.
+titular y suplente. Una matrícula se pasa a otro modelo (ATB M1/M2) y cambia su dibujo; la ITV sale en Vencimientos.
+La autobomba Renault viene vacía y en su ficha se ve con cada módulo; los modelos con módulo de antes pasan a ella.
 Uso: python3 tests/test_matriculas.py  (con la app servida en APP_URL)"""
 import os, pathlib
 from playwright.sync_api import sync_playwright
@@ -75,24 +74,12 @@ with sync_playwright() as p:
     a.fill('#modalForm [name=plate]', 'et 124277'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(300)
     assert n('V-AMAROK') == 3 and n('V-SANGYONG') == 6
 
-    # En una actividad se sugieren las matrículas del modelo elegido (las que ya van en otro vehículo, no)
-    a.evaluate("vehicleEntryForm({}, '', [{ id: 'V-AMAROK', plate: 'ET-120111' }], () => {})"); a.wait_for_selector('#modalForm [name=plate]')
-    a.select_option('#modalForm [name=id]', 'V-AMAROK'); a.wait_for_timeout(100)
-    opts = a.evaluate("[...document.querySelectorAll('#dl-plate option')].map(o => o.value)")
-    assert sorted(opts) == ['ET-120171', 'ET-120206'], opts
-    a.select_option('#modalForm [name=id]', 'V-VPI'); a.wait_for_timeout(100)
-    assert a.input_value('#modalForm [name=plate]') == 'ET-121338', 'con una sola matrícula se pone sola'
-    assert not a.is_visible('#modalForm .veh-mods'), 'el módulo solo sale con la Renault'
-    # Al llevar la Renault a una actividad se elige el módulo que lleva, y con él el dibujo
-    a.keyboard.press('Escape')
-    a.evaluate("window._ent = null; vehicleEntryForm({}, '', [], e => { window._ent = e; })"); a.wait_for_selector('#modalForm [name=id]')
-    a.select_option('#modalForm [name=id]', 'V-AB-CHASIS'); a.wait_for_timeout(100)
-    assert a.is_visible('#modalForm .veh-mods') and 'v-ab-chasis.webp' in a.get_attribute('#modalForm .veh-mods img', 'src'), 'viene vacía'
-    a.click('#modalForm .veh-mods button:has-text("LCIF")')
-    assert 'v-ab-lcif.webp' in a.get_attribute('#modalForm .veh-mods img', 'src')
-    a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
-    ent = a.evaluate("window._ent"); assert ent['id'] == 'V-AB-CHASIS' and ent['mod'] == 'lcif', ent
-    assert a.evaluate("vehLabel(window._ent)").startswith('Autobomba Renault (módulo LCIF)')
+    # La Renault viene vacía y en su ficha se ve con cada módulo
+    a.evaluate("vehicleView('V-AB-CHASIS')"); a.wait_for_selector('#modal .veh-mods')
+    assert 'v-ab-chasis.webp' in a.get_attribute('#modal .veh-mods img', 'src'), 'viene vacía'
+    a.click('#modal .veh-mods button:has-text("LCIF")'); assert 'v-ab-lcif.webp' in a.get_attribute('#modal .veh-mods img', 'src')
+    assert a.evaluate("vehLabel({ id: 'V-AB-CHASIS', mod: 'lcif' })").startswith('Autobomba Renault (módulo LCIF)')
+    a.keyboard.press('Escape'); a.wait_for_timeout(150)
 
     # Migración v9: las matrículas de los modelos con módulo pasan a la Renault y las actividades guardan el módulo
     a.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)), t = Date.now();

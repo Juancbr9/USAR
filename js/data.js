@@ -255,14 +255,6 @@ const placeOf = g => g.vehicle ? vehName(g.vehicle) : !g.door ? 'Sin ubicar' : g
 const placeShort = g => g.vehicle ? vehName(g.vehicle) : g.door ? doorName(g.door) : 'Sin ubicar';
 const groupKey = g => g.vehicle || g.door;
 // Material de una operación: el contenedor completo (si sale), lo elegido a mano y lo que va en sus vehículos
-function missionGearIds(m) {
-  const ids = new Set(m.gear || []), all = list('gear');
-  if (m.container) all.filter(g => !g.vehicle && inCont(g.door)).forEach(g => ids.add(g.id));
-  // Lo que se carga en cada vehículo de la actividad (una caja lleva todo lo de dentro)
-  (m.vehicles || []).forEach(v => (v.gear || []).forEach(id => get('boxes', id) ? boxItems(id).forEach(g => ids.add(g.id)) : ids.add(id)));
-  return [...ids].filter(id => get('gear', id));
-}
-const missionGear = m => missionGearIds(m).map(id => get('gear', id));
 const qtyText = g => +g.qty > 1 ? ` ×${g.qty}` : '';
 // Grupos de material en orden: huecos B1–B20, lo sin ubicar y después los vehículos que llevan material
 function gearGroups(items = list('gear')) {
@@ -287,19 +279,15 @@ function persist() {
   if (logs.length > 1500) logs.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(1200).forEach(l => delete db.logs[l.id]);
   writeJSON(KEY.db, db);
 }
-// Añade los vehículos y plantillas de serie si no hay ninguno (sus ids son fijos, así no se duplican entre móviles)
+// Añade los vehículos de serie si no hay ninguno (sus ids son fijos, así no se duplican entre móviles)
 function seedDefaults(share = false) {
-  [['vehicles', DEFAULT_VEHICLES], ['templates', DEFAULT_TEMPLATES]].forEach(([kind, items]) => {
-    // Vehículos: solo si no hay ninguno. Plantillas de serie: se añaden las nuevas (las borradas no vuelven)
-    if (kind === 'vehicles' && list(kind).length) return;
-    items.filter(r => !db[kind][r.id]).forEach(r => { const rec = { ...r, _u: Date.now() }; db[kind][r.id] = rec; if (share) Sync.queue(kind, rec); });
-  });
+  // Vehículos: solo si no hay ninguno
+  if (!list('vehicles').length) DEFAULT_VEHICLES.forEach(r => { const rec = { ...r, _u: Date.now() }; db.vehicles[r.id] = rec; if (share) Sync.queue('vehicles', rec); });
   // Base de material v2: el material real del contenedor (sustituye al de ejemplo si no se había tocado)
   if (!(get('meta', 'gearbase')?.value >= 2)) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
     OLD_BASE_IDS.forEach(id => { const g = get('gear', id); if (g && !g.serial && !g.photo && !g.out && !g.notes) stampIt('gear', { id, _del: true }); });
     BASE_GEAR.forEach(g => { if (!db.gear[g.id]) stampIt('gear', { ...g }); });
-    DEFAULT_TEMPLATES.filter(t => get('templates', t.id)).forEach(t => stampIt('templates', { ...t }));
     stampIt('meta', { id: 'gearbase', value: 2 });
   }
   // Base de material v3: huecos y cajas reales del contenedor (hojas B1–B20, cajas H y U)
@@ -325,7 +313,6 @@ function seedDefaults(share = false) {
       stampIt('vehicles', { id, _del: true });
     });
     DEFAULT_VEHICLES.forEach(v => { if (!db.vehicles[v.id]) stampIt('vehicles', { ...v }); });
-    DEFAULT_TEMPLATES.filter(t => get('templates', t.id)).forEach(t => stampIt('templates', { ...t }));
   }
   // v3: las TETRA y el botiquín van «con el jefe» (su vehículo cambia en cada salida), no fijos en el SsangYong
   if (!(get('meta', 'vehbase')?.value >= 3)) {

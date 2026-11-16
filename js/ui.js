@@ -32,42 +32,36 @@ function render() {
   if (bloqueado()) return renderMantenimiento();
   document.body.classList.remove('login-on');
   if (HUB_TO[prefs.tab]) prefs.tab = HUB_TO[prefs.tab];
-  // Cada tipo de actividad se ve en la lista de todas (las maniobras y convoyes abiertos siguen en su ficha)
-  if (ACT_FILTER[prefs.tab] && !(prefs.move && ACT_TYPES[ACT_FILTER[prefs.tab]])) { prefs.afil = ACT_FILTER[prefs.tab]; prefs.tab = 'actividades'; }
   if (prefs.tab === 'consumibles') prefs.almFold = { ...prefs.almFold, fungible: false };   // el fungible se abre desplegado
   if (ALMACEN_TABS.includes(prefs.tab)) prefs.tab = 'contenedor';
   applyArea();
   renderHeader();
   renderNav();
-  renderActivationBar();
   // Si una pantalla falla, se ve un aviso con salida (y el error sigue llegando a la consola)
   try { $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)(); }
   catch (e) { $('view').innerHTML = errorState(); setTimeout(() => { throw e; }); }
-  const screen = [prefs.tab, prefs.mission, prefs.person, prefs.move, prefs.ws].join('|');
+  const screen = [prefs.tab, prefs.person].join('|');
   if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
-  document.body.classList.toggle('mision', !!document.querySelector('#view .mc'));
   if (document.querySelector('.cvi')) fitCells();
   if (prefs.tab === 'apuntalamientos') apuKeepFocus();
   if (prefs.tab === 'personal') persKeepFocus();
   navTrack();
   if ($('search').value) renderSearch();
   updateWakeLock();
-  renderFab();
 }
 
 const WIDE = matchMedia('(min-width: 1024px)');
 WIDE.addEventListener?.('change', () => renderNav());
 function renderNav() {
-  const count = alertCount(alerts()), active = list('missions').some(m => m.status === 'active');
-  renderDrawer(count, active);
+  const count = alertCount(alerts());
+  renderDrawer(count);
   // Tablet en horizontal y PC: el mismo menú desplegable, fijo a la izquierda. En el móvil, solo el menú de tres rayas
-  $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count, active)}</div>` : '';
+  $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count)}</div>` : '';
 }
 
 // Menú por niveles (en el orden de MENU): Inicio, Actividades, Material, Vehículos, Equipo, Guía de campo y Ajustes.
 // Al tocar un área se despliegan sus secciones (un área abierta a la vez).
-const OPS_TABS = ['operaciones', 'intervenciones', 'ejercicios', 'maniobras', 'convoy'];
-const menuTab = tab => tab === 'arcos' ? 'apuntalamientos' : OPS_TABS.includes(tab) ? 'actividades' : ALMACEN_TABS.includes(tab) || tab === 'entregas' ? (tab === 'entregas' ? 'fuera' : 'contenedor') : tab;
+const menuTab = tab => tab === 'arcos' ? 'apuntalamientos' : ALMACEN_TABS.includes(tab) || tab === 'entregas' ? (tab === 'entregas' ? 'fuera' : 'contenedor') : tab;
 const parteDe = tab => Object.keys(MENU_PARTES).find(k => MENU_PARTES[k].items.includes(tab));
 const tabGroups = tab => { tab = menuTab(tab); const s = sectionOf(tab), parte = parteDe(tab); return parte ? [parte] : s && !MENU.includes(tab) && s[4] !== 'home' ? [s[4]] : []; };
 function menuOpen(g) { return (prefs.menuOpen ?? tabGroups(prefs.tab)).includes(g); }
@@ -75,12 +69,12 @@ function toggleMenuGroup(g) {
   prefs.menuOpen = menuOpen(g) ? [] : [g];
   writeJSON(KEY.prefs, prefs); renderNav();
 }
-function menuTree(count, active) {
+function menuTree(count) {
   const curTab = menuTab(prefs.tab);
   const item = (id, icon, title, cls = '') => { const st = sectionStatus(id); return `
     <button class="dr-item ${cls} ${curTab === id ? 'on' : ''}" data-area="${areaOf(id)}" ${curTab === id ? 'aria-current="page"' : ''} onclick="go('${id}')">
       ${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b>${id === 'avisos' ? `<small>${count ? count + (count === 1 ? ' aviso' : ' avisos') : 'Todo en orden'}</small>` : ''}</span>
-      ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}${id === 'actividades' && active ? '<span class="live-dot"></span>' : ''}
+      ${id === 'avisos' && count ? `<span class="count">${count}</span>` : ''}
       ${st && st[1] !== 'neutral' && st[1] !== 'ok' ? `<span class="dr-dot ${st[1]}" title="${esc(st[0])}"></span>` : ''}</button>`; };
   const head = (g, icon, title) => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
     return `<button class="dr-group-head ${on ? 'has-on' : ''}" data-area="${g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
@@ -97,14 +91,14 @@ function menuTree(count, active) {
 }
 
 // Menú de tres rayas (móvil y tablet)
-function renderDrawer(count = alertCount(alerts()), active = list('missions').some(m => m.status === 'active')) {
+function renderDrawer(count = alertCount(alerts())) {
   const mc = $('menuCount');
   if (mc) { mc.textContent = count > 99 ? '99+' : count; mc.classList.toggle('hidden', !count); }
   const panel = $('drawerPanel'); if (!panel || $('drawer').classList.contains('hidden')) return;
   panel.innerHTML = `
     <div class="dr-head"><div class="dr-brand"><img src="img/logo.webp" width="44" height="44" alt=""><div class="wordmark">SIER <span class="plate">242</span></div></div>
       <button class="icon-btn" aria-label="Cerrar menú" onclick="toggleDrawer(false)">${ic('x', 'i-lg')}</button></div>
-    ${menuTree(count, active)}`;
+    ${menuTree(count)}`;
 }
 let DRAWER_CLOSING = null;
 function toggleDrawer(open) {
@@ -124,12 +118,11 @@ function toggleDrawer(open) {
 }
 
 function go(tab) {
-  const sub = ALMACEN_TABS.includes(tab) && tab, afil = ACT_FILTER[tab];
-  tab = sub ? 'contenedor' : afil || tab === 'operaciones' ? 'actividades' : HUB_TO[tab] || tab;
+  const sub = ALMACEN_TABS.includes(tab) && tab;
+  tab = sub ? 'contenedor' : HUB_TO[tab] || tab;
   toggleDrawer(false); haptic(8);
-  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'avisos' ? { vAll: false } : {}), ...(tab === 'arcos' ? { arc: null } : {}), ...(tab === 'apuntalamientos' ? { apu: null } : {}) });
+  setPref({ tab, menuOpen: null, ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'avisos' ? { vAll: false } : {}), ...(tab === 'arcos' ? { arc: null } : {}), ...(tab === 'apuntalamientos' ? { apu: null } : {}) });
   scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'otros' ? 'escalon' : sub); }
-const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
 function toggleSearch() {
   const bar = $('searchbar');
@@ -177,78 +170,49 @@ function alerts() {
     // ITV que ya ha llegado: se pregunta si la ha pasado
     itv: itvPending(),
     // Material de los apartados (Agua, Cuerdas…) en revisión o averiado
-    esp: list('matesp').filter(m => APARTADOS[m.ap] && m.status && m.status !== 'OPERATIVO').sort(byName)
+    esp: matTodo().filter(m => !matOk(m)).sort(byName)
   };
 }
 const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length + a.esp.length;
 
 /* ==================== VISTA: INICIO ==================== */
-// Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, los vencimientos y lo próximo del calendario
+// La sección de un vistazo: saludo y operatividad, una tarjeta por especialidad, la fuerza de hoy, los avisos, los
+// vencimientos y lo próximo del calendario
 function viewAvisos() {
   const a = alerts(), total = alertCount(a), gearList = list('gear');
-  const ok = gearList.filter(g => g.status === 'OPERATIVO').length, pct = Math.round(ok / (gearList.length || 1) * 100);
   // art: dibujo del equipo o la caja delante (como en el resto de listas del material)
   const row = (onclick, title, sub, right = '', art = '') =>
     `<button class="item" onclick="${onclick}">${art ? '<div class="who-row">' + art : ''}<div><b>${esc(title)}</b><small>${esc(sub)}</small></div>${art ? '</div>' : ''}${right}</button>`;
   const boxArt = b => `<span class="box-chip sm" style="--c:${colorOf(b)[1]}; --ink:${colorOf(b)[2]}">${esc(b.code)}</span>`;
-  const section = (title, cls, rows, area = 'log', foot = '', chip = AREAS[area].name) => rows.length ? `
+  const section = (title, cls, rows, area = 'log', foot = '', chip = 'USAR') => rows.length ? `
     <div class="panel area-panel" data-area="${area}"><div class="between sec-head"><h3><span class="area-chip">${chip}</span>${title}</h3><span class="tag ${cls}">${rows.length}</span></div>
     <div class="list">${rows.join('')}</div>${foot}</div>` : '';
   const where = g => whereIs(g) + (boxCode(g) ? ', caja ' + boxCode(g) : '');
-  const active = list('missions').filter(m => m.status === 'active');
-  const next = list('missions').filter(m => m.status === 'prep').sort((x, y) => (x.date || '').localeCompare(y.date || ''))[0];
   const hour = new Date().getHours();
   const hello = hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
   const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-  // Indicadores
-  const ops = operators(), alDia = ops.filter(o => !readinessIssues(o.id).length).length;
-  const exp = expiries(), late = exp.filter(x => daysTo(x.date) < 0).length, soon = exp.filter(x => daysTo(x.date) >= 0 && daysTo(x.date) <= 30).length;
-  // value: [cifra, lo que va detrás] para que la cifra cuente al entrar
-  const kpi = (icon, label, [n, suf = ''], sub, cls, onclick) => `<button class="dash-kpi ${cls}" onclick="${onclick}">
-    <span class="dash-kpi-i">${ic(icon)}</span><small>${label}</small><b data-count="${n}" data-suf="${esc(suf)}">${n}${esc(suf)}</b><span class="dash-kpi-sub">${sub}</span></button>`;
   const upcoming = events().filter(e => eventDays(e).at(-1) >= todayISO()).slice(0, 3);
-  // Operatividad de la unidad: media de material operativo, personal al día y vehículos sin fallos en su última revista
-  const units = vehicles().flatMap(v => v.units || []), vOk = units.filter(u => !lastVcheck(u.id)?.fails.length).length;
-  const parts = [pct, ops.length ? alDia / ops.length * 100 : 100, units.length ? vOk / units.length * 100 : 100], ready = Math.round(parts.reduce((s, x) => s + x, 0) / 3);
+  // Operatividad de la sección: material operativo (el de todas las especialidades y vehículos), personal presente y
+  // matrículas sin fallos en su última revista ni la ITV caducada
+  const ops = operators(), mat = [...gearList, ...matTodo()], flota = flotaEstado();
+  const pct = (n, t) => t ? n / t * 100 : 100;
+  const parts = [pct(mat.filter(matOk).length, mat.length), pct(ops.filter(o => !esAusente(o)).length, ops.length), pct(flota.filter(x => !x.fallo && !x.itv).length, flota.length)];
+  const ready = Math.round(parts.reduce((s, x) => s + x, 0) / 3);
 
   return `
     <div class="hero">
       <p class="hero-date">${esc(today)}</p>
       <p class="hello">${hello}, ${esc(nombreBonito(prefs.activeOperator))}</p>
-      <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo el material está en orden.`}</p>
-      <div class="hero-ops" role="img" aria-label="Operatividad de la unidad: ${ready} %. Material ${Math.round(parts[0])} %, personal ${Math.round(parts[1])} %, vehículos ${Math.round(parts[2])} %">
+      <p class="hero-msg">${total ? `${ic('alert', 'i-sm')} Hay ${total} ${total === 1 ? 'cosa' : 'cosas'} que revisar.` : `${ic('checkc', 'i-sm')} Todo en orden.`}</p>
+      <div class="hero-ops" role="img" aria-label="Operatividad de la sección: ${ready} %. Material ${Math.round(parts[0])} %, personal ${Math.round(parts[1])} %, vehículos ${Math.round(parts[2])} %">
         <div class="hero-pct ${ready >= 90 ? 'ok' : ready >= 75 ? 'warn' : 'bad'}"><b data-count="${ready}" data-suf="%">${ready}%</b><small>operativa</small></div>
         <div class="hero-bars">${[['Material', parts[0]], ['Personal', parts[1]], ['Vehículos', parts[2]]].map(([l, v]) =>
           `<div class="hero-bar"><span>${l}</span><i><u class="${v >= 90 ? '' : v >= 75 ? 'warn' : 'bad'}" style="width:${Math.round(v)}%"></u></i><b>${Math.round(v)}%</b></div>`).join('')}</div>
       </div>
     </div>
 
-    <div class="dash-kpis">
-      ${kpi('box', 'Material operativo', [pct, '%'], `${ok} de ${gearList.length} equipos`, pct >= 95 ? 'ok' : pct >= 80 ? 'warn' : 'bad', "go('contenedor')")}
-      ${kpi('wrench', 'En revisión', [a.review.length + a.broken.length], a.broken.length ? `${a.broken.length} averiados` : 'ninguno averiado', a.broken.length ? 'bad' : a.review.length ? 'warn' : 'ok', "go('revision')")}
-      ${kpi('users', 'Personal al día', [alDia, '/' + ops.length], 'documentación', alDia === ops.length ? 'ok' : 'warn', "go('personal')")}
-      ${kpi('clock', 'Vencimientos', [late + soon], late ? `${late} ${late === 1 ? 'caducado' : 'caducados'}` : 'en 30 días', late ? 'bad' : soon ? 'warn' : 'ok', "setPref({ vwin: 30 }); document.getElementById('venc')?.scrollIntoView({ behavior: 'smooth' })")}
-    </div>
+    ${espTiles()}
     ${enMantenimiento() ? mantenimientoPanel() : ''}
-
-    ${active.map(m => {
-      const inZone = presence(m).filter(p => p.state === 'in').length, vs = victimsOf(m.id), ws = worksitesOf(m.id);
-      const pend = vs.filter(v => !isOut(v)).length;
-      return `
-      <div class="panel live">
-        <button class="grow" style="display:block; width:100%" onclick="openMission('${m.id}')">
-          <span class="live-tag">En curso · ${esc(phaseOf(m).name)}</span>
-          <h2 style="margin-top:4px">${esc(m.title)}</h2>
-          <p class="muted">${esc(mtypeName(m))}${m.location ? ' en ' + esc(m.location) : ''}</p>
-        </button>
-        <div class="live-stats">
-          <button onclick="openMission('${m.id}', 'personal')"><b class="num">${inZone}</b><small>en zona</small></button>
-          <button onclick="openMission('${m.id}', 'worksites')"><b class="num">${ws.length}</b><small>worksites</small></button>
-          <button onclick="openMission('${m.id}', 'victimas')"><b class="num ${pend ? 'warn' : ''}">${pend}</b><small>víctimas pendientes</small></button>
-        </div>
-      </div>`; }).join('')}
-
-    ${next ? `<button class="item next-out" onclick="openMission('${next.id}')"><div><small>Próxima salida</small><b>${esc(next.title)}</b><small>${fmtDT(next.date)}${next.location ? ', ' + esc(next.location) : ''}</small></div><span class="tag warn">En preparación</span></button>` : ''}
 
     ${fuerzaPanel()}
 
@@ -262,8 +226,8 @@ function viewAvisos() {
       ${section('ITV: ¿la han pasado?', 'warn', a.itv.map(x => row(`itvForm('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`,
         `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)), 'log', '', 'Vehículos')}
       ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))), 'log', '', 'Vehículos')}
-      ${section('Material de especialidades', a.esp.some(m => m.status === 'AVERIADO') ? 'bad' : 'warn', a.esp.map(m => row(`setPref({ tab: '${m.ap}', aptab: 'material' }); scrollTo(0, 0)`, m.name, `${APARTADOS[m.ap].name} · ${AP_ESTADOS[m.status]?.[0] || m.status}${m.notes ? ' · ' + m.notes : ''}`)), 'team', '', 'Especialidades')}
-      ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
+      ${section('Material en revisión o averiado', a.esp.some(m => m.status === 'AVERIADO') ? 'bad' : 'warn', a.esp.map(m => row(matIr(m), m.name, `${matDueno(m)} · ${AP_ESTADOS[m.status]?.[0] || m.status}${m.notes ? ' · ' + m.notes : ''}`)), 'team', '', 'Material')}
+      ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team', '', 'Personal')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`, '', artMini(g))))}
     </div>` : ''}
@@ -282,6 +246,17 @@ function viewAvisos() {
       <button class="btn btn-g" onclick="shareText(reportText())">${ic('share')} Enviar estado</button>
       <button class="btn btn-g" onclick="printManifest()">${ic('printer')} Imprimir estado</button>
     </div>`;
+}
+
+// Inicio: una tarjeta por especialidad o equipo, con su icono, los presentes y el material operativo
+function espTiles() {
+  const fig = (n, t, label, bad) => `<span class="esp-n ${bad ? 'bad' : ''}"><b>${n}<i>/${t}</i></b><small>${label}</small></span>`;
+  const tile = (onclick, art, name, sub, gente, mat) => `<button class="esp-tile" onclick="${onclick}">${art}<span class="esp-t"><b>${esc(name)}</b><small>${esc(sub)}</small></span>
+    ${fig(gente.filter(o => !esAusente(o)).length, gente.length, 'presentes', false)}${fig(mat.filter(matOk).length, mat.length, 'material', mat.some(m => !matOk(m)))}</button>`;
+  return `<div class="esp-tiles">
+    ${tile("go('contenedor')", '<img class="esp-art" src="img/logo.webp" alt="">', 'USAR', 'Rescate urbano', usarOps(), list('gear'))}
+    ${Object.entries(APARTADOS).map(([k, ap]) => tile(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon, 'i-lg')}</span>`, ap.name, ap.largo, apMiembros(k), apMat(k))).join('')}
+  </div>`;
 }
 
 // «GRANADOS» → «Granados» (los nombres se guardan en mayúsculas)
@@ -346,12 +321,8 @@ function renderSearch() {
       ['Personal', o.name, [o.role, o.phone].filter(Boolean).join(' · '), `openPerson('${o.id}')`]),
     ...list('docs').filter(d => hit(d.type, d.number, d.notes, opName(d.op))).map(d =>
       ['Documento', `${d.type} de ${opName(d.op)}`, d.expires ? 'Caduca ' + fmtDate(d.expires) : 'Sin caducidad', `openPerson('${d.op}'); docDetail('${d.id}')`]),
-    ...list('missions').filter(m => hit(m.title, m.location, m.objective)).map(m =>
-      ['Operación', m.title, `${mtypeName(m)} · ${fmtDT(m.date)}`, `openMission('${m.id}')`]),
-    ...list('worksites').filter(w => hit(w.code, w.address, w.notes)).map(w =>
-      ['Worksite', w.code, `${mget(w.mission)?.title || ''}${w.address ? ' · ' + w.address : ''}`, `openMission('${w.mission}', 'worksites'); setPref({ ws: '${w.id}' })`]),
-    ...list('heritage').filter(h => hit(h.name, h.place, h.type)).map(h =>
-      ['Patrimonio', `${herCode(h)} ${h.name}`, `${mget(h.mission)?.title || ''} · ${herStatus(h.status)[0]}`, `openMission('${h.mission}', 'patrimonio'); heritageDetail('${h.id}')`]),
+    ...matTodo().filter(m => hit(m.name, m.place, m.serial, m.notes)).map(m =>
+      ['Material', m.name, [matDueno(m), m.place].filter(Boolean).join(' · '), matIr(m)]),
     ...list('arcs').filter(x => hit(x.name, x.team)).map(x =>
       ['Arco', x.name, ['Apuntalar arcos', x.team].filter(Boolean).join(' · '), `openArc('${x.id}')`])
   ];
@@ -609,7 +580,7 @@ document.addEventListener('click', e => {
 
 /* ---------- Gesto «atrás» del móvil (o botón atrás): vuelve a la pantalla anterior de la app ---------- */
 // Cada cambio de pantalla deja una entrada en el historial del navegador; abrir una ventana, el menú o una foto, también.
-const navSnap = () => ({ tab: prefs.tab, mission: prefs.mission || null, mtab: prefs.mtab || null, person: prefs.person || null, ws: prefs.ws || null, move: prefs.move || null, arc: prefs.arc || null });
+const navSnap = () => ({ tab: prefs.tab, person: prefs.person || null, arc: prefs.arc || null });
 const navKey = s => JSON.stringify(s);
 let NAV_KEY = null, NAV_POP = false;
 function navTrack() {

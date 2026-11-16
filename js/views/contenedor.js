@@ -164,7 +164,6 @@ function itemHistory(kind, id) {
       ev.push({ ts: Date.parse(l.date), icon: 'out', text: `Prestado con firma a ${loanWho(l)}${l.purpose ? ' · ' + l.purpose : ''}` });
       if (l.returned) ev.push({ ts: +l.returned || Date.parse(l.returned) || Date.parse(l.date), icon: 'in', text: `Devuelto por ${loanWho(l)}` });
     });
-    list('missions').filter(m => m.status !== 'prep' && missionGearIds(m).includes(id)).forEach(m => ev.push({ ts: m.startedAt || Date.parse(m.date), icon: 'radio', text: `Salió con «${m.title}»` }));
     if (x.out && !x.out.mission && !x.out.loan) ev.push({ ts: x.out.since, icon: 'users', text: `Lo lleva ${x.out.who}` });
   }
   const seen = new Set(), rows = ev.filter(e => e.ts && !isNaN(e.ts)).sort((a, b) => b.ts - a.ts).filter(e => { const k = e.ts + e.text; if (seen.has(k)) return false; seen.add(k); return true; });

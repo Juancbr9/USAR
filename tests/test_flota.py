@@ -56,7 +56,7 @@ with sync_playwright() as p:
     assert b['mover'], 'el resto sigue moviendo el material'
     # Aunque se llame a los formularios (QR, enlaces antiguos…), no se abren
     n = a.evaluate("list('gear').length")
-    for f in ("gearForm()", "boxForm()", "consForm()", "vehicleForm()", f"extrasForm(list('missions')[0]?.id)", f"removeItem('gear', list('gear')[0].id)"):
+    for f in ("gearForm()", "boxForm()", "consForm()", "vehicleForm()", "matForm('veh:' + vehicles()[0].id)", f"removeItem('gear', list('gear')[0].id)"):
         a.evaluate(f); a.wait_for_timeout(50)
         assert a.locator('#modalForm, #extrasForm').count() == 0, f'{f} no debe abrirse'
     assert a.evaluate("list('gear').length") == n, 'no se borra nada'
