@@ -2137,3 +2137,17 @@ body.mision .mlayout > .tabs .tab .n { background: rgba(255, 255, 255, .14); col
 }
 :root[data-sun] .hero small, :root[data-sun] .hero p, :root[data-sun] .hero-bar span { color: #ffffff; }
 :root[data-sun] .mc small, :root[data-sun] .mc .muted { color: #ffffff; }
+
+/* ---------- Apartados de especialidades y equipos ---------- */
+.dr-label { margin: 14px 10px 4px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .09); font: 500 12.5px var(--sans); color: var(--frame-muted); }
+.dr-label + .dr-group { margin-top: 0; padding-top: 0; border-top: 0 !important; }
+.ap-de { font: inherit; color: var(--muted); }
+.sier-kpi b.ap-fecha { font-size: 18px; line-height: 1.5; letter-spacing: 0; }
+.ap-nota { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.pers-mas { gap: 6px 18px; margin-top: 10px; }
+.pers-mas .link { min-height: 44px; }
+.pers-acts { display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
+.pers-acts .btn { padding-left: 12px; padding-right: 12px; }
+@media (max-width: 560px) { .pers-acts { width: 100%; grid-template-columns: 1.15fr 1.15fr .8fr; } }
+/* El fondo cambia de golpe (al entrar o salir de una operación pasa de oscuro a claro): a medias dejaba el texto sin contraste */
+body { transition: none; }

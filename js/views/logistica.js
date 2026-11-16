@@ -31,8 +31,11 @@ function viewLogistica() {
   const cuenta = f => [pres.filter(f).length, ops.filter(f).length];
   const irPers = pview => `setPref({ tab: 'personal', person: null, persQ: '', pview: '${pview}' }); scrollTo(0, 0)`;
   // Capacidades: especialidades y equipos
-  const caps = [...ESPECIALIDADES.map(e => [e, ...cuenta(o => opEsp(o) === e), irPers('esp')]),
-    ...Object.entries(EQUIPOS).filter(([k]) => k !== 'moto').map(([k, l]) => [l, ...cuenta(o => (o.eq || []).includes(k)), irPers('equipos')])].filter(c => c[2]);
+  const irAp = (k, aptab = 'equipo') => `setPref({ tab: '${k}', aptab: '${aptab}' }); scrollTo(0, 0)`;
+  const caps = [...ESPECIALIDADES.map(e => [e, ...cuenta(o => opEsp(o) === e), apDe(e) ? irAp(apDe(e)) : irPers('esp')]),
+    ...Object.entries(EQUIPOS).filter(([k]) => k !== 'moto').map(([k, l]) => [l, ...cuenta(o => (o.eq || []).includes(k)), APARTADOS[k] ? irAp(k) : irPers('equipos')])].filter(c => c[2]);
+  // Material de cada apartado (Agua, Cuerdas…): operativo del total
+  const matAp = Object.keys(APARTADOS).map(k => [k, apMat(k)]).filter(([, m]) => m.length);
   const [motoT, motoTt] = cuenta(o => o.moto?.tipo === 'T'), [motoS, motoSt] = cuenta(o => o.moto?.tipo === 'S');
   // Quién vuelve y quién falta en los próximos días
   const vuelven = ops.filter(o => fuera(o) && o.aus.hasta && daysTo(o.aus.hasta) <= 7).sort((a, b) => a.aus.hasta.localeCompare(b.aus.hasta));
@@ -62,7 +65,7 @@ function viewLogistica() {
       <div class="panel">
         <h3>Capacidades</h3><p class="muted" style="margin-bottom:6px">Gente presente ${esc(diaTxt)} de cada especialidad y equipo.</p>
         ${caps.map(([l, n, t, go]) => logMeter(l, n, t, go)).join('')}
-        ${motoTt ? logMeter('Motosierristas', motoT, motoTt, irPers('equipos'), motoSt ? ` + ${motoS} de ${motoSt} suplentes` : '') : ''}
+        ${motoTt ? logMeter('Motosierristas', motoT, motoTt, irAp('moto'), motoSt ? ` + ${motoS} de ${motoSt} suplentes` : '') : ''}
         ${caps.length || motoTt ? '' : '<p class="muted">Aún no hay especialidades ni equipos apuntados en el personal.</p>'}
       </div>
       ${vuelven.length || previstas.length ? `<div class="panel">
@@ -89,9 +92,13 @@ function viewLogistica() {
           ${logRow('En revisión o averiado', a.review.length + a.broken.length, a.broken.length ? 'bad' : a.review.length ? 'warn' : '', "go('revision')")}
           ${logRow('Fungible bajo mínimo', a.low.length, a.low.length ? 'bad' : '', a.low.length ? 'pedidoForm()' : "go('consumibles')", a.low.length ? ' toca para preparar el pedido' : '')}
           ${logRow('EPI por revisar', a.epi.length, a.epi.length ? 'warn' : '', "go('epi')")}
-          ${logRow('Vencimientos en 30 días', venc, exp.some(x => daysTo(x.date) < 0) ? 'bad' : venc ? 'warn' : '', "setPref({ tab: 'avisos', vwin: 30 }); setTimeout(() => document.getElementById('venc')?.scrollIntoView(), 60)")}
+          ${logRow('Vencimientos en 30 días', venc, exp.some(x => daysTo(x.date) < 0) ? 'bad' : venc ? 'warn' : '', "setPref({ tab: 'avisos', vwin: 30, vAll: true }); setTimeout(() => document.getElementById('venc')?.scrollIntoView(), 60)")}
         </div>
       </div>
+      ${matAp.length ? `<div class="panel">
+        <h3>Material de especialidades</h3><p class="muted" style="margin-bottom:6px">Operativo del total apuntado en cada apartado.</p>
+        ${matAp.map(([k, m]) => logMeter(APARTADOS[k].name, m.filter(x => (x.status || 'OPERATIVO') === 'OPERATIVO').length, m.length, irAp(k, 'material'), m.some(x => x.review && daysTo(x.review) <= 30) ? ' revisión próxima' : '')).join('')}
+      </div>` : ''}
       ${cargos.length ? `<div class="panel">
         <div class="between"><h3>Quién tiene material</h3><button class="link" onclick="go('fuera')">Fuera</button></div>
         <div class="log-rows">${cargos.map(([who, gs]) => logRow(who, gs.length + (gs.length === 1 ? ' equipo' : ' equipos'), '', "go('fuera')", ' ' + gs.slice(0, 2).map(g => g.name).join(', ') + (gs.length > 2 ? '…' : ''))).join('')}</div>

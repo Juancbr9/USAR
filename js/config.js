@@ -11,6 +11,20 @@ const ESPECIALIDADES = ['USAR', 'Res. Terrestre', 'Res. Acuático'];
 const EMPLEOS = ['TTE', 'STTE', 'BG', 'SGT 1º', 'SGT', 'CBO 1º', 'CBO', 'SDO'];   // de más a menos antigüedad
 // Equipos transversales: una persona puede estar en varios, además de su especialidad
 const EQUIPOS = { rpas: 'RPAS', sva: 'SVA', moto: 'Motosierristas' };
+// Apartados de las demás especialidades y equipos (USAR tiene sus propias pantallas): cada uno con su gente, su material
+// y su revista. de: quién pertenece (por especialidad, por equipo o los motosierristas); habitual: material para empezar.
+const APARTADOS = {
+  agua: { name: 'Agua', largo: 'Rescate acuático', icon: 'waves', esp: 'Res. Acuático',
+    habitual: ['Chalecos de rescate', 'Cascos de aguas', 'Trajes de neopreno', 'Trajes secos', 'Bolsas de rescate (cuerda flotante)', 'Aletas', 'Embarcación neumática', 'Motor fueraborda', 'Remos', 'Tubo de rescate'] },
+  cuerdas: { name: 'Cuerdas', largo: 'Rescate terrestre', icon: 'rope', esp: 'Res. Terrestre',
+    habitual: ['Cuerdas semiestáticas', 'Cuerdas dinámicas', 'Arneses integrales', 'Cascos', 'Mosquetones', 'Descensores', 'Bloqueadores', 'Poleas', 'Anillos y cintas', 'Trípode', 'Camilla de rescate', 'Protectores de cuerda'] },
+  rpas: { name: 'RPAS', largo: 'Drones', icon: 'drone', eq: 'rpas',
+    habitual: ['Aeronave', 'Emisora', 'Baterías', 'Cargador', 'Hélices de repuesto', 'Tablet o pantalla', 'Maleta de transporte'] },
+  sva: { name: 'SVA', largo: 'Equipo SVA', icon: 'cross', eq: 'sva',
+    habitual: ['Mochila de SVA', 'Desfibrilador', 'Botella de oxígeno', 'Aspirador de secreciones', 'Collarines', 'Férulas', 'Tablero espinal', 'Pulsioxímetro'] },
+  moto: { name: 'Motosierras', largo: 'Equipo motosierrista', icon: 'saw', moto: true,
+    habitual: ['Motosierra', 'Espadas de repuesto', 'Cadenas de repuesto', 'Pantalón anticorte', 'Casco forestal', 'Guantes anticorte', 'Bidón combinado', 'Lima y afilador', 'Cuñas'] }
+};
 const MOTIVOS_AUSENCIA = ['Permiso', 'Baja médica', 'Curso', 'Comisión de servicio', 'Guardia o servicio', 'Asuntos propios', 'Otro'];
 const STATUS_TAG = { 'OPERATIVO': 'ok', 'REVISIÓN': 'warn', 'AVERIADO': 'bad' };
 // Huecos del contenedor, como en las hojas pegadas en él. Cada lateral: 4 columnas; en las dos del centro hay tres huecos
@@ -63,7 +77,7 @@ const EMERGENCIES = {
 const DANGEROUS = ['', 'Baterías de litio', 'Combustible', 'Gases a presión', 'Otro'];
 const SOON_DAYS = 30;          // aviso de vencimiento con esta antelación
 const RESERVA = 'RESERVA';     // EPI sin asignar
-const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans', 'moves', 'vchecks', 'arcs'];
+const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans', 'moves', 'vchecks', 'arcs', 'matesp'];
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
