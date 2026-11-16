@@ -111,7 +111,7 @@ function replaceAll(data, msg) {
 }
 
 /* ---------- Usuario y permisos (modo seguro) ---------- */
-const rolTexto = () => Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? 'Miembro: ve y usa todo; el material y los vehículos los da de alta el jefe' : 'Sin rol en el equipo';
+const rolTexto = () => Sync.role === 'jefe' ? 'Jefe: ve y edita todo y gestiona los miembros' : Sync.role === 'miembro' ? (flotaAbierta() ? 'Miembro: ve y edita todo; los miembros y los PIN los lleva el jefe' : 'Miembro: ve y usa todo; el material y los vehículos los da de alta el jefe') : 'Sin rol en el equipo';
 // Personas que entran con nombre y PIN (y las cuentas con correo de antes). Solo los jefes.
 async function membersModal() {
   let ps = [], ms = [];

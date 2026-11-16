@@ -101,6 +101,9 @@ function handleScan(mid, text) {
   const out = $('scanResult');
   const op = text.startsWith('USAR242-P:') ? get('operators', text.slice(10)) : null;
   if (!op) {
+    // Material de un apartado o de un vehículo, o un hueco de pasillo: se abre como su enlace
+    const mh = text.match(/#([mh])=([^&\s]+)/);
+    if (mh) { closeModal(); location.hash = '#' + mh[1] + '=' + mh[2]; return; }
     const g = text.match(/#g=([^&]+)/), k = text.match(/#k=([^&]+)/);
     if (g && get('gear', decodeURIComponent(g[1]))) { closeModal(); gearDetail(decodeURIComponent(g[1])); return; }
     if (k && get('boxes', decodeURIComponent(k[1]))) { closeModal(); boxDetail(decodeURIComponent(k[1])); return; }

@@ -529,7 +529,7 @@ function viewArmarios() {
 function viewPasillo() {
   return `
     <div class="panel">
-      <p class="muted" style="margin:0 0 12px">La estantería del pasillo: 5 módulos, con el suelo y la primera balda. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
+      <p class="muted" style="margin:0 0 12px">${usarPasillos().length ? 'El pasillo ' + usarPasillos().join(' y ') + ' (el de USAR)' : 'La estantería del pasillo'}: 5 módulos, con el suelo y la primera balda. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
       <div class="pas-scroll"><div class="pas" style="--mods:${PAS_MOD}">
         ${[...PAS_NIV.keys()].reverse().map(nv => `
           <div class="pas-lvl${nv ? '' : ' floor'}">${nv ? 'Balda' : 'Suelo'}</div>

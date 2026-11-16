@@ -201,6 +201,12 @@ with sync_playwright() as p:
     # ---------- Equipo ----------
     a.evaluate("go('personal')"); a.wait_for_timeout(250)
     ann(a, 'personal-lista', [('#view button.btn-a:has-text("Persona")', 'r', {'d': 24}), ('#view button:has-text("Tarjetas QR")', 'r', {'d': 24}), ('#view .sier-res', 'i'), ('#view .pers-views', 'i')])
+    # El cuadrante de vacaciones, con unas ausencias de ejemplo en el mes (se quitan después)
+    a.evaluate("""(() => { const ym = todayISO().slice(0, 7), o = operators();
+      [[1, 'Vacaciones', '03', '12'], [3, 'Curso', '08', '10'], [4, 'Permiso', '19', '20'], [6, 'Vacaciones', '21', '28']].forEach(([i, motivo, d, h]) => o[i] && stamp('operators', { ...o[i], plan: [{ id: 'PL-M' + i, motivo, desde: ym + '-' + d, hasta: ym + '-' + h }] }));
+      commit(); setPref({ pview: 'cuadrante' }); })()"""); a.wait_for_timeout(300)
+    ann(a, 'cuadrante', [('#view button.btn-a:has-text("Ausencia")', 'b', {'d': 30}), ('#view table.cq tbody tr >> nth=1 >> .cq-nombre', 'i'), ('#view button:has-text("Mínimos")', 'r', {'d': 24})], scroll='#view .cq-panel', top=150)
+    a.evaluate("operators().filter(o => (o.plan || []).length).forEach(o => stamp('operators', { ...o, plan: [] })); commit(); setPref({ pview: 'peloton' }); scrollTo(0, 0)"); a.wait_for_timeout(200)
     a.evaluate("""(() => { go('agua'); apHabitual('agua'); const m = apMat('agua'); [[0, 1, 0], [1, 1, 1], [2, 1, 1], [3, 2, 2], [4, 3, 0], [5, 3, 0], [6, 2, 1], [7, 4, 2]].forEach(([i, mod, niv]) => stamp('matesp', { ...m[i], pas: 4, lado: 'I', mod, niv }));
       stamp('matesp', { ...apMat('agua')[6], status: 'REVISIÓN' }); commit(); setPref({ aptab: 'material' }); })()"""); a.wait_for_timeout(2600); tall(1000)
     ann(a, 'apartado', [('#view .sier-res', 'i'), ('#view .ctabs', 'b', {'d': 30}), ('#view .px', 'i')]); tall(760)

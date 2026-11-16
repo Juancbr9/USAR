@@ -170,10 +170,12 @@ function alerts() {
     // ITV que ya ha llegado: se pregunta si la ha pasado
     itv: itvPending(),
     // Material de los apartados (Agua, Cuerdas…) en revisión o averiado
-    esp: matTodo().filter(m => !matOk(m)).sort(byName)
+    esp: matTodo().filter(m => !matOk(m)).sort(byName),
+    // Revistas con aviso que ya tocan (de un apartado o de un vehículo)
+    rev: revPendientes()
   };
 }
-const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length + a.esp.length;
+const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length + a.esp.length + a.rev.length;
 
 /* ==================== VISTA: INICIO ==================== */
 // La sección de un vistazo: saludo y operatividad, una tarjeta por especialidad, la fuerza de hoy, los avisos, los
@@ -227,6 +229,7 @@ function viewAvisos() {
         `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)), 'log', '', 'Vehículos')}
       ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))), 'log', '', 'Vehículos')}
       ${section('Material en revisión o averiado', a.esp.some(m => m.status === 'AVERIADO') ? 'bad' : 'warn', a.esp.map(m => row(matIr(m), m.name, `${matDueno(m)} · ${AP_ESTADOS[m.status]?.[0] || m.status}${m.notes ? ' · ' + m.notes : ''}`)), 'team', '', 'Material')}
+      ${section('Toca pasar revista', 'warn', a.rev.map(([o]) => row(matIr(duenoDe(o)), duenoNombre(o), (REV_CADA.find(r => r[0] === revCada(o))?.[1] || '') + (matRevistas(o)[0] ? ' · última: ' + fmtWhen(matRevistas(o)[0].ts) : ' · aún no se ha pasado'))), 'team', '', 'Material')}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team', '', 'Personal')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`, '', artMini(g))))}
@@ -256,7 +259,7 @@ function espTiles() {
     ${gente ? fig(gente.filter(o => !esAusente(o)).length, gente.length, 'presentes', false) : fig(mat.filter(m => m.holder && get('operators', m.holder)).length, mat.length, 'cogido', false)}${fig(mat.filter(matOk).length, mat.length, 'material', mat.some(m => !matOk(m)))}</button>`;
   return `<div class="esp-tiles">
     ${tile("go('contenedor')", '<img class="esp-art" src="img/logo.webp" alt="">', 'USAR', 'Rescate urbano', usarOps(), list('gear'))}
-    ${Object.entries(APARTADOS).map(([k, ap]) => tile(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon, 'i-lg')}</span>`, ap.name, ap.largo, ap.comun ? null : apMiembros(k), apMat(k))).join('')}
+    ${Object.entries(APARTADOS).map(([k, ap]) => tile(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon, 'i-lg')}</span>`, ap.name, ap.largo, ap.comun ? null : apMiembros(k), apVivo(k))).join('')}
   </div>`;
 }
 
@@ -513,6 +516,18 @@ function handleHash() {
     if (!g) return toast('Equipo no encontrado en este dispositivo', 'bad');
     setPref({ tab: 'contenedor', door: groupKey(g) });
     gearDetail(value);
+  }
+  if (key === 'm') {
+    const m = get('matesp', value);
+    if (!m) return toast('Material no encontrado en este dispositivo', 'bad');
+    if (m.veh) { setPref({ tab: 'vehiculos' }); } else setPref({ tab: m.ap, aptab: 'material' });
+    matForm(duenoTxt(m), m.id);
+  }
+  if (key === 'h') {   // apartado.pasillo.lado.módulo.altura
+    const [k, pas, lado, mod, niv] = value.split('.');
+    if (!APARTADOS[k] || !apPasillos(k).includes(+pas)) return toast('Ese hueco ya no existe', 'bad');
+    setPref({ tab: k, aptab: 'material', pasN: { ...prefs.pasN, [k]: +pas }, pasLado: lado === 'D' ? 'D' : 'I' });
+    pasHueco(k, +pas, lado === 'D' ? 'D' : 'I', +mod, +niv || 0);
   }
   if (key === 'k') {
     if (!get('boxes', value)) return toast('Caja no encontrada en este dispositivo', 'bad');

@@ -81,9 +81,12 @@ with sync_playwright() as p:
       commit(); })()""")
     pages = [(f"go('{t}')", t) for t in a.evaluate("Object.keys(VIEWS)")]
     pages += [("openPerson('OP-01')", 'persona'), ("go('contenedor')", 'dibujo'), ("go('revision')", 'revisión'), ("go('armarios')", 'armarios'), ("go('pasillo')", 'pasillo'),
+              ("(() => { const o = operators(), h = todayISO(); stamp('operators', { ...o[1], plan: [{ id: 'PL-A', motivo: 'Vacaciones', desde: h, hasta: h }] }); stamp('operators', { ...o[2], plan: [{ id: 'PL-B', motivo: 'Curso', desde: h, hasta: h }] });"
+               " stamp('operators', { ...o[3], plan: [{ id: 'PL-C', motivo: 'Baja médica', desde: h, hasta: h }] }); stamp('meta', { id: 'minimos', value: { todos: 99 } }); commit(); setPref({ tab: 'personal', person: null, pview: 'cuadrante' }); })()", 'cuadrante'),
+              ("(() => { ['falta', 'pedir', 'pedido', 'recibido'].forEach((s, i) => stamp('needs', { id: 'NE-A' + i, ap: 'agua', text: 'Cosa ' + i, qty: 2, state: s, by: 'GRANADOS', ts: 1 })); commit(); setPref({ tab: 'agua', aptab: 'necesidades' }); })()", 'necesidades'),
               ("toggleDrawer(true)", 'menú')]
     modals = [("gearDetail('G-B19-5')", 'ficha equipo'), ("boxDetail('K-H2')", 'ficha caja'), ("personForm('OP-01')", 'editar persona'),
-              ("vehicleView(vehicles()[0].id)", 'vehículo'), ("matForm('ap:agua')", 'material'), ("eventForm()", 'evento'), ("epiForm(list('epis')[0].id)", 'EPI'), ("revForm('G-B19-5')", 'revisión form'), ("novForm('gear', 'G-B19-5')", 'nota')]
+              ("vehicleView(vehicles()[0].id)", 'vehículo'), ("matForm('ap:agua')", 'material'), ("planDe(operators()[1].id)", 'ausencias de una persona'), ("almacenForm()", 'pasillos del almacén'), ("eventForm()", 'evento'), ("epiForm(list('epis')[0].id)", 'EPI'), ("revForm('G-B19-5')", 'revisión form'), ("novForm('gear', 'G-B19-5')", 'nota')]
     results = {}
     for theme in ['light', 'dark', 'sun']:
         a.evaluate(f"setPref({{ theme: '{theme}' }}); applyTheme()")

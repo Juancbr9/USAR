@@ -43,14 +43,15 @@ const enMantenimiento = () => (get('meta', 'mantenimiento')?.value ?? MANT_DEFEC
 // Quien entra también durante el mantenimiento (además de ADMIN)
 const mantPasan = () => get('meta', 'mantenimiento')?.allow ?? MANT_PASAN;
 const bloqueado = () => enMantenimiento() && !isAdmin() && !mantPasan().includes(me()?.name);
-// Material, cajas, consumibles, vehículos y extras de las salidas: solo ADMIN (y a quien él dé el permiso de logística en su
-// ficha) los añade, cambia o elimina. Con usuario de Supabase hace falta además que sea jefe (la base de datos solo deja
-// crear o borrar material a los jefes): así ADMIN, con una segunda cuenta de miembro, ve la app como el resto.
-// El resto del equipo sigue moviendo material, sacándolo, pasándolo a revisión y ajustando el stock.
+// Material, cajas, consumibles y vehículos: los añade, cambia o elimina cualquiera del equipo. Lo pidió el usuario: somos
+// gente de confianza y así nos ayudamos; queda apuntado quién hace cada cosa. (Antes era solo de ADMIN y de quien tuviera
+// el permiso de logística.)
 const FLOTA_KINDS = ['gear', 'boxes', 'consumables', 'vehicles'];
-const puedeFlota = () => (isAdmin() || !!me()?.logistica) && (!Sync.user || Sync.role === 'jefe');
-const soloFlota = () => puedeFlota() || (toast(me()?.logistica ? `Tienes permiso de logística, pero en Miembros y permisos tienes que ser jefe: pídeselo a ${ADMIN}`
-  : `Solo ${ADMIN} y quien tenga permiso de logística pueden añadir o cambiar material, vehículos y extras`, 'bad'), false);
+// Con usuario de la base de datos, un miembro solo puede si la base de datos ya lo admite: eso lo dice el registro
+// «flotaabierta» (lo crea el mismo cambio de supabase.sql que abre las reglas); mientras no esté, sigue siendo cosa de jefes.
+const flotaAbierta = () => !!get('meta', 'flotaabierta')?.value;
+const puedeFlota = () => !!me() && (!Sync.user || Sync.role === 'jefe' || flotaAbierta());
+const soloFlota = () => puedeFlota() || (toast('La base de datos aún no deja a los miembros dar de alta material ni vehículos: que lo haga un jefe o que se aplique el cambio de supabase.sql', 'bad'), false);
 // iPhone y iPad: la app de Android (APK) no sirve; la web se instala desde Safari en la pantalla de inicio y funciona igual
 const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 // En iPhone el lector es Face ID (o Touch ID): se nombra así en los botones y avisos
