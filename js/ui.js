@@ -322,7 +322,7 @@ function renderSearch() {
     ...list('docs').filter(d => hit(d.type, d.number, d.notes, opName(d.op))).map(d =>
       ['Documento', `${d.type} de ${opName(d.op)}`, d.expires ? 'Caduca ' + fmtDate(d.expires) : 'Sin caducidad', `openPerson('${d.op}'); docDetail('${d.id}')`]),
     ...matTodo().filter(m => hit(m.name, m.place, m.serial, m.notes)).map(m =>
-      ['Material', m.name, [matDueno(m), m.place].filter(Boolean).join(' · '), matIr(m)]),
+      ['Material', m.name, [matDueno(m), huecoTxt(m), m.place].filter(Boolean).join(' · '), matIr(m)]),
     ...list('arcs').filter(x => hit(x.name, x.team)).map(x =>
       ['Arco', x.name, ['Apuntalar arcos', x.team].filter(Boolean).join(' · '), `openArc('${x.id}')`])
   ];

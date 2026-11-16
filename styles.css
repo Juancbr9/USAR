@@ -2171,8 +2171,29 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .veh-mat .sec-head { border-bottom: 0; padding-bottom: 0; margin-bottom: 10px; }
 /* Textos largos (empleo, motivo de ausencia, pelotón): se cortan con puntos suspensivos en vez de ensanchar la página */
 .pers-emp { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-.item > .tag, .log-row > b, .lista-t span { max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
+.item > .tag { max-width: 52%; white-space: normal; text-align: right; overflow-wrap: anywhere; }
+.log-row > b, .lista-t span { max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
 .pers-panel h3, .sier-cuenta, .item b, .item small { overflow-wrap: anywhere; }
 .meter > span { overflow-wrap: anywhere; }
 .grid > *, .sec-head > div:first-child, .sec-head > h3, .between > div:first-child { min-width: 0; }
 .pers-panel .item > div, .who-row > div { min-width: 0; }
+
+/* ---------- Pasillo de cada especialidad: estantería de palés (montantes azules, largueros naranjas) ---------- */
+.px-scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px 4px; }
+.px { display: grid; grid-template-columns: 30px repeat(var(--mods), minmax(70px, 1fr)); min-width: calc(30px + var(--mods) * 70px);
+  background: var(--sunk); border-left: 8px solid #2b5ea8; border-right: 8px solid #2b5ea8; }
+.px-lvl { display: grid; place-items: center; border-bottom: 8px solid #e8742a; }
+.px-lvl span { writing-mode: vertical-rl; transform: rotate(180deg); font: 500 11.5px var(--sans); color: var(--muted); white-space: nowrap; }
+.px-cell { position: relative; min-height: 96px; padding: 20px 4px 5px; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
+  border-left: 6px solid #2b5ea8; border-bottom: 8px solid #e8742a; text-align: left; min-width: 0; }
+.px-floor, .px-lvl.floor { border-bottom: 0; }
+.px-floor { background: repeating-linear-gradient(0deg, transparent 0 18px, rgba(0, 0, 0, .04) 18px 19px); }
+.px-tag { position: absolute; top: 4px; right: 6px; font: 500 11px var(--num); color: var(--muted); }
+.px-it { display: block; padding: 3px 5px; border-radius: 5px; background: var(--surface); border: 1px solid var(--line-2); color: var(--ink);
+  font-size: 11.5px; font-weight: 500; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.px-it.warn { border-color: var(--warn); color: var(--warn); } .px-it.bad { border-color: var(--bad); color: var(--bad); }
+.px-more { font-size: 11px; color: var(--muted); padding-left: 3px; }
+@media (hover: hover) and (pointer: fine) { .px-cell:hover { background-color: color-mix(in srgb, var(--yellow) 10%, transparent); } }
+.px-suelto { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 14px; color: var(--muted); }
+.px-suelto.warn { color: var(--warn); font-weight: 500; }
+.item b .nw, .nw { white-space: nowrap; overflow-wrap: normal; display: inline-block; }

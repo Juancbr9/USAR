@@ -24,3 +24,7 @@
   y se apunta en `ESP_ART`. USAR conserva sus pantallas propias (contenedor, pasillo, armarios…).
 - Material de apartados y vehículos: registros `matesp` con dueño (`ap` o `veh`), en `js/views/material.js`; el dueño se
   pasa como texto (`'ap:agua'`, `'veh:V-…'`).
+  Cada material puede tener hueco en el pasillo dibujado de su especialidad (`mod`, `niv`; `js/views/pasillo.js`, con
+  módulos y baldas configurables por apartado) y persona a la que está asignado (`holder`; sale en su ficha).
+- Situación del personal: cada persona está «En base» o ausente con motivo, lugar y fechas (`aus`); se ve en Personal →
+  «Situación», se cambia en su ficha o con «Pasar lista», y una ausencia con `desde` futuro es solo prevista.

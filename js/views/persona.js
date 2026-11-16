@@ -20,7 +20,7 @@ function viewPerson(o) {
   const epis = list('epis').filter(e => e.holder === o.id), epiBad = epis.filter(e => epiState(e).cls !== 'ok');
   const f = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
   // Pestañas: cada cosa en su sitio, sin una página interminable (se recuerda la última)
-  const nMat = gearWith(o).length + boxesWith(o).length;
+  const asignado = matCon(o.id), nMat = gearWith(o).length + boxesWith(o).length + asignado.length;
   const tabs = [['datos', 'shield', 'Datos'], ['docs', 'file', 'Documentos', docs.length], ['epi', 'hardhat', 'EPI', epiBad.length], ['mat', 'box', 'Material', nMat]];
   const tab = tabs.some(t => t[0] === prefs.ptab) ? prefs.ptab : 'datos';
   return `
@@ -83,6 +83,10 @@ function viewPerson(o) {
             <small>${esc(e ? [e.size && 'Talla ' + e.size, e.expires && 'Caduca ' + fmtDate(e.expires)].filter(Boolean).join(' · ') || 'Sin talla' : 'Toca para asignar')}</small></div></div><span class="tag ${st.cls}">${st.text}</span></button>`; }).join('')}
           ${epis.filter(e => !EPI_TYPES[e.type]).map(e => `<button class="item" onclick="epiForm('${e.id}')"><div><b>${esc(epiLabel(e))}</b><small>${esc(e.size ? 'Talla ' + e.size : '')}</small></div><span class="tag ${epiState(e).cls}">${epiState(e).text}</span></button>`).join('')}</div>
       </div>` : ''}
+    ${tab === 'mat' && asignado.length ? `<div class="panel">
+        <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material asignado</h3><span class="tag info">${asignado.length}</span></div>
+        <div class="list">${asignado.map(m => `<button class="item" onclick="${matIr(m)}"><div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
+          <small>${esc([matDueno(m), m.serial ? 'n.º ' + m.serial : '', m.held ? 'desde ' + fmtDate(m.held) : ''].filter(Boolean).join(' · '))}</small></div>${matOk(m) ? ic('chev', 'i-sm') : `<span class="tag ${AP_ESTADOS[m.status]?.[1] || 'warn'}">${AP_ESTADOS[m.status]?.[0] || m.status}</span>`}</button>`).join('')}</div></div>` : ''}
     ${tab === 'mat' ? `    ${((gs, bs) => gs.length || bs.length ? `<div class="panel">
       <div class="between sec-head"><h3 class="sec-title" style="margin:0">${ic('box')} Material que lleva</h3><span class="tag info">${gs.length + bs.length}</span></div>
       <p class="muted" style="margin:-4px 0 10px">No está en el almacén: al devolverlo vuelve a su sitio.</p>
@@ -90,7 +94,7 @@ function viewPerson(o) {
         <small>${esc([boxItems(b.id).length + ' equipos', 'Desde ' + fmtWhen(b.out.since)].join(' · '))}</small></div></button>
         <button class="btn btn-g btn-sm" onclick="returnBox('${b.id}')">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}${gs.map(g => `<div class="item"><button class="who-row grow link-row" onclick="gearDetail('${g.id}')">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b>
         <small>${esc([boxCode(g) && 'Caja ' + boxCode(g), 'Desde ' + fmtWhen(g.out.since), g.out.note].filter(Boolean).join(' · '))}</small></div></button>
-        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : `<div class="panel">${emptyState('box', 'No lleva material', 'Lo que se le dé desde Material (soltándolo en «Persona») sale aquí.')}</div>`)(gearWith(o), boxesWith(o))}` : ''}`;
+        <button class="btn btn-g btn-sm" onclick="checkin('${g.id}'); closeModal()">${ic('in', 'i-sm')} Devolver</button></div>`).join('')}</div></div>` : asignado.length ? '' : `<div class="panel">${emptyState('box', 'No tiene material', 'Lo que se le asigne en el material de una especialidad o de un vehículo, y lo que se le dé del almacén de USAR, sale aquí.')}</div>`)(gearWith(o), boxesWith(o))}` : ''}`;
 }
 
 // Campos de la organización de la sección, comunes al alta y a la ficha

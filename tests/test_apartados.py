@@ -114,6 +114,51 @@ with sync_playwright() as p:
         a.evaluate("setPref({ tab: 'cuerdas' })"); a.wait_for_timeout(150); assert a.locator('#view button:has-text("Empezar con lo habitual")').count() == 1, 'el suyo sí'
     a.evaluate("setPref({ session: 'OP-01' })")
 
+    # Pasillo de la especialidad: dibujo con módulos y baldas; el material se coloca desde el hueco o desde su ficha
+    a.evaluate("setPref({ session: 'OP-01', tab: 'agua', aptab: 'material' })"); a.wait_for_timeout(200)
+    assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Sin colocar' in a.inner_text('#view .px-suelto')
+    a.click('#view button:has-text("Módulos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '3'); a.fill('[name=baldas]', '1'); save()
+    assert a.locator('#view .px .px-cell').count() == 3 * 2 and a.evaluate("apPasillo('agua')") == {'mods': 3, 'baldas': 1}
+    a.click('#view .px-cell[aria-label^="Módulo 2, balda"]'); a.wait_for_selector('#modal h3:has-text("Módulo 2 · Balda")')
+    assert 'Este hueco está vacío' in a.inner_text('#modal')
+    a.click('#modal .item:has-text("Chalecos de rescate")'); a.wait_for_timeout(250)
+    assert a.evaluate("enHueco('agua', 2, 1).map(m => m.name)") == ['Chalecos de rescate'] and a.locator('#modal .item:has-text("Chalecos de rescate") button:has-text("Quitar")').count() == 1
+    a.click('#modal button:has-text("Material aquí")'); a.wait_for_selector('#modal [name=name]')
+    assert a.input_value('[name=mod]') == '2' and a.input_value('[name=niv]') == '1', 'el material nuevo nace en ese hueco'
+    a.fill('[name=name]', 'Boyas'); save()
+    cel = a.inner_text('#view .px-cell[aria-label^="Módulo 2, balda"]'); assert 'Boyas' in cel and 'Chalecos' in cel, cel
+    assert 'Pasillo · módulo 2 · balda' in a.inner_text('#view .list .item:has-text("Boyas")')
+    a.click('#view .list .item:has-text("Boyas")'); a.wait_for_selector('#modal [name=mod]'); a.select_option('[name=mod]', '3'); a.select_option('[name=niv]', '0'); save()
+    assert a.evaluate("enHueco('agua', 3, 0).map(m => m.name)") == ['Boyas']
+    a.click('#view .px-cell[aria-label^="Módulo 3, suelo"]'); a.wait_for_selector('#modal .item:has-text("Boyas")')
+    a.click('#modal .item:has-text("Boyas") button:has-text("Quitar")'); a.wait_for_timeout(250)
+    assert a.evaluate("sinColocar('agua').some(m => m.name === 'Boyas')") and 'Este hueco está vacío' in a.inner_text('#modal')
+    a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    # Al quitar módulos, lo que estaba en ellos pasa a «Sin colocar»: no se borra nada
+    a.evaluate("pasMover(apMat('agua').find(m => m.name === 'Chalecos de rescate').id, 3, 1)"); a.wait_for_timeout(150)
+    a.click('#view button:has-text("Módulos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '2'); save()
+    assert a.evaluate("sinColocar('agua').some(m => m.name === 'Chalecos de rescate')") and a.evaluate("apMat('agua').length") == n + 1
+    assert 'Pasillo' not in a.inner_text('#view .list .item:has-text("Chalecos de rescate")') and 'Sin colocar' in a.inner_text('#view .list .item:has-text("Boyas")')
+    seen('pasillo de agua'); wide('pasillo de agua'); a.screenshot(path=f'{OUT}/apartado-pasillo.png', full_page=True)
+    # El buscador dice el hueco
+    a.evaluate("pasMover(apMat('agua').find(m => m.name === 'Boyas').id, 1, 1)")
+    a.click('[aria-label=Buscar]'); a.fill('#search', 'boyas'); a.wait_for_timeout(300); assert 'Pasillo · módulo 1 · balda' in a.inner_text('#results')
+    a.evaluate("clearSearch(); $('searchbar').classList.add('hidden')")
+
+    # Material asignado a una persona: se elige en la ficha del material y sale en la suya y en Logística
+    a.evaluate("setPref({ tab: 'agua', aptab: 'material' })"); a.wait_for_timeout(150)
+    a.click('#view .list .item:has-text("Trajes secos")'); a.wait_for_selector('#modal [name=holder]')
+    buzo = a.evaluate("operators().find(o => o.name === 'BUZO').id"); a.select_option('[name=holder]', buzo); a.fill('[name=serial]', 'TS-07'); save()
+    assert 'Lo tiene BUZO' in a.inner_text('#view .list .item:has-text("Trajes secos")')
+    a.evaluate(f"openPerson('{buzo}'); setPref({{ ptab: 'mat' }})"); a.wait_for_timeout(200)
+    asig = ' '.join(a.inner_text('#view .panel:has(h3:has-text("Material asignado"))').split()); assert 'Trajes secos' in asig and 'Agua' in asig and 'TS-07' in asig and 'desde' in asig, asig
+    assert a.locator('#view .ctab:has-text("Material") .n').inner_text() == '1'
+    a.evaluate("go('recursos')"); a.wait_for_timeout(200)
+    quien = ' '.join(a.inner_text('#view .panel:has(h3:text-is("Quién tiene material"))').split()); assert 'BUZO' in quien and 'Trajes secos' in quien, quien
+    a.click('#view .panel:has(h3:text-is("Quién tiene material")) .log-row:has-text("BUZO")'); a.wait_for_timeout(200)
+    assert a.evaluate("prefs.person") == buzo and 'Material asignado' in a.inner_text('#view')
+    a.click('#view .panel:has(h3:has-text("Material asignado")) .item'); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'agua'
+
     # Material de un vehículo: en su ficha, con su lista habitual, alta por matrícula, revista y avisos
     vid = a.evaluate("(() => { const v = vehicles().find(v => (v.units || []).length > 1) || vehicles()[0]; return v.id; })()")
     vn = a.evaluate(f"get('vehicles', '{vid}').name"); placa = a.evaluate(f"get('vehicles', '{vid}').units[0].plate")
@@ -139,7 +184,7 @@ with sync_playwright() as p:
     a.evaluate("go('recursos')"); a.wait_for_timeout(200)
     esp = ' '.join(a.inner_text('#view .panel:has(h3:text-is("Material de especialidades y vehículos"))').split()); assert f'{vn} {nv}/{nv + 1}' in esp, esp
     a.click('[aria-label=Buscar]'); a.fill('#search', 'motobomba'); a.wait_for_timeout(300); assert vn in a.inner_text('#results') and 'Motobomba portátil' in a.inner_text('#results')
-    a.evaluate("clearSearch(); toggleSearch()")
+    a.evaluate("clearSearch(); $('searchbar').classList.add('hidden')")
     # Borrar el vehículo deja de contar su material
     assert a.evaluate(f"matTodo().some(m => m.veh === '{vid}')") is True
 

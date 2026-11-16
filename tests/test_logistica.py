@@ -62,7 +62,9 @@ with sync_playwright() as p:
     # Pasar lista: se toca a quien falta (con su motivo) y vuelve a tocarse para marcarlo presente
     a.click('#view button:has-text("Pasar lista")'); a.wait_for_selector('#listaBody')
     assert a.locator('#listaBody .lista-f').count() == total and a.inner_text('.lista-res b') .replace('\n', '') == f'{total}/{total}'
-    a.select_option('#listaBody select', 'Curso'); a.click('.lista-f:has-text("BUZO")'); a.wait_for_timeout(120)
+    a.select_option('#listaBody select', 'Curso'); a.fill('#listaLugar', 'Academia de Logística'); a.click('.lista-f:has-text("BUZO")'); a.wait_for_timeout(120)
+    assert a.evaluate("operators().find(o => o.name === 'BUZO').aus.lugar") == 'Academia de Logística' and a.input_value('#listaLugar') == 'Academia de Logística'
+    a.fill('#listaLugar', '')
     a.select_option('#listaBody select', 'Baja médica'); a.click('.lista-f:has-text("CUERDAS")'); a.click('.lista-f:has-text("MANDO")'); a.wait_for_timeout(120)
     assert a.locator('.lista-f.aus').count() == 3 and a.inner_text('.lista-res b').replace('\n', '') == f'{total - 3}/{total}'
     assert a.get_attribute('.lista-f:has-text("BUZO")', 'aria-label') == 'BUZO: ausente' and 'Curso' in a.inner_text('.lista-f:has-text("BUZO")')
@@ -78,6 +80,14 @@ with sync_playwright() as p:
     caps = ' '.join(panel('Capacidades').split())
     for x in ['Res. Terrestre 1/2', 'Res. Acuático 1/2', 'SVA 1/2', 'Motosierristas + 1 de 1 suplentes 0/2', 'USAR 13/13']: assert x in caps, (x, caps)
     assert a.locator('#view .meter.bad').count() >= 3 and a.locator('#view .log-fig.warn, #view .log-fig.bad').count() >= 1
+    # Tablero de situación (Personal → «Situación»): en base y cada motivo, con dónde está cada uno
+    a.evaluate("setPref({ tab: 'personal', person: null, pview: 'situacion' })"); a.wait_for_timeout(200)
+    heads = a.locator('.pers-panel h3').all_inner_texts(); assert heads == ['En base', 'Baja médica', 'Curso'], heads
+    assert a.locator('.pers-panel >> nth=0').locator('.item').count() == total - 2
+    cur = ' '.join(a.inner_text('.pers-panel:has(h3:text-is("Curso"))').split()); assert 'BUZO' in cur and 'Academia de Logística' in cur and 'sin fecha de vuelta' in cur, cur
+    assert 'en Academia de Logística' in a.evaluate("sierParte()")
+    a.evaluate("setPref({ pview: 'peloton' }); go('recursos')"); a.wait_for_timeout(200)
+    assert 'Academia de Logística' in panel('Personal')
     # El parte sale con los ausentes
     parte = a.evaluate("sierParte()"); assert 'CUERDAS' in parte and 'Baja médica' in parte and f'Presentes: *{total - 2}*' in parte, parte
 
