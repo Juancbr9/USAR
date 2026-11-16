@@ -2149,3 +2149,5 @@ body.mision .mlayout > .tabs .tab .n { background: rgba(255, 255, 255, .14); col
 .pers-acts { display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
 .pers-acts .btn { padding-left: 12px; padding-right: 12px; }
 @media (max-width: 560px) { .pers-acts { width: 100%; grid-template-columns: 1.15fr 1.15fr .8fr; } }
+/* El fondo cambia de golpe (al entrar o salir de una operación pasa de oscuro a claro): a medias dejaba el texto sin contraste */
+body { transition: none; }
