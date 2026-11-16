@@ -38,7 +38,7 @@ function availabilityForm(mid, op) {
   ], v => setAvailability(mid, op, v.state, v.eta));
 }
 function activationText(m) {
-  return [...waHead('🚨', 'USAR 242 · ACTIVACIÓN', m.title), `📅 *Fecha:* ${fmtDT(m.date)}`, m.location ? `📍 *Lugar:* ${m.location}` : null, m.meeting ? `🤝 *Reunión:* ${m.meeting}` : null,
+  return [...waHead('🚨', UNIDAD + ' · ACTIVACIÓN', m.title), `📅 *Fecha:* ${fmtDT(m.date)}`, m.location ? `📍 *Lugar:* ${m.location}` : null, m.meeting ? `🤝 *Reunión:* ${m.meeting}` : null,
     '', '👉 *Responde en la app* (Operaciones → Personal):', '✅ Voy · ⏱️ Voy con retraso · ❌ No puedo', `🔗 ${appUrl()}`].filter(x => x !== null).join('\n');
 }
 

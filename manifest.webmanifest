@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "USAR 242",
-  "short_name": "USAR 242",
-  "description": "Material, EPI, personal y operaciones del equipo USAR 242",
+  "name": "SIER 242",
+  "short_name": "SIER 242",
+  "description": "Personal, actividades y vehículos de la SIER 242, con el material, EPI y operaciones del equipo USAR",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

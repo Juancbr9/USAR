@@ -17,7 +17,7 @@ with sync_playwright() as p:
     a.on('dialog', lambda d: d.accept())
     # GRANADOS (sesión de las pruebas): ve el aviso y nada de la app
     a.goto(APP); a.wait_for_selector('.mant-card')
-    assert 'USAR 242 EN FASE DE MANTENIMIENTO' in a.inner_text('#view')
+    assert 'SIER 242 EN FASE DE MANTENIMIENTO' in a.inner_text('#view')
     a.wait_for_function("document.querySelector('.mant-img').naturalWidth > 0")  # se ve el muñequito
     assert a.locator('.topbar').is_hidden() and a.locator('#drawer').is_hidden(), 'sin menú ni cabecera'
     a.screenshot(path=f'{OUT}/mantenimiento.png')

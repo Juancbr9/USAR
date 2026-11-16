@@ -77,7 +77,7 @@ async function updateWakeLock() {
 document.addEventListener('visibilitychange', updateWakeLock);
 
 // Compartir con el menú del sistema; si no existe, se copia el texto
-async function shareText(text, title = 'USAR 242') {
+async function shareText(text, title = UNIDAD) {
   haptic(12);
   if (navigator.share) { try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); toast('Texto copiado: pégalo donde quieras'); }

@@ -48,6 +48,7 @@ function render() {
   document.body.classList.toggle('mision', !!document.querySelector('#view .mc'));
   if (document.querySelector('.cvi')) fitCells();
   if (prefs.tab === 'apuntalamientos') apuKeepFocus();
+  if (prefs.tab === 'personal') persKeepFocus();
   navTrack();
   if ($('search').value) renderSearch();
   updateWakeLock();
@@ -67,7 +68,8 @@ function renderNav() {
 // Al tocar un área se despliegan sus secciones (un área abierta a la vez).
 const OPS_TABS = ['operaciones', 'intervenciones', 'ejercicios', 'maniobras', 'convoy'];
 const menuTab = tab => tab === 'arcos' ? 'apuntalamientos' : OPS_TABS.includes(tab) ? 'actividades' : ALMACEN_TABS.includes(tab) || tab === 'entregas' ? (tab === 'entregas' ? 'fuera' : 'contenedor') : tab;
-const tabGroups = tab => { tab = menuTab(tab); const s = sectionOf(tab); return s && !MENU.includes(tab) && s[4] !== 'home' ? [s[4]] : []; };
+const parteDe = tab => Object.keys(MENU_PARTES).find(k => MENU_PARTES[k].items.includes(tab));
+const tabGroups = tab => { tab = menuTab(tab); const s = sectionOf(tab), parte = parteDe(tab); return parte ? [parte] : s && !MENU.includes(tab) && s[4] !== 'home' ? [s[4]] : []; };
 function menuOpen(g) { return (prefs.menuOpen ?? tabGroups(prefs.tab)).includes(g); }
 function toggleMenuGroup(g) {
   prefs.menuOpen = menuOpen(g) ? [] : [g];
@@ -83,11 +85,12 @@ function menuTree(count, active) {
   const head = (g, icon, title) => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
     return `<button class="dr-group-head ${on ? 'has-on' : ''}" data-area="${g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
   return MENU.map(k => {
-    if (!AREAS[k]) { const [id, icon, title] = sectionOf(k); return item(id, icon, k === 'avisos' ? 'Inicio' : title); }
-    const kids = SECTIONS.filter(s => s[4] === k && !s[6] && !MENU.includes(s[0]));
+    const parte = MENU_PARTES[k];
+    if (!AREAS[k] && !parte) { const [id, icon, title] = sectionOf(k); return item(id, icon, k === 'avisos' ? 'Inicio' : title); }
+    const kids = parte ? parte.items.map(sectionOf) : SECTIONS.filter(s => s[4] === k && !s[6] && !MENU.includes(s[0]) && !parteDe(s[0]));
     return `
     <div class="dr-group ${menuOpen(k) ? 'open' : ''}" data-area="${k}">
-      ${head(k, AREAS[k].icon, AREAS[k].name)}
+      ${head(k, (parte || AREAS[k]).icon, (parte || AREAS[k]).name)}
       ${menuOpen(k) ? `<div class="dr-children">${kids.map(([id, icon, title]) => item(id, icon, title, 'sub')).join('')}</div>` : ''}
     </div>`; }).join('');
 }
@@ -98,7 +101,7 @@ function renderDrawer(count = alertCount(alerts()), active = list('missions').so
   if (mc) { mc.textContent = count > 99 ? '99+' : count; mc.classList.toggle('hidden', !count); }
   const panel = $('drawerPanel'); if (!panel || $('drawer').classList.contains('hidden')) return;
   panel.innerHTML = `
-    <div class="dr-head"><div class="dr-brand"><img src="img/logo.webp" width="44" height="44" alt=""><div class="wordmark">USAR <span class="plate">242</span></div></div>
+    <div class="dr-head"><div class="dr-brand"><img src="img/logo.webp" width="44" height="44" alt=""><div class="wordmark">SIER <span class="plate">242</span></div></div>
       <button class="icon-btn" aria-label="Cerrar menú" onclick="toggleDrawer(false)">${ic('x', 'i-lg')}</button></div>
     ${menuTree(count, active)}`;
 }
@@ -316,7 +319,7 @@ function renderSearch() {
       ['EPI', e.name, `${opName(e.holder)} · Talla ${e.size}`, `epiForm('${e.id}')`]),
     ...list('consumables').filter(c => hit(c.name, c.location)).map(c =>
       ['Stock', c.name, `${c.stock} ${c.unit} · ${consDoor(c) ? doorName(consDoor(c)) : 'sin ubicar'}`, `findGo('cons', '${c.id}')`]),
-    ...operators().filter(o => hit(o.name, o.role, o.cell, o.phone, readiness(o.id).fullName)).map(o =>
+    ...operators().filter(o => hit(o.name, o.role, o.cell, o.phone, readiness(o.id).fullName, o.empleo, o.peloton, opEsp(o))).map(o =>
       ['Personal', o.name, [o.role, o.phone].filter(Boolean).join(' · '), `openPerson('${o.id}')`]),
     ...list('docs').filter(d => hit(d.type, d.number, d.notes, opName(d.op))).map(d =>
       ['Documento', `${d.type} de ${opName(d.op)}`, d.expires ? 'Caduca ' + fmtDate(d.expires) : 'Sin caducidad', `openPerson('${d.op}'); docDetail('${d.id}')`]),

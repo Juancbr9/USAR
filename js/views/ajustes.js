@@ -98,7 +98,7 @@ function importJSON(event) {
     if (!confirm('Se sustituirán los datos actuales' + (Sync.cfg() ? ' de todo el equipo' : '') + ' por los de la copia. ¿Continuar?')) return;
     Object.entries(data.images || {}).filter(([k, v]) => SAFE_ID.test(k) && /^data:image\//.test(v)).forEach(([k, v]) => Img.put(k, v).catch(() => {}));
     replaceAll(incoming, 'Copia de seguridad importada');
-  }).catch(() => toast('El archivo no es una copia válida de USAR 242', 'bad'));
+  }).catch(() => toast('El archivo no es una copia válida de la app', 'bad'));
 }
 
 function resetAll() {

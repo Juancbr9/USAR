@@ -1,6 +1,8 @@
-# USAR 242 · Instrucciones para el agente
+# SIER 242 (antes USAR 242) · Instrucciones para el agente
 
 - Responder en español.
+- La app es de toda la SIER 242; USAR es una parte (grupo «USAR» del menú). El repositorio es **público**: nunca poner en el
+  código ni en las pruebas nombres completos ni teléfonos del personal (se cargan en la app con Personal → «Importar»).
 - El usuario es RODRI (acceso completo; ver `ADMIN` en `js/config.js`).
 - Antes de subir cambios: `bash tests/run_all.sh` (todas las pruebas en verde).
 - **Publicar siempre**: al terminar un cambio, abrir la PR a `main` y, cuando la comprobación «pruebas» de GitHub

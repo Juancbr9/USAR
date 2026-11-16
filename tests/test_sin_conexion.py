@@ -15,7 +15,7 @@ with sync_playwright() as p:
     c.set_offline(True); a.reload(); a.wait_for_selector('#view > *', timeout=10000); print('Sin conexión carga la app:', a.title())
     c.set_offline(False)
     html=open(str(ROOT / 'index.html')).read()
-    open(str(ROOT / 'index.html'),'w').write(html.replace('<title>USAR 242</title>','<title>USAR 242 NUEVA</title>'))
+    open(str(ROOT / 'index.html'),'w').write(html.replace('<title>SIER 242</title>','<title>SIER 242 NUEVA</title>'))
     try:
         a.reload(); a.wait_for_selector('#view > *'); titulo = a.title(); print('Con conexión, versión nueva al recargar:', titulo)
     finally:

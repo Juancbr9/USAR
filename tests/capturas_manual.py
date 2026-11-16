@@ -117,9 +117,9 @@ with sync_playwright() as p:
     a.evaluate("setPref({ session: 'OP-01', tab: 'consumibles' })"); a.wait_for_timeout(250)
     ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
-    a.evaluate("prefs.menuOpen = ['log']; renderDrawer()"); tall(1100); a.wait_for_timeout(200)
-    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Material")', 'r', {'d': 60}),
-                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-dot', 'r', {'d': 30}), ('#drawer .dr-group-head:has-text("Equipo")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Guía de campo")', 'r', {'d': 60})]); tall(760)
+    a.evaluate("prefs.menuOpen = ['usar']; renderDrawer()"); tall(1100); a.wait_for_timeout(200)
+    ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-group-head:has-text("Actividades")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
+                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Revisión") .dr-dot', 'r', {'d': 30}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
 
     # ---------- Operación de ejemplo ----------
@@ -262,7 +262,7 @@ with sync_playwright() as p:
 
     # ---------- Equipo ----------
     a.evaluate("go('personal')"); a.wait_for_timeout(250)
-    ann(a, 'personal-lista', [('#view button.btn-a:has-text("Persona")', 'r', {'d': 24}), ('#view button:has-text("Tarjetas QR")', 'r', {'d': 24}), ('#view .panel select', 'i'), ('#view .grid .item >> nth=0', 'i')])
+    ann(a, 'personal-lista', [('#view button.btn-a:has-text("Persona")', 'r', {'d': 24}), ('#view button:has-text("Tarjetas QR")', 'r', {'d': 24}), ('#view .sier-res', 'i'), ('#view .pers-views', 'i')])
     a.evaluate("openPerson('OP-01')"); a.wait_for_timeout(500); tall(1000)
     ann(a, 'persona', [('#view a:has-text("Llamar")', 'i'), ('#view button:has-text("Editar datos")', 'r', {'d': 20}), ('#view button:has-text("Documento")', 'l', {'d': 20})], scroll='#view a:has-text("Llamar")', top=200)
     ann(a, 'persona-epi', [('.panel:has-text("EPI asignado") .sec-head .tag', 'l', {'d': 20}), ('.panel:has-text("EPI asignado") .item >> nth=0', 'i')], scroll='.panel:has-text("EPI asignado")', top=150)

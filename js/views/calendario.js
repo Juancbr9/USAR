@@ -119,7 +119,7 @@ function setAttendance(id, op, k) {
 
 function eventText(e) {
   const ps = names(e.people || []);
-  return [...waHead('📣', `USAR 242 · ${e.type.toUpperCase()}`, e.title), `📅 *Cuándo:* ${eventDays(e).length > 1 ? evWhen(e) : fmtDT(e.start) + (e.end ? ' → ' + fmtHour(new Date(e.end)) : '')}`,
+  return [...waHead('📣', `${UNIDAD} · ${e.type.toUpperCase()}`, e.title), `📅 *Cuándo:* ${eventDays(e).length > 1 ? evWhen(e) : fmtDT(e.start) + (e.end ? ' → ' + fmtHour(new Date(e.end)) : '')}`,
     e.place ? `📍 *Dónde:* ${e.place}` : null, ...(e.notes ? waSec('📝', 'Detalles').concat(e.notes) : []),
     ...(ps.length ? waSec('👥', `Convocados (${ps.length})`).concat(ps.map(n => '• ' + n)) : [])].filter(x => x !== null).join('\n');
 }
@@ -127,9 +127,9 @@ function downloadIcs(id) {
   const e = get('events', id);
   const f = iso => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const clean = s => String(s || '').replace(/[,;\\]/g, m => '\\' + m).replace(/\n/g, '\\n');
-  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//USAR 242//ES', 'BEGIN:VEVENT', `UID:${e.id}@usar242`, `DTSTAMP:${f(new Date().toISOString())}`,
-    `DTSTART:${f(e.start)}`, `DTEND:${f(e.end || e.start)}`, `SUMMARY:${clean('USAR 242 · ' + (e.title || e.type))}`, `LOCATION:${clean(e.place)}`, `DESCRIPTION:${clean(e.notes)}`,
-    'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:USAR 242', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SIER 242//ES', 'BEGIN:VEVENT', `UID:${e.id}@usar242`, `DTSTAMP:${f(new Date().toISOString())}`,
+    `DTSTART:${f(e.start)}`, `DTEND:${f(e.end || e.start)}`, `SUMMARY:${clean(UNIDAD + ' · ' + (e.title || e.type))}`, `LOCATION:${clean(e.place)}`, `DESCRIPTION:${clean(e.notes)}`,
+    'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:SIER 242', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
   download(`usar242-${dayKey(e.start)}.ics`, ics, 'text/calendar');
 }
 function eventToMission(id) {

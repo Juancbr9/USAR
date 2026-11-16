@@ -1864,3 +1864,20 @@ h1.sr-only { font-size: 16px; }
 .plt-fina { stroke: #000; stroke-width: .02; }
 .plt-reg { stroke: #000; stroke-width: .03; }
 .plt-solape { fill: #000; fill-opacity: .08; stroke: #000; stroke-width: .02; stroke-dasharray: .2 .15; }
+
+/* ==================== SIER 242: personal de la sección ==================== */
+.sier-res { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.sier-kpi { padding: 10px 12px; display: grid; gap: 2px; }
+.sier-kpi + .sier-kpi { border-left: 1px solid var(--line); }
+.sier-kpi small { font-size: 13px; color: var(--muted); font-weight: 600; }
+.sier-kpi b { font: 800 26px/1.05 var(--num); letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.sier-kpi.ok b { color: var(--ok); } .sier-kpi.bad b { color: var(--bad); }
+.sier-cuenta { margin: 8px 0 0; font-size: 14px; color: var(--muted); line-height: 1.5; }
+.sier-cuenta b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.pers-emp { display: inline-block; font: 700 12px var(--sans); color: var(--muted); border: 1px solid var(--line-2); border-radius: 4px; padding: 1px 5px; vertical-align: 2px; white-space: nowrap; }
+.pers-full { font-size: 12.5px; }
+.pers-aus .who-row { opacity: .6; }
+.pers-views .chip { min-height: 44px; }
+.imp-prev { margin-top: 8px; font-size: 14px; }
+.imp-prev .callout { margin-top: 6px; }
+#impTxt { font: 13px/1.45 var(--num); white-space: pre; overflow-x: auto; }

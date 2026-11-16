@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ejecuta todas las pruebas de USAR 242.
+# Ejecuta todas las pruebas de SIER 242.
 # Requisitos: python3 con playwright, opencv-python-headless y numpy; node; navegador chromium de playwright.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -46,6 +46,7 @@ run test_metodo.py
 run test_mejoras.py
 run test_patrimonio.py
 run test_personal.py
+run test_sier.py
 start_mock; run test_campo.py
 run test_contenedor.py
 run test_manual.py

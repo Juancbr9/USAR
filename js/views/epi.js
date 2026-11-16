@@ -39,7 +39,8 @@ function epiForm(id, type = 'casco', holder = RESERVA) {
 
 /* ==================== EPI: de un vistazo, qué lleva cada uno y qué hay en reserva ==================== */
 function viewEpi() {
-  const ops = operators(), types = Object.keys(EPI_TYPES), mine = op => list('epis').filter(e => e.holder === op);
+  // EPI del equipo USAR: sale quien es de USAR y quien, sin serlo, tiene algo asignado
+  const types = Object.keys(EPI_TYPES), mine = op => list('epis').filter(e => e.holder === op), ops = operators().filter(o => opEsp(o) === 'USAR' || mine(o.id).length);
   const spares = list('epis').filter(e => e.holder === RESERVA).sort((a, b) => epiLabel(a).localeCompare(epiLabel(b), 'es', { numeric: true }) || String(a.size).localeCompare(String(b.size), 'es', { numeric: true }));
   const cells = ops.flatMap(o => types.map(t => epiState(mine(o.id).find(e => e.type === t))));
   const falta = cells.filter(s => s.text === 'Falta').length, rev = cells.filter(s => s.cls !== 'ok' && s.text !== 'Falta').length;
