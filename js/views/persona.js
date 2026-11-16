@@ -208,6 +208,7 @@ function expiries() {
   });
   list('epis').filter(e => e.expires).forEach(e => out.push({ date: e.expires, what: `${epiLabel(e)} de ${opName(e.holder)}`, kind: 'EPI', go: `epiForm('${e.id}')` }));
   list('gear').filter(g => g.service).forEach(g => out.push({ date: g.service, what: g.name, kind: 'Mantenimiento', go: `gearDetail('${g.id}')` }));
+  list('matesp').filter(m => m.review && APARTADOS[m.ap]).forEach(m => out.push({ date: m.review, what: `${m.name} · ${APARTADOS[m.ap].name}`, kind: 'Revisión', go: `setPref({ tab: '${m.ap}', aptab: 'material' }); apMatForm('${m.ap}', '${m.id}')` }));
   list('vehicles').forEach(v => (v.units || []).filter(u => u.itv).forEach(u => out.push({ date: u.itv, what: `${v.name} ${u.plate}${u.cita ? ' · cita ' + u.cita : ''}`, kind: 'ITV', go: `vehicleForm('${v.id}'); unitForm('${v.id}', '${u.id}')` })));
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -215,15 +216,18 @@ function expiries() {
 // Vencimientos (en Inicio): todo lo que caduca por fecha, a 30 días, 3 meses, 1 año o todo
 function vencPanel() {
   const win = prefs.vwin ?? 30;
-  const all = expiries(), shown = all.filter(x => win === 0 || daysTo(x.date) <= win), late = all.filter(x => daysTo(x.date) < 0).length;
+  const all = expiries(), todos = all.filter(x => win === 0 || daysTo(x.date) <= win), late = all.filter(x => daysTo(x.date) < 0).length;
+  // Sin tocar nada se ven los 5 más urgentes; al elegir un plazo o pulsar «Ver todos», la lista entera
+  const corto = !prefs.vAll && todos.length > 6, shown = corto ? todos.slice(0, 5) : todos;
   return `
     <div class="panel area-panel" id="venc" data-area="home">
       <div class="between sec-head"><h3>${ic('clock')} Vencimientos</h3>${late ? `<span class="tag bad">${late} ${late === 1 ? 'caducado' : 'caducados'}</span>` : ''}</div>
-      <div class="row chips">${[[30, '30 días'], [90, '3 meses'], [365, '1 año'], [0, 'Todo']].map(([d, l]) => `<button class="chip ${win === d ? 'on' : ''}" onclick="setPref({ vwin: ${d} })">${l}</button>`).join('')}</div>
+      <div class="row chips">${[[30, '30 días'], [90, '3 meses'], [365, '1 año'], [0, 'Todo']].map(([d, l]) => `<button class="chip ${win === d ? 'on' : ''}" onclick="setPref({ vwin: ${d}, vAll: true })">${l}</button>`).join('')}</div>
       ${shown.length ? `<div class="list" style="margin-top:10px">${shown.map(x => {
       const n = daysTo(x.date), cls = n < 0 ? 'bad' : n <= 30 ? 'warn' : 'neutral';
       return `<button class="item" onclick="${x.go}"><div><b>${esc(x.what).replace(/\b([A-Z]{2}-\d{4,}(?: [A-Z]{2})?)/g, '<span class="nw">$1</span>')}</b><small>${x.kind} · ${fmtDate(x.date)}</small></div>
-        <span class="tag ${cls}">${n < 0 ? `Caducado hace ${-n} d` : n === 0 ? 'Hoy' : `En ${n} d`}</span></button>`; }).join('')}</div>`
+        <span class="tag ${cls}">${n < 0 ? `Caducado hace ${-n} d` : n === 0 ? 'Hoy' : `En ${n} d`}</span></button>`; }).join('')}</div>
+      ${corto ? `<button class="btn btn-g full" style="margin-top:10px" onclick="setPref({ vAll: true })">Ver los ${todos.length}</button>` : ''}`
       : emptyState('checkc', 'Nada vence en este plazo', 'Documentos, cualificaciones, EPI, mantenimientos e ITV al día.')}
     </div>`;
 }

@@ -16,3 +16,6 @@
   barra lateral), hoja clara con esquinas redondeadas, naranja de rescate como único acento (la variable se sigue llamando
   `--yellow`), tipografía IBM Plex (Sans, Sans Condensed y Mono para cifras), títulos sin mayúsculas ni cursiva y sin sombras
   en reposo. Las capturas del manual se regeneran con `python3 tests/capturas_manual.py`.
+- Apartados de especialidades y equipos: se definen en `APARTADOS` (`js/config.js`) y todos usan la misma pantalla
+  (`js/views/apartados.js`: equipo, material —registros `matesp`—, revista y notas). Para añadir uno nuevo basta una
+  entrada más en `APARTADOS` (sale solo en el menú, en Logística y en los vencimientos). USAR conserva sus pantallas propias.

@@ -85,6 +85,7 @@ function menuTree(count, active) {
   const head = (g, icon, title) => { const open = menuOpen(g), on = tabGroups(curTab).includes(g);
     return `<button class="dr-group-head ${on ? 'has-on' : ''}" data-area="${g}" aria-expanded="${open}" onclick="toggleMenuGroup('${g}')">${ic(icon, 'i-lg')}<span class="grow"><b>${title}</b></span>${ic('chev', 'i-sm chev')}</button>`; };
   return MENU.map(k => {
+    if (k[0] === '#') return `<p class="dr-label">${esc(k.slice(1))}</p>`;
     const parte = MENU_PARTES[k];
     if (!AREAS[k] && !parte) { const [id, icon, title] = sectionOf(k); return item(id, icon, k === 'avisos' ? 'Inicio' : title); }
     const kids = parte ? parte.items.map(sectionOf) : SECTIONS.filter(s => s[4] === k && !s[6] && !MENU.includes(s[0]) && !parteDe(s[0]));
@@ -126,7 +127,7 @@ function go(tab) {
   const sub = ALMACEN_TABS.includes(tab) && tab, afil = ACT_FILTER[tab];
   tab = sub ? 'contenedor' : afil || tab === 'operaciones' ? 'actividades' : HUB_TO[tab] || tab;
   toggleDrawer(false); haptic(8);
-  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'arcos' ? { arc: null } : {}), ...(tab === 'apuntalamientos' ? { apu: null } : {}) });
+  setPref({ tab, menuOpen: null, ...(afil ? { afil } : {}), ...(tab === 'actividades' ? { mission: null, ws: null, mtab: 'resumen', move: null } : {}), ...(tab === 'personal' ? { person: null } : {}), ...(tab === 'avisos' ? { vAll: false } : {}), ...(tab === 'arcos' ? { arc: null } : {}), ...(tab === 'apuntalamientos' ? { apu: null } : {}) });
   scrollTo(0, 0); if (sub) almacenGo(sub === 'consumibles' ? 'fungible' : sub === 'otros' ? 'escalon' : sub); }
 const openMission = (id, mtab = 'resumen') => { toggleDrawer(false); setPref({ tab: 'operaciones', mission: id, ws: null, mtab }); scrollTo(0, 0); };
 
@@ -174,10 +175,12 @@ function alerts() {
     // Matrículas cuya última revista de salida tuvo fallos (hasta que otra revista salga bien)
     veh: vehicles().flatMap(v => (v.units || []).map(u => ({ v, u, c: lastVcheck(u.id) }))).filter(x => x.c?.fails.length),
     // ITV que ya ha llegado: se pregunta si la ha pasado
-    itv: itvPending()
+    itv: itvPending(),
+    // Material de los apartados (Agua, Cuerdas…) en revisión o averiado
+    esp: list('matesp').filter(m => APARTADOS[m.ap] && m.status && m.status !== 'OPERATIVO').sort(byName)
   };
 }
-const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length;
+const alertCount = a => a.broken.length + a.review.length + a.nov.length + a.epi.length + a.due.length + a.low.length + a.out.length + a.ready.length + a.veh.length + a.itv.length + a.esp.length;
 
 /* ==================== VISTA: INICIO ==================== */
 // Cuadro de mando: saludo, lo que está en curso, cuatro indicadores, los avisos, los vencimientos y lo próximo del calendario
@@ -259,6 +262,7 @@ function viewAvisos() {
       ${section('ITV: ¿la han pasado?', 'warn', a.itv.map(x => row(`itvForm('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`,
         `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)), 'log', '', 'Vehículos')}
       ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))), 'log', '', 'Vehículos')}
+      ${section('Material de especialidades', a.esp.some(m => m.status === 'AVERIADO') ? 'bad' : 'warn', a.esp.map(m => row(`setPref({ tab: '${m.ap}', aptab: 'material' }); scrollTo(0, 0)`, m.name, `${APARTADOS[m.ap].name} · ${AP_ESTADOS[m.status]?.[0] || m.status}${m.notes ? ' · ' + m.notes : ''}`)), 'team', '', 'Especialidades')}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team')}
       ${section('Fuera del contenedor', 'info', a.out.map(g => row(`gearDetail('${g.id}')`, g.name,
         `Lo tiene ${g.out.who} desde ${fmtWhen(g.out.since)}${g.out.note ? '. ' + g.out.note : ''}`, '', artMini(g))))}
