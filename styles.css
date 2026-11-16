@@ -2197,3 +2197,4 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .px-suelto { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 14px; color: var(--muted); }
 .px-suelto.warn { color: var(--warn); font-weight: 500; }
 .item b .nw, .nw { white-space: nowrap; overflow-wrap: normal; display: inline-block; }
+.chip.on .muted { color: inherit; }

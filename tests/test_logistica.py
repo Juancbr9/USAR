@@ -37,7 +37,7 @@ with sync_playwright() as p:
     a.evaluate("go('avisos')"); a.wait_for_timeout(200)
     assert 'Granados' in a.inner_text('.hero .hello') and a.locator('.hero-bar').count() == 3 and a.locator('.hero-pct b').inner_text().endswith('%')
     # Una tarjeta por especialidad o equipo: USAR con su emblema y sus 13; el resto con los suyos
-    assert a.locator('.esp-tiles .esp-tile').count() == 6 and a.locator('.esp-tile >> nth=0').locator('img.esp-art').count() == 1
+    assert a.locator('.esp-tiles .esp-tile').count() == 7 and a.locator('.esp-tile >> nth=0').locator('img.esp-art').count() == 1
     t = ' '.join(a.inner_text('.esp-tile >> nth=0').split()); assert t.startswith('USAR') and '13/13 presentes' in t and 'material' in t, t
     t = ' '.join(a.inner_text('.esp-tile:has-text("Agua")').split()); assert '2/2 presentes' in t and '0/0 material' in t, t
     f = a.inner_text('.panel:has(h3:text-is("Fuerza de hoy"))'); assert f'de {total} presentes' in f and 'PIEN 1' in f and '2/2' in f.replace('\n', ''), f

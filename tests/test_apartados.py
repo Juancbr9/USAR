@@ -33,7 +33,7 @@ with sync_playwright() as p:
     # Menú: bajo el rótulo «Especialidades y equipos», USAR y los cinco apartados
     a.click('#menuBtn'); a.wait_for_timeout(150)
     assert a.locator('#drawer .dr-label').inner_text() == 'Especialidades y equipos'
-    for n in ['Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras']: assert a.locator(f'#drawer .dr-item:not(.sub):has-text("{n}")').count() == 1, n
+    for n in ['Parque', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras']: assert a.locator(f'#drawer .dr-item:not(.sub):has-text("{n}")').count() == 1, n
     a.click('#drawer .dr-item:has-text("Agua")'); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'agua'
 
     # Agua: su gente (los de Res. Acuático), con presentes
@@ -106,44 +106,71 @@ with sync_playwright() as p:
     a.evaluate("operators().filter(o => (o.eq || []).includes('rpas')).forEach(o => put('operators', { ...o, eq: [] })); go('rpas')"); a.wait_for_timeout(150)
     assert 'Nadie apuntado todavía' in a.inner_text('#view')
 
-    # Quien no es del apartado ni tiene logística no cambia su material
+    # Cualquiera del equipo rellena lo de todos, aunque no sea de ese apartado ni tenga permiso de logística
     a.evaluate("setPref({ session: operators().find(o => o.name === 'CUERDAS').id, tab: 'agua', aptab: 'material' })"); a.wait_for_timeout(200)
-    if not a.evaluate("puedeFlota()"):
-        assert a.locator('#view button:has-text("Pasar revista")').count() == 0
-        a.click('#view .list .item >> nth=0'); a.wait_for_timeout(150); assert a.locator('#modal [name=name]').count() == 0, 'no abre el formulario'
-        a.evaluate("setPref({ tab: 'cuerdas' })"); a.wait_for_timeout(150); assert a.locator('#view button:has-text("Empezar con lo habitual")').count() == 1, 'el suyo sí'
+    assert a.locator('#view button:has-text("Pasar revista")').count() == 1 and a.locator('#view button:has-text("Pasillos y baldas")').count() == 1
+    a.click('#view .list .item >> nth=0'); a.wait_for_selector('#modal [name=name]'); a.evaluate("closeModal()"); a.wait_for_timeout(250)
     a.evaluate("setPref({ session: 'OP-01' })")
 
-    # Pasillo de la especialidad: dibujo con módulos y baldas; el material se coloca desde el hueco o desde su ficha
+    # Pasillo de la especialidad: el suyo por número (Agua, el 4), con lado izquierdo y derecho, módulos y baldas
     a.evaluate("setPref({ session: 'OP-01', tab: 'agua', aptab: 'material' })"); a.wait_for_timeout(200)
+    assert a.evaluate("apPasillos('agua')") == [4] and a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 4'
     assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Sin colocar' in a.inner_text('#view .px-suelto')
-    a.click('#view button:has-text("Módulos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '3'); a.fill('[name=baldas]', '1'); save()
-    assert a.locator('#view .px .px-cell').count() == 3 * 2 and a.evaluate("apPasillo('agua')") == {'mods': 3, 'baldas': 1}
-    a.click('#view .px-cell[aria-label^="Módulo 2, balda"]'); a.wait_for_selector('#modal h3:has-text("Módulo 2 · Balda")')
+    assert [t.split('\n')[0] for t in a.locator('#view .panel:has(.px) .seg-row button').all_inner_texts()] == ['Izquierda', 'Derecha']
+    # Se configura el lado que se ve (3 módulos y 1 balda); el otro lado sigue como estaba
+    a.click('#view button:has-text("Pasillos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '3'); a.fill('[name=baldas]', '1'); save()
+    assert a.locator('#view .px .px-cell').count() == 3 * 2 and a.evaluate("pasLado('agua', 4, 'I')") == {'mods': 3, 'baldas': 1} and a.evaluate("pasLado('agua', 4, 'D')") == {'mods': 4, 'baldas': 2}
+    a.click('#view .px-cell[aria-label^="Módulo 2, balda"]'); a.wait_for_selector('#modal h3:has-text("Pasillo 4 izquierda · M2 · Balda")')
     assert 'Este hueco está vacío' in a.inner_text('#modal')
     a.click('#modal .item:has-text("Chalecos de rescate")'); a.wait_for_timeout(250)
-    assert a.evaluate("enHueco('agua', 2, 1).map(m => m.name)") == ['Chalecos de rescate'] and a.locator('#modal .item:has-text("Chalecos de rescate") button:has-text("Quitar")').count() == 1
+    assert a.evaluate("enHueco('agua', 4, 'I', 2, 1).map(m => m.name)") == ['Chalecos de rescate'] and a.locator('#modal .item:has-text("Chalecos de rescate") button:has-text("Quitar")').count() == 1
     a.click('#modal button:has-text("Material aquí")'); a.wait_for_selector('#modal [name=name]')
-    assert a.input_value('[name=mod]') == '2' and a.input_value('[name=niv]') == '1', 'el material nuevo nace en ese hueco'
+    assert a.input_value('[name=lado]') == 'I' and a.input_value('[name=mod]') == '2' and a.input_value('[name=niv]') == '1', 'el material nuevo nace en ese hueco'
+    assert a.locator('#modal [name=pas]').count() == 0, 'con un solo pasillo no se pregunta cuál'
     a.fill('[name=name]', 'Boyas'); save()
     cel = a.inner_text('#view .px-cell[aria-label^="Módulo 2, balda"]'); assert 'Boyas' in cel and 'Chalecos' in cel, cel
-    assert 'Pasillo · módulo 2 · balda' in a.inner_text('#view .list .item:has-text("Boyas")')
-    a.click('#view .list .item:has-text("Boyas")'); a.wait_for_selector('#modal [name=mod]'); a.select_option('[name=mod]', '3'); a.select_option('[name=niv]', '0'); save()
-    assert a.evaluate("enHueco('agua', 3, 0).map(m => m.name)") == ['Boyas']
-    a.click('#view .px-cell[aria-label^="Módulo 3, suelo"]'); a.wait_for_selector('#modal .item:has-text("Boyas")')
+    assert 'Pasillo 4 · izquierda · módulo 2 · balda' in a.inner_text('#view .list .item:has-text("Boyas")')
+    # Desde la ficha se pasa al lado derecho; el dibujo cambia de lado con el botón
+    a.click('#view .list .item:has-text("Boyas")'); a.wait_for_selector('#modal [name=mod]'); a.select_option('[name=lado]', 'D'); a.select_option('[name=mod]', '4'); a.select_option('[name=niv]', '2'); save()
+    assert a.evaluate("enHueco('agua', 4, 'D', 4, 2).map(m => m.name)") == ['Boyas'] and 'Boyas' not in a.inner_text('#view .px')
+    a.click('#view .panel:has(.px) .seg-row button:has-text("Derecha")'); a.wait_for_timeout(200)
+    assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Boyas' in a.inner_text('#view .px-cell[aria-label^="Módulo 4, balda 2"]')
+    a.click('#view .px-cell[aria-label^="Módulo 4, balda 2"]'); a.wait_for_selector('#modal .item:has-text("Boyas")')
     a.click('#modal .item:has-text("Boyas") button:has-text("Quitar")'); a.wait_for_timeout(250)
     assert a.evaluate("sinColocar('agua').some(m => m.name === 'Boyas')") and 'Este hueco está vacío' in a.inner_text('#modal')
-    a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    a.evaluate("closeModal(); setPref({ pasLado: 'I' })"); a.wait_for_timeout(250)
     # Al quitar módulos, lo que estaba en ellos pasa a «Sin colocar»: no se borra nada
-    a.evaluate("pasMover(apMat('agua').find(m => m.name === 'Chalecos de rescate').id, 3, 1)"); a.wait_for_timeout(150)
-    a.click('#view button:has-text("Módulos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '2'); save()
+    a.evaluate("pasMover(apMat('agua').find(m => m.name === 'Chalecos de rescate').id, 4, 'I', 3, 1)"); a.wait_for_timeout(150)
+    a.click('#view button:has-text("Pasillos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '2'); save()
     assert a.evaluate("sinColocar('agua').some(m => m.name === 'Chalecos de rescate')") and a.evaluate("apMat('agua').length") == n + 1
     assert 'Pasillo' not in a.inner_text('#view .list .item:has-text("Chalecos de rescate")') and 'Sin colocar' in a.inner_text('#view .list .item:has-text("Boyas")')
     seen('pasillo de agua'); wide('pasillo de agua'); a.screenshot(path=f'{OUT}/apartado-pasillo.png', full_page=True)
     # El buscador dice el hueco
-    a.evaluate("pasMover(apMat('agua').find(m => m.name === 'Boyas').id, 1, 1)")
-    a.click('[aria-label=Buscar]'); a.fill('#search', 'boyas'); a.wait_for_timeout(300); assert 'Pasillo · módulo 1 · balda' in a.inner_text('#results')
+    a.evaluate("pasMover(apMat('agua').find(m => m.name === 'Boyas').id, 4, 'I', 1, 1)")
+    a.click('[aria-label=Buscar]'); a.fill('#search', 'boyas'); a.wait_for_timeout(300); assert 'Pasillo 4 · izquierda · módulo 1 · balda' in a.inner_text('#results')
     a.evaluate("clearSearch(); $('searchbar').classList.add('hidden')")
+
+    # El Parque: material común en los pasillos 1 y 2 (sin gente propia); cualquiera coge y devuelve con un toque
+    a.evaluate("go('parque')"); a.wait_for_timeout(200)
+    assert a.inner_text('#view h2') == 'Parque' and [t.split(' ')[0] for t in a.locator('#view .ctab').all_inner_texts()] == ['Material', 'Notas'], 'el Parque no tiene pestaña de equipo'
+    assert a.evaluate("apPasillos('parque')") == [1, 2] and a.locator('#view .panel:has(.px) .chips .chip').count() == 2
+    a.click('#view button:has-text("Empezar con lo habitual")'); a.wait_for_timeout(250)
+    a.click('#view .panel:has(.px) .chips .chip:has-text("Pasillo 2")'); a.wait_for_timeout(150); assert a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 2'
+    a.click('#view .px-cell[aria-label^="Módulo 1, suelo"]'); a.wait_for_selector('#modal h3:has-text("Pasillo 2 izquierda · M1 · Suelo")')
+    a.click('#modal .item:has-text("Palas")'); a.wait_for_timeout(250); a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    assert a.evaluate("enHueco('parque', 2, 'I', 1, 0).map(m => m.name)") == ['Palas'] and 'Pasillo 2 · izquierda · módulo 1 · suelo' in a.inner_text('#view .list .item:has-text("Palas")')
+    a.click('#view .list .item:has-text("Palas")'); a.wait_for_selector('#modal [name=pas]'); assert a.input_value('[name=pas]') == '2'
+    a.click('#modal button:has-text("Me lo llevo yo")'); a.wait_for_timeout(300)
+    assert 'Lo tiene GRANADOS' in a.inner_text('#view .list .item:has-text("Palas")') and a.locator('#view .sier-kpi b').first.inner_text() == '1'
+    a.evaluate("openPerson('OP-01'); setPref({ ptab: 'mat' })"); a.wait_for_timeout(200); assert 'Palas' in a.inner_text('#view .panel:has(h3:has-text("Material asignado"))') and 'Parque' in a.inner_text('#view .panel:has(h3:has-text("Material asignado"))')
+    a.evaluate("setPref({ tab: 'parque', person: null })"); a.wait_for_timeout(200)
+    a.click('#view .list .item:has-text("Palas")'); a.wait_for_selector('#modal button:has-text("Lo devuelvo a su sitio")'); a.click('#modal button:has-text("Lo devuelvo a su sitio")'); a.wait_for_timeout(300)
+    assert 'Lo tiene' not in a.inner_text('#view .list .item:has-text("Palas")') and a.evaluate("apMat('parque').find(m => m.name === 'Palas').holder") == ''
+    # Se le puede añadir otro pasillo, o quitárselos todos
+    a.click('#view button:has-text("Pasillos y baldas")'); a.wait_for_selector('#modal [name=nums]'); a.fill('[name=nums]', '1, 2, 7'); save()
+    assert a.evaluate("apPasillos('parque')") == [1, 2, 7] and a.locator('#view .panel:has(.px) .chips .chip').count() == 3
+    assert a.evaluate("apPasillos('rpas')") == [] and a.evaluate("(setPref({ tab: 'rpas', aptab: 'material' }), document.querySelector('#view').innerText.includes('no tiene pasillo apuntado'))")
+    seen('parque'); wide('parque')
 
     # Material asignado a una persona: se elige en la ficha del material y sale en la suya y en Logística
     a.evaluate("setPref({ tab: 'agua', aptab: 'material' })"); a.wait_for_timeout(150)

@@ -24,7 +24,10 @@
   y se apunta en `ESP_ART`. USAR conserva sus pantallas propias (contenedor, pasillo, armarios…).
 - Material de apartados y vehículos: registros `matesp` con dueño (`ap` o `veh`), en `js/views/material.js`; el dueño se
   pasa como texto (`'ap:agua'`, `'veh:V-…'`).
-  Cada material puede tener hueco en el pasillo dibujado de su especialidad (`mod`, `niv`; `js/views/pasillo.js`, con
-  módulos y baldas configurables por apartado) y persona a la que está asignado (`holder`; sale en su ficha).
+  Cada material puede tener hueco en un pasillo (`pas` n.º de pasillo, `lado` I/D, `mod`, `niv`; `js/views/pasillo.js`) y
+  persona a la que está asignado (`holder`; sale en su ficha). Los pasillos del almacén van por número y tienen estantería
+  a izquierda y derecha: Parque 1 y 2, USAR 3 (su propio dibujo), Agua 4, Cuerdas 5, Motosierras 6; todo configurable en la app.
+- Confianza: cualquiera del equipo rellena el material de cualquier apartado o vehículo (lo pidió el usuario). Solo siguen
+  restringidos a logística (`puedeFlota`) el alta de material de USAR y los modelos y matrículas de vehículos.
 - Situación del personal: cada persona está «En base» o ausente con motivo, lugar y fechas (`aus`); se ve en Personal →
   «Situación», se cambia en su ficha o con «Pasar lista», y una ausencia con `desde` futuro es solo prevista.

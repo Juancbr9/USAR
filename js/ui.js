@@ -251,11 +251,12 @@ function viewAvisos() {
 // Inicio: una tarjeta por especialidad o equipo, con su icono, los presentes y el material operativo
 function espTiles() {
   const fig = (n, t, label, bad) => `<span class="esp-n ${bad ? 'bad' : ''}"><b>${n}<i>/${t}</i></b><small>${label}</small></span>`;
+  // gente: los del apartado; null si es común (el Parque), que enseña cuánto de lo suyo tiene alguien
   const tile = (onclick, art, name, sub, gente, mat) => `<button class="esp-tile" onclick="${onclick}">${art}<span class="esp-t"><b>${esc(name)}</b><small>${esc(sub)}</small></span>
-    ${fig(gente.filter(o => !esAusente(o)).length, gente.length, 'presentes', false)}${fig(mat.filter(matOk).length, mat.length, 'material', mat.some(m => !matOk(m)))}</button>`;
+    ${gente ? fig(gente.filter(o => !esAusente(o)).length, gente.length, 'presentes', false) : fig(mat.filter(m => m.holder && get('operators', m.holder)).length, mat.length, 'cogido', false)}${fig(mat.filter(matOk).length, mat.length, 'material', mat.some(m => !matOk(m)))}</button>`;
   return `<div class="esp-tiles">
     ${tile("go('contenedor')", '<img class="esp-art" src="img/logo.webp" alt="">', 'USAR', 'Rescate urbano', usarOps(), list('gear'))}
-    ${Object.entries(APARTADOS).map(([k, ap]) => tile(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon, 'i-lg')}</span>`, ap.name, ap.largo, apMiembros(k), apMat(k))).join('')}
+    ${Object.entries(APARTADOS).map(([k, ap]) => tile(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon, 'i-lg')}</span>`, ap.name, ap.largo, ap.comun ? null : apMiembros(k), apMat(k))).join('')}
   </div>`;
 }
 
