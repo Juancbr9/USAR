@@ -23,12 +23,14 @@ const matRevId = owner => (duenoDe(owner).veh ? 'vehrev-' : 'aprev-') + owner.sl
 const matRevistas = owner => get('meta', matRevId(owner))?.value || [];
 // Al guardar o borrar el material de un vehículo se vuelve a su ficha (que es una ventana)
 const matVuelve = owner => { const d = duenoDe(owner); if (d.veh) setTimeout(() => vehicleView(d.veh), 0); };
+// Material (de apartados y vehículos) que tiene asignado una persona
+const matCon = id => matTodo().filter(m => m.holder === id).sort(byName);
 const matricula = m => m.veh && m.unit ? (get('vehicles', m.veh)?.units || []).find(u => u.id === m.unit)?.plate || '' : '';
 
 function matRow(owner, m) {
   const [txt, cls] = AP_ESTADOS[m.status] || AP_ESTADOS.OPERATIVO, n = m.review ? daysTo(m.review) : null;
   return `<button class="item" onclick="matForm('${owner}', '${m.id}')"><div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
-    <small>${esc([matricula(m), m.place || (m.veh ? '' : 'Sin sitio apuntado'), m.serial ? 'n.º ' + m.serial : '', m.notes].filter(Boolean).join(' · ') || 'Toca para completarlo')}</small></div>
+    <small>${esc([m.holder && get('operators', m.holder) ? 'Lo tiene ' + opName(m.holder) : '', matricula(m), huecoTxt(m), m.place || (m.veh || huecoTxt(m) ? '' : 'Sin colocar'), m.serial ? 'n.º ' + m.serial : '', m.notes].filter(Boolean).join(' · ') || 'Toca para completarlo')}</small></div>
     <span class="row tags" style="justify-content:flex-end">${n != null && n <= 30 ? `<span class="tag ${n < 0 ? 'bad' : 'warn'}">${n < 0 ? 'Revisión pasada' : n === 0 ? 'Revisión hoy' : `Revisión en ${n} d`}</span>` : ''}
       ${cls === 'ok' ? '' : `<span class="tag ${cls}">${txt}</span>`}</span></button>`;
 }
@@ -44,19 +46,24 @@ function matBloque(owner, vacio) {
         puede ? `<button class="btn btn-g" onclick="matHabitual('${owner}')">${ic('list')} Empezar con lo habitual</button>` : '')}`;
 }
 
-function matForm(owner, id) {
+// pre: valores de partida de un material nuevo (p. ej. el hueco del pasillo desde el que se añade)
+function matForm(owner, id, pre = {}) {
   if (!matPuede(owner)) return toast(`El material de ${duenoNombre(owner)} lo lleva ${duenoDe(owner).veh ? 'logística' : 'su gente y logística'}`, 'bad');
-  const d = duenoDe(owner), m = id ? get('matesp', id) : { status: 'OPERATIVO', qty: 1 }, units = d.veh ? get('vehicles', d.veh)?.units || [] : [];
+  const d = duenoDe(owner), m = id ? get('matesp', id) : { status: 'OPERATIVO', qty: 1, ...pre }, units = d.veh ? get('vehicles', d.veh)?.units || [] : [];
+  const pas = d.ap ? apPasillo(d.ap) : null, enSitio = pas && colocado(d.ap, m);
   openForm(id ? m.name : `Material de ${duenoNombre(owner)}`, [
     { k: 'name', label: 'Qué es', value: m.name || '', required: true, wide: true, placeholder: 'Ej.: ' + duenoHabitual(owner)[0] },
     { k: 'qty', label: 'Cuántos', type: 'number', value: m.qty || 1 },
     { k: 'status', label: 'Estado', value: m.status || 'OPERATIVO', options: Object.entries(AP_ESTADOS).map(([v, [l]]) => [v, l]) },
     ...(units.length > 1 ? [{ k: 'unit', label: 'Matrícula', value: m.unit || '', wide: true, options: [['', 'Todas las de este modelo'], ...units.map(u => [u.id, u.plate])] }] : []),
-    { k: 'place', label: d.veh ? 'Dónde va (cofre, cabina, techo…)' : 'Dónde está', value: m.place || '', wide: true, placeholder: d.veh ? 'Ej.: Cofre lateral izquierdo' : 'Ej.: Almacén, armario 2' },
+    ...(pas ? [{ k: 'mod', label: 'Pasillo: módulo', value: enSitio ? +m.mod : 0, options: [[0, 'Sin colocar'], ...Array.from({ length: pas.mods }, (_, i) => [i + 1, 'Módulo ' + (i + 1)])] },
+      { k: 'niv', label: 'Pasillo: altura', value: enSitio ? +m.niv || 0 : 0, options: Array.from({ length: pas.baldas + 1 }, (_, n) => [n, nivNombre(n, pas.baldas)]) }] : []),
+    { k: 'place', label: d.veh ? 'Dónde va (cofre, cabina, techo…)' : 'Otro sitio o detalle', value: m.place || '', wide: true, placeholder: d.veh ? 'Ej.: Cofre lateral izquierdo' : 'Ej.: En la caja roja' },
+    { k: 'holder', label: 'Asignado a (si lo tiene alguien a su cargo)', value: m.holder || '', wide: true, options: [['', 'Nadie: está en su sitio'], ...operators().sort(byName).map(o => [o.id, conEmpleo(o)])] },
     { k: 'review', label: 'Próxima revisión o caducidad', type: 'date', value: m.review || '' },
     { k: 'serial', label: 'N.º de serie', value: m.serial || '' },
     { k: 'notes', label: 'Notas', value: m.notes || '', wide: true }
-  ], v => { put('matesp', { ...m, id: m.id || uid('ME'), ...d, name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: v.unit || '', place: v.place || '', review: v.review || '', serial: v.serial || '', notes: v.notes || '' },
+  ], v => { put('matesp', { ...m, id: m.id || uid('ME'), ...d, name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: v.unit || '', ...(pas ? { mod: +v.mod || 0, niv: +v.mod ? +v.niv || 0 : 0 } : {}), place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}), review: v.review || '', serial: v.serial || '', notes: v.notes || '' },
       id ? `${duenoNombre(owner)}: ${v.name} actualizado` : `${duenoNombre(owner)}: añadido ${v.name}`); matVuelve(owner); },
   id ? `<button type="button" class="btn btn-bad span2" onclick="matBorrar('${owner}', '${id}')">${ic('trash')} Eliminar</button>` : '');
 }

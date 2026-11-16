@@ -20,8 +20,9 @@ function flotaEstado() {
     return { v, u, fallo, itv, libre: !fallo && !itv };
   }));
 }
-// Material prestado a personas (sin contar lo que sale con una actividad), agrupado por quién lo tiene
-const cargosPorPersona = () => Object.entries(list('gear').filter(g => g.out && !g.out.mission).reduce((m, g) => { (m[g.out.who || 'Sin nombre'] ||= []).push(g); return m; }, {}))
+// Material que tienen las personas (lo del almacén de USAR que llevan y lo asignado de apartados y vehículos), por persona
+const cargosPorPersona = () => Object.entries([...list('gear').filter(g => g.out && !g.out.mission).map(g => [g.out.who || 'Sin nombre', g]), ...matTodo().filter(m => m.holder && get('operators', m.holder)).map(m => [opName(m.holder), m])]
+  .reduce((m, [who, g]) => { (m[who] ||= []).push(g); return m; }, {}))
   .sort((a, b) => b[1].length - a[1].length);
 
 function viewLogistica() {
@@ -57,7 +58,7 @@ function viewLogistica() {
         <div class="log-fig ${logCls(pres.length, ops.length)}"><b>${pres.length}</b><span>de ${ops.length} presentes ${esc(diaTxt)}</span></div>
         ${PELOTONES.filter(k => ops.some(o => o.peloton === k)).map(k => logMeter(k, ...cuenta(o => o.peloton === k), irPers('peloton'))).join('')}
         ${ops.some(o => !o.peloton) && ops.some(o => o.peloton) ? logMeter('Sin pelotón', ...cuenta(o => !o.peloton), irPers('peloton')) : ''}
-        ${aus.length ? `<div class="log-rows">${aus.map(o => logRow(conEmpleo(o), o.aus.hasta ? 'hasta ' + fmtDate(o.aus.hasta) : 'sin fecha', 'bad', `openPerson('${o.id}')`, ' ' + (o.aus.motivo || 'Ausente'))).join('')}</div>` : ''}
+        ${aus.length ? `<div class="log-rows">${aus.map(o => logRow(conEmpleo(o), o.aus.hasta ? 'hasta ' + fmtDate(o.aus.hasta) : 'sin fecha', 'bad', `openPerson('${o.id}')`, ' ' + [o.aus.motivo || 'Ausente', o.aus.lugar].filter(Boolean).join(' · '))).join('')}</div>` : ''}
         <div class="log-foot">${esHoy ? `<button class="btn btn-a" onclick="pasarLista()">${ic('check')} Pasar lista</button>` : ''}
           <button class="btn btn-g" onclick="shareText(sierParte(), 'Parte de personal')">${ic('chat')} Parte</button></div>
       </div>
@@ -98,13 +99,13 @@ function viewLogistica() {
       </div>` : ''}
       ${cargos.length ? `<div class="panel">
         <div class="between"><h3>Quién tiene material</h3><button class="link" onclick="go('fuera')">Fuera</button></div>
-        <div class="log-rows">${cargos.map(([who, gs]) => logRow(who, gs.length + (gs.length === 1 ? ' equipo' : ' equipos'), '', "go('fuera')", ' ' + gs.slice(0, 2).map(g => g.name).join(', ') + (gs.length > 2 ? '…' : ''))).join('')}</div>
+        <div class="log-rows">${cargos.map(([who, gs]) => logRow(who, gs.length + (gs.length === 1 ? ' equipo' : ' equipos'), '', operators().find(o => o.name === who) ? `setPref({ tab: 'personal', person: '${operators().find(o => o.name === who)?.id}', ptab: 'mat' }); scrollTo(0, 0)` : "go('fuera')", ' ' + gs.slice(0, 2).map(g => g.name).join(', ') + (gs.length > 2 ? '…' : ''))).join('')}</div>
       </div>` : ''}
     </div>`;
 }
 
 /* ---------- Pasar lista ---------- */
-let LISTA_MOTIVO = MOTIVOS_AUSENCIA[0];
+let LISTA_MOTIVO = MOTIVOS_AUSENCIA[0], LISTA_LUGAR = '';
 function listaHtml() {
   const ops = operators().sort(ordenSier), n = ops.filter(esAusente).length;
   const grupos = [...PELOTONES, ''].map(k => [k || (ops.some(o => o.peloton) ? 'Sin pelotón' : 'Personal'), ops.filter(o => (o.peloton || '') === k)]).filter(g => g[1].length);
@@ -112,10 +113,11 @@ function listaHtml() {
     <p class="muted">Toca a quien falte: queda ausente con el motivo elegido. Tócalo otra vez y vuelve a estar presente.</p>
     <label class="lbl" style="margin-top:10px">Motivo de los que marques
       <select class="input" onchange="LISTA_MOTIVO = this.value">${MOTIVOS_AUSENCIA.map(m => `<option ${m === LISTA_MOTIVO ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></label>
+    <label class="lbl" style="margin-top:8px">Dónde están (opcional)<input class="input" id="listaLugar" value="${esc(LISTA_LUGAR)}" placeholder="Ej.: Academia, Las Palmas…" autocomplete="off" oninput="LISTA_LUGAR = this.value"></label>
     <div class="lista-res" aria-live="polite"><span>Presentes</span><b>${ops.length - n}<small style="display:inline">/${ops.length}</small></b></div>
     ${grupos.map(([t, m]) => `<div class="lista-grupo"><p class="lista-t"><span>${esc(t)}</span><span>${m.filter(o => !esAusente(o)).length}/${m.length}</span></p>
       <div class="lista-fichas">${m.map(o => { const f = esAusente(o); return `<button class="lista-f ${f ? 'aus' : ''}" aria-pressed="${!f}" aria-label="${esc(o.name)}: ${f ? 'ausente' : 'presente'}" onclick="listaToca('${o.id}')">
-        <b>${esc(o.name)}</b><small>${esc(f ? o.aus.motivo || 'Ausente' : o.empleo || 'Presente')}</small></button>`; }).join('')}</div></div>`).join('')}
+        <b>${esc(o.name)}</b><small>${esc(f ? [o.aus.motivo || 'Ausente', o.aus.lugar].filter(Boolean).join(' · ') : o.empleo || 'Presente')}</small></button>`; }).join('')}</div></div>`).join('')}
     <div class="row" style="margin-top:16px"><button class="btn btn-a" onclick="closeModal()">${ic('check')} Hecho</button>
       <button class="btn btn-g" onclick="shareText(sierParte(), 'Parte de personal')">${ic('chat')} Enviar el parte</button></div>
   </div>`;
@@ -124,7 +126,7 @@ function pasarLista() { openModal('Pasar lista', listaHtml()); }
 function listaToca(id) {
   const o = get('operators', id), f = esAusente(o), sheet = document.querySelector('#modal .sheet'), y = sheet?.scrollTop || 0;
   // Una ausencia prevista (aún sin empezar) conserva su motivo y su fecha de fin: solo se adelanta a hoy
-  put('operators', { ...o, aus: f ? null : { motivo: LISTA_MOTIVO, hasta: '', nota: '', ...(ausPrevista(o) ? o.aus : {}), desde: todayISO() } }, `${o.name}: ${f ? 'presente' : 'ausente (' + LISTA_MOTIVO + ')'}`);
+  put('operators', { ...o, aus: f ? null : { motivo: LISTA_MOTIVO, hasta: '', nota: '', lugar: LISTA_LUGAR.trim(), ...(ausPrevista(o) ? o.aus : {}), desde: todayISO() } }, `${o.name}: ${f ? 'presente' : 'ausente (' + LISTA_MOTIVO + ')'}`);
   const body = $('listaBody'); if (!body) return;
   body.outerHTML = listaHtml(); if (sheet) sheet.scrollTop = y;
   document.querySelector(`#listaBody .lista-f[onclick*="${id}"]`)?.focus({ preventScroll: true });

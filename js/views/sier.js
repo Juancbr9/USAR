@@ -7,10 +7,13 @@ const ESP_NINGUNA = 'Sin especialidad';
 const espLabel = o => opEsp(o) || ESP_NINGUNA;
 const opEquipos = o => [...(o.eq || []).map(k => EQUIPOS[k]).filter(Boolean), ...(o.moto ? [`Motosierra ${o.moto.tipo === 'S' ? 'suplente' : 'titular'}`] : [])];
 const motoTxt = m => m ? `${m.tipo === 'S' ? 'Suplente' : 'Titular'}${m.eq ? ` · equipo ${m.eq}` : ''}${m.aut ? ` (AUT. ${m.aut})` : ''}` : '';
-const ausTxt = o => esAusente(o) ? [o.aus.motivo || 'Ausente', o.aus.hasta ? 'hasta el ' + fmtDate(o.aus.hasta) : ''].filter(Boolean).join(' ') : '';
+const ausTxt = o => esAusente(o) ? [o.aus.motivo || 'Ausente', o.aus.lugar ? 'en ' + o.aus.lugar : '', o.aus.hasta ? 'hasta el ' + fmtDate(o.aus.hasta) : ''].filter(Boolean).join(' ') : '';
+// Dónde está cada uno: «En base» o el motivo de su ausencia
+const EN_BASE = 'En base';
+const situacion = o => esAusente(o) ? o.aus.motivo || 'Ausente' : EN_BASE;
 const conEmpleo = o => [o.empleo, o.name].filter(Boolean).join(' ');
 // Vistas del personal
-const PVIEWS = [['peloton', 'Pelotones'], ['esp', 'Especialidades'], ['equipos', 'Equipos'], ['puestos', 'Puestos USAR']];
+const PVIEWS = [['peloton', 'Pelotones'], ['situacion', 'Situación'], ['esp', 'Especialidades'], ['equipos', 'Equipos'], ['puestos', 'Puestos USAR']];
 
 function personRow(p, sub) {
   const issues = readinessIssues(p.id), eb = list('epis').filter(e => e.holder === p.id && epiState(e).cls !== 'ok').length, n = issues.length + (eb ? 1 : 0), aus = esAusente(p);
@@ -37,6 +40,9 @@ function viewPersonal() {
   const porGrupo = (keys, f, vacio) => [...keys, ''].map(k => [k || vacio, ops.filter(p => (f(p) || '') === k)]).filter(([, m], i) => m.length || (i < keys.length && !q));
   const paneles = {
     peloton: () => porGrupo(PELOTONES, p => p.peloton, 'Sin pelotón').map(([t, m]) => persPanel(t, m)).join(''),
+    // Tablero de situación: en base y, después, cada motivo de ausencia con quién está, dónde y hasta cuándo
+    situacion: () => [EN_BASE, ...MOTIVOS_AUSENCIA, 'Ausente'].map(k => [k, ops.filter(p => situacion(p) === k)]).filter(([k, m]) => m.length || k === EN_BASE)
+      .map(([t, m]) => persPanel(t, m, p => [p.peloton, esAusente(p) ? [p.aus.lugar, p.aus.hasta ? 'hasta el ' + fmtDate(p.aus.hasta) : 'sin fecha de vuelta', p.aus.nota].filter(Boolean).join(' · ') : (espLabel(p) === ESP_NINGUNA ? '' : espLabel(p))].filter(Boolean).join(' · '))).join(''),
     esp: () => porGrupo(ESPECIALIDADES, opEsp, ESP_NINGUNA).map(([t, m]) => persPanel(t, m, p => [p.peloton, ...opEquipos(p)].filter(Boolean).join(' · '))).join(''),
     equipos: () => { const moto = t => ops.filter(p => p.moto && (p.moto.tipo === 'S') === (t === 'S')).sort((a, b) => (+a.moto.eq || 99) - (+b.moto.eq || 99));
       return [...Object.entries(EQUIPOS).filter(([k]) => k !== 'moto').map(([k, l]) => persPanel('Equipo ' + l, ops.filter(p => (p.eq || []).includes(k)), p => [p.peloton, espLabel(p) === ESP_NINGUNA ? '' : espLabel(p)].filter(Boolean).join(' · '))),
@@ -83,8 +89,9 @@ function ausenciaForm(id) {
     { k: 'motivo', label: 'Motivo', value: a.motivo || MOTIVOS_AUSENCIA[0], options: MOTIVOS_AUSENCIA.map(m => [m, m]), required: true, wide: true },
     { k: 'desde', label: 'Desde (hoy, o una fecha futura si es una ausencia prevista)', type: 'date', value: ausPrevista(o) || esAusente(o) ? a.desde || todayISO() : todayISO(), required: true },
     { k: 'hasta', label: 'Hasta (ese día incluido; vacío: hasta que se marque presente)', type: 'date', value: a.hasta || '' },
+    { k: 'lugar', label: 'Dónde está (opcional)', value: a.lugar || '', wide: true, placeholder: 'Ej.: Academia de Logística, Calatayud' },
     { k: 'nota', label: 'Nota', value: a.nota || '', wide: true }
-  ], v => put('operators', { ...o, aus: { motivo: v.motivo, hasta: v.hasta || '', nota: v.nota || '', desde: v.desde || todayISO() } }, `${o.name}: ${v.desde > todayISO() ? 'ausencia prevista desde el ' + fmtDate(v.desde) : 'ausente'} (${v.motivo}${v.hasta ? ' hasta ' + fmtDate(v.hasta) : ''})`));
+  ], v => put('operators', { ...o, aus: { motivo: v.motivo, hasta: v.hasta || '', lugar: v.lugar || '', nota: v.nota || '', desde: v.desde || todayISO() } }, `${o.name}: ${v.desde > todayISO() ? 'ausencia prevista desde el ' + fmtDate(v.desde) : 'ausente'} (${v.motivo}${v.hasta ? ' hasta ' + fmtDate(v.hasta) : ''})`));
 }
 function marcarPresente(id) { const o = get('operators', id); put('operators', { ...o, aus: null }, `${o.name}: ${ausPrevista(o) ? 'ausencia prevista anulada' : 'presente'}`); }
 const ausPrevTxt = o => ausPrevista(o) ? `${o.aus.motivo || 'Ausencia'} del ${fmtDate(o.aus.desde)}${o.aus.hasta ? ' al ' + fmtDate(o.aus.hasta) : ''}` : '';
