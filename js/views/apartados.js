@@ -3,7 +3,7 @@
 // pantallas). Todos funcionan igual: su gente (con presentes y ausentes), su material (un inventario sencillo con estado,
 // dónde está y próxima revisión o caducidad), la revista de ese material y unas notas compartidas.
 
-const apMiembros = k => { const a = APARTADOS[k]; return operators().filter(o => a.esp ? opEsp(o) === a.esp : a.eq ? (o.eq || []).includes(a.eq) : !!o.moto).sort(ordenSier); };
+const apMiembros = k => { const a = APARTADOS[k]; return a.comun ? [] : operators().filter(o => a.esp ? opEsp(o) === a.esp : a.eq ? (o.eq || []).includes(a.eq) : !!o.moto).sort(ordenSier); };
 // El material es el de js/views/material.js, con el apartado como dueño («ap:agua»)
 const apMat = k => matDe({ ap: k });
 const apPuede = k => matPuede('ap:' + k);
@@ -16,8 +16,8 @@ const apDe = esp => Object.keys(APARTADOS).find(k => APARTADOS[k].esp === esp);
 function viewApartado(k) {
   const a = APARTADOS[k], gente = apMiembros(k), pres = gente.filter(o => !esAusente(o)), mat = apMat(k), ok = mat.filter(matOk);
   const ult = apRevistas(k)[0], puede = apPuede(k), nota = apNota(k);
-  const tabs = [['equipo', 'users', 'Equipo', gente.length], ['material', 'box', 'Material', mat.length], ['notas', 'file', 'Notas', 0]];
-  const tab = tabs.some(t => t[0] === prefs.aptab) ? prefs.aptab : 'equipo';
+  const tabs = [...(a.comun ? [] : [['equipo', 'users', 'Equipo', gente.length]]), ['material', 'box', 'Material', mat.length], ['notas', 'file', 'Notas', 0]];
+  const tab = tabs.some(t => t[0] === prefs.aptab) ? prefs.aptab : tabs[0][0], fuera = mat.filter(m => m.holder && get('operators', m.holder)).length;
   const sub = p => [p.peloton, a.moto ? motoTxt(p.moto) : '', ...(a.esp ? opEquipos(p) : [espLabel(p) === ESP_NINGUNA ? '' : espLabel(p)])].filter(Boolean).join(' · ');
   const cuerpo = {
     equipo: () => !gente.length ? `<div class="panel">${emptyState('users', 'Nadie apuntado todavía', `En Personal, edita a cada persona y ponle ${a.esp ? 'la especialidad «' + a.esp + '»' : a.eq ? 'el equipo «' + a.name + '»' : 'que es motosierrista'}.`,
@@ -35,7 +35,8 @@ function viewApartado(k) {
     <div class="panel">
       <div class="between wrap-row sec-head"><div><h2>${esc(a.name)}</h2><p class="muted">${esc(a.largo)} · ${UNIDAD}</p></div></div>
       <div class="sier-res">
-        <div class="sier-kpi ${logCls(pres.length, gente.length) === 'bad' ? 'bad' : ''}"><small>Presentes</small><b>${pres.length}<span class="ap-de">/${gente.length}</span></b></div>
+        ${a.comun ? `<div class="sier-kpi"><small>Lo tiene alguien</small><b>${fuera}</b></div>`
+          : `<div class="sier-kpi ${logCls(pres.length, gente.length) === 'bad' ? 'bad' : ''}"><small>Presentes</small><b>${pres.length}<span class="ap-de">/${gente.length}</span></b></div>`}
         <div class="sier-kpi ${ok.length < mat.length ? 'bad' : ''}"><small>Material</small><b>${ok.length}<span class="ap-de">/${mat.length}</span></b></div>
         <div class="sier-kpi"><small>Revista</small><b class="ap-fecha">${ult ? fmtDate(new Date(ult.ts - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10)) : '—'}</b></div>
       </div>

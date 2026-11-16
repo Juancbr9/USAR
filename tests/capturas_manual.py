@@ -116,9 +116,9 @@ with sync_playwright() as p:
     a.evaluate("setPref({ session: 'OP-01', tab: 'consumibles' })"); a.wait_for_timeout(250)
     ann(a, 'stock', [('#view .cons-item .row.nowrap >> nth=0', 'b', {'d': 30}), ('#view .tag.bad', 'l', {'d': 30})])
     a.click('#menuBtn'); a.wait_for_timeout(250)
-    a.evaluate("prefs.menuOpen = ['usar']; renderDrawer()"); tall(1220); a.wait_for_timeout(200)
+    a.evaluate("prefs.menuOpen = ['usar']; renderDrawer()"); tall(1270); a.wait_for_timeout(200)
     ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-item:has-text("Logística")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
-                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Calendario")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}),
+                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Parque")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}),
                     ('#drawer .dr-item:has-text("Revisión") .dr-dot', 'r', {'d': 30}), ('#drawer .dr-item:has-text("Agua")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
 
@@ -201,7 +201,7 @@ with sync_playwright() as p:
     # ---------- Equipo ----------
     a.evaluate("go('personal')"); a.wait_for_timeout(250)
     ann(a, 'personal-lista', [('#view button.btn-a:has-text("Persona")', 'r', {'d': 24}), ('#view button:has-text("Tarjetas QR")', 'r', {'d': 24}), ('#view .sier-res', 'i'), ('#view .pers-views', 'i')])
-    a.evaluate("""(() => { go('agua'); apHabitual('agua'); const m = apMat('agua'); [[0, 1, 0], [1, 1, 1], [2, 1, 1], [3, 2, 2], [4, 3, 0], [5, 3, 0], [6, 2, 1], [7, 4, 2]].forEach(([i, mod, niv]) => stamp('matesp', { ...m[i], mod, niv }));
+    a.evaluate("""(() => { go('agua'); apHabitual('agua'); const m = apMat('agua'); [[0, 1, 0], [1, 1, 1], [2, 1, 1], [3, 2, 2], [4, 3, 0], [5, 3, 0], [6, 2, 1], [7, 4, 2]].forEach(([i, mod, niv]) => stamp('matesp', { ...m[i], pas: 4, lado: 'I', mod, niv }));
       stamp('matesp', { ...apMat('agua')[6], status: 'REVISIÓN' }); commit(); setPref({ aptab: 'material' }); })()"""); a.wait_for_timeout(2600); tall(1000)
     ann(a, 'apartado', [('#view .sier-res', 'i'), ('#view .ctabs', 'b', {'d': 30}), ('#view .px', 'i')]); tall(760)
     a.evaluate("apMat('agua').forEach(m => stamp('matesp', { id: m.id, _del: true })); commit(); go('recursos')"); a.wait_for_timeout(250)

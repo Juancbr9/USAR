@@ -11,23 +11,27 @@ const ESPECIALIDADES = ['USAR', 'Res. Terrestre', 'Res. Acuático'];
 const EMPLEOS = ['TTE', 'STTE', 'BG', 'SGT 1º', 'SGT', 'CBO 1º', 'CBO', 'SDO'];   // de más a menos antigüedad
 // Equipos transversales: una persona puede estar en varios, además de su especialidad
 const EQUIPOS = { rpas: 'RPAS', sva: 'SVA', moto: 'Motosierristas' };
-// Apartados de las demás especialidades y equipos (USAR tiene sus propias pantallas): cada uno con su gente, su material
-// y su revista. de: quién pertenece (por especialidad, por equipo o los motosierristas); habitual: material para empezar.
+// Apartados: el Parque (material común) y las demás especialidades y equipos (USAR tiene sus propias pantallas), cada uno
+// con su gente, su material y su revista. Quién pertenece: por especialidad (esp), por equipo (eq) o los motosierristas
+// (moto); comun: sin gente propia. pasillos: sus números en el almacén (se cambian en la app). habitual: para empezar.
 const APARTADOS = {
-  agua: { name: 'Agua', largo: 'Rescate acuático', icon: 'waves', esp: 'Res. Acuático',
+  // El Parque: material común de la sección, del que coge todo el mundo (no tiene gente propia)
+  parque: { name: 'Parque', largo: 'Material común de la sección', icon: 'package', comun: true, pasillos: [1, 2],
+    habitual: ['Palas', 'Picos', 'Rastrillos', 'Carretillas', 'Escaleras', 'Lonas', 'Bidones de agua', 'Garrafas de combustible', 'Generador', 'Focos', 'Alargaderas', 'Cinta de balizar', 'Conos', 'Cuerdas de uso general'] },
+  agua: { name: 'Agua', largo: 'Rescate acuático', icon: 'waves', esp: 'Res. Acuático', pasillos: [4],
     habitual: ['Chalecos de rescate', 'Cascos de aguas', 'Trajes de neopreno', 'Trajes secos', 'Bolsas de rescate (cuerda flotante)', 'Aletas', 'Embarcación neumática', 'Motor fueraborda', 'Remos', 'Tubo de rescate'] },
-  cuerdas: { name: 'Cuerdas', largo: 'Rescate terrestre', icon: 'rope', esp: 'Res. Terrestre',
+  cuerdas: { name: 'Cuerdas', largo: 'Rescate terrestre', icon: 'rope', esp: 'Res. Terrestre', pasillos: [5],
     habitual: ['Cuerdas semiestáticas', 'Cuerdas dinámicas', 'Arneses integrales', 'Cascos', 'Mosquetones', 'Descensores', 'Bloqueadores', 'Poleas', 'Anillos y cintas', 'Trípode', 'Camilla de rescate', 'Protectores de cuerda'] },
   rpas: { name: 'RPAS', largo: 'Drones', icon: 'drone', eq: 'rpas',
     habitual: ['Aeronave', 'Emisora', 'Baterías', 'Cargador', 'Hélices de repuesto', 'Tablet o pantalla', 'Maleta de transporte'] },
   sva: { name: 'SVA', largo: 'Equipo SVA', icon: 'cross', eq: 'sva',
     habitual: ['Mochila de SVA', 'Desfibrilador', 'Botella de oxígeno', 'Aspirador de secreciones', 'Collarines', 'Férulas', 'Tablero espinal', 'Pulsioxímetro'] },
-  moto: { name: 'Motosierras', largo: 'Equipo motosierrista', icon: 'saw', moto: true,
-    habitual: ['Motosierra', 'Espadas de repuesto', 'Cadenas de repuesto', 'Pantalón anticorte', 'Casco forestal', 'Guantes anticorte', 'Bidón combinado', 'Lima y afilador', 'Cuñas'] }
+  moto: { name: 'Motosierras', largo: 'Motosierras y desbrozadoras', icon: 'saw', moto: true, pasillos: [6],
+    habitual: ['Motosierra', 'Desbrozadora', 'Espadas de repuesto', 'Cadenas de repuesto', 'Pantalón anticorte', 'Casco forestal', 'Guantes anticorte', 'Bidón combinado', 'Lima y afilador', 'Cuñas'] }
 };
 // Apartados que ya tienen su icono propio en img/esp/<apartado>.webp (los demás usan el dibujo de línea)
 const ESP_ART = [];
-const MOTIVOS_AUSENCIA = ['Permiso', 'Baja médica', 'Curso', 'Comisión de servicio', 'Guardia o servicio', 'Asuntos propios', 'Otro'];
+const MOTIVOS_AUSENCIA = ['Permiso', 'Vacaciones', 'Baja médica', 'Curso', 'Comisión de servicio', 'Guardia o servicio', 'Asuntos propios', 'Otro'];
 const STATUS_TAG = { 'OPERATIVO': 'ok', 'REVISIÓN': 'warn', 'AVERIADO': 'bad' };
 // Huecos del contenedor, como en las hojas pegadas en él. Cada lateral: 4 columnas; en las dos del centro hay tres huecos
 // (el de arriba es compartido: «B3 y B6», «B13 y B16») y en las de los extremos, dos (arriba uno alto y abajo otro).

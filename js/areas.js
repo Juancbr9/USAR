@@ -18,7 +18,7 @@ const AREAS = {
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'recursos', 'personal', 'vehiculos', 'calendario', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS), 'help'];
+const MENU = ['avisos', 'recursos', 'personal', 'vehiculos', ...Object.keys(APARTADOS).filter(k => APARTADOS[k].comun), 'calendario', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS).filter(k => !APARTADOS[k].comun), 'help'];
 // Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
 // las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
 const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };

@@ -17,8 +17,8 @@ const matDueno = m => m.veh ? get('vehicles', m.veh)?.name || 'Vehículo' : APAR
 const matIr = m => m.veh ? `go('vehiculos'); vehicleView('${m.veh}')` : `setPref({ tab: '${m.ap}', aptab: 'material' }); scrollTo(0, 0)`;
 const duenoNombre = owner => matDueno(duenoDe(owner));
 const duenoHabitual = owner => duenoDe(owner).veh ? VEH_HABITUAL : APARTADOS[duenoDe(owner).ap].habitual;
-// Lo cambian quien tiene permiso de logística y, en un apartado, también su gente
-const matPuede = owner => puedeFlota() || (!duenoDe(owner).veh && apMiembros(duenoDe(owner).ap).some(o => o.id === me()?.id));
+// Lo rellena cualquiera del equipo: somos gente de confianza y así nos ayudamos (queda apuntado quién cambia cada cosa)
+const matPuede = owner => !!me();
 const matRevId = owner => (duenoDe(owner).veh ? 'vehrev-' : 'aprev-') + owner.slice(owner.indexOf(':') + 1);
 const matRevistas = owner => get('meta', matRevId(owner))?.value || [];
 // Al guardar o borrar el material de un vehículo se vuelve a su ficha (que es una ventana)
@@ -48,28 +48,40 @@ function matBloque(owner, vacio) {
 
 // pre: valores de partida de un material nuevo (p. ej. el hueco del pasillo desde el que se añade)
 function matForm(owner, id, pre = {}) {
-  if (!matPuede(owner)) return toast(`El material de ${duenoNombre(owner)} lo lleva ${duenoDe(owner).veh ? 'logística' : 'su gente y logística'}`, 'bad');
+  if (!matPuede(owner)) return;
   const d = duenoDe(owner), m = id ? get('matesp', id) : { status: 'OPERATIVO', qty: 1, ...pre }, units = d.veh ? get('vehicles', d.veh)?.units || [] : [];
-  const pas = d.ap ? apPasillo(d.ap) : null, enSitio = pas && colocado(d.ap, m);
+  // Pasillo: los del apartado; el desplegable de módulos y alturas llega hasta el lado más grande
+  const nums = d.ap ? apPasillos(d.ap) : [], enSitio = nums.length && colocado(d.ap, m), u = enSitio || (pre.pas && !id) ? ubic({ ap: d.ap, ...m }) : { pas: nums[0], lado: 'I', mod: 0, niv: 0 };
+  const tope = f => Math.max(...nums.flatMap(n => ['I', 'D'].map(l => pasLado(d.ap, n, l)[f])));
   openForm(id ? m.name : `Material de ${duenoNombre(owner)}`, [
     { k: 'name', label: 'Qué es', value: m.name || '', required: true, wide: true, placeholder: 'Ej.: ' + duenoHabitual(owner)[0] },
     { k: 'qty', label: 'Cuántos', type: 'number', value: m.qty || 1 },
     { k: 'status', label: 'Estado', value: m.status || 'OPERATIVO', options: Object.entries(AP_ESTADOS).map(([v, [l]]) => [v, l]) },
     ...(units.length > 1 ? [{ k: 'unit', label: 'Matrícula', value: m.unit || '', wide: true, options: [['', 'Todas las de este modelo'], ...units.map(u => [u.id, u.plate])] }] : []),
-    ...(pas ? [{ k: 'mod', label: 'Pasillo: módulo', value: enSitio ? +m.mod : 0, options: [[0, 'Sin colocar'], ...Array.from({ length: pas.mods }, (_, i) => [i + 1, 'Módulo ' + (i + 1)])] },
-      { k: 'niv', label: 'Pasillo: altura', value: enSitio ? +m.niv || 0 : 0, options: Array.from({ length: pas.baldas + 1 }, (_, n) => [n, nivNombre(n, pas.baldas)]) }] : []),
+    ...(nums.length ? [...(nums.length > 1 ? [{ k: 'pas', label: 'Pasillo', value: u.pas, options: nums.map(n => [n, 'Pasillo ' + n]) }] : []),
+      { k: 'lado', label: 'Lado del pasillo', value: u.lado, options: Object.entries(LADOS) },
+      { k: 'mod', label: 'Módulo', value: u.mod, options: [[0, 'Sin colocar'], ...Array.from({ length: tope('mods') }, (_, i) => [i + 1, 'Módulo ' + (i + 1)])] },
+      { k: 'niv', label: 'Altura', value: u.niv, options: Array.from({ length: tope('baldas') + 1 }, (_, n) => [n, nivNombre(n)]) }] : []),
     { k: 'place', label: d.veh ? 'Dónde va (cofre, cabina, techo…)' : 'Otro sitio o detalle', value: m.place || '', wide: true, placeholder: d.veh ? 'Ej.: Cofre lateral izquierdo' : 'Ej.: En la caja roja' },
     { k: 'holder', label: 'Asignado a (si lo tiene alguien a su cargo)', value: m.holder || '', wide: true, options: [['', 'Nadie: está en su sitio'], ...operators().sort(byName).map(o => [o.id, conEmpleo(o)])] },
     { k: 'review', label: 'Próxima revisión o caducidad', type: 'date', value: m.review || '' },
     { k: 'serial', label: 'N.º de serie', value: m.serial || '' },
     { k: 'notes', label: 'Notas', value: m.notes || '', wide: true }
-  ], v => { put('matesp', { ...m, id: m.id || uid('ME'), ...d, name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: v.unit || '', ...(pas ? { mod: +v.mod || 0, niv: +v.mod ? +v.niv || 0 : 0 } : {}), place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}), review: v.review || '', serial: v.serial || '', notes: v.notes || '' },
+  ], v => { put('matesp', { ...m, id: m.id || uid('ME'), ...d, name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: v.unit || '', ...(nums.length ? { pas: +v.pas || nums[0], lado: v.lado === 'D' ? 'D' : 'I', mod: +v.mod || 0, niv: +v.mod ? +v.niv || 0 : 0 } : {}), place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}), review: v.review || '', serial: v.serial || '', notes: v.notes || '' },
       id ? `${duenoNombre(owner)}: ${v.name} actualizado` : `${duenoNombre(owner)}: añadido ${v.name}`); matVuelve(owner); },
-  id ? `<button type="button" class="btn btn-bad span2" onclick="matBorrar('${owner}', '${id}')">${ic('trash')} Eliminar</button>` : '');
+  id ? `${m.holder === me()?.id ? `<button type="button" class="btn btn-g span2" onclick="matLlevar('${owner}', '${id}', false)">${ic('in')} Lo devuelvo a su sitio</button>`
+      : `<button type="button" class="btn btn-g span2" onclick="matLlevar('${owner}', '${id}', true)">${ic('out')} Me lo llevo yo</button>`}
+    <button type="button" class="btn btn-bad span2" onclick="matBorrar('${owner}', '${id}')">${ic('trash')} Eliminar</button>` : '');
 }
 function matBorrar(owner, id) {
   const m = get('matesp', id); if (!m || !confirm(`¿Eliminar «${m.name}»?`)) return;
   remove('matesp', id, `${matDueno(m) || 'Material'}: eliminado ${m.name}`); closeModal(); matVuelve(owner);
+}
+// Coger algo y devolverlo con un toque: queda a tu nombre (sale en tu ficha) hasta que lo devuelvas
+function matLlevar(owner, id, llevar) {
+  const m = get('matesp', id), yo = me(); if (!m || !yo) return;
+  put('matesp', { ...m, holder: llevar ? yo.id : '', held: llevar ? todayISO() : '' }, `${matDueno(m)}: ${m.name} ${llevar ? 'lo tiene ' + yo.name : 'devuelto por ' + yo.name}`);
+  closeModal(); toast(llevar ? `${m.name}: queda a tu nombre` : `${m.name}: devuelto`); matVuelve(owner);
 }
 // Para no empezar de cero: la lista habitual, que luego se ajusta (cantidades, sitio, lo que sobre)
 function matHabitual(owner) {
