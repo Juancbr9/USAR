@@ -36,12 +36,12 @@ with sync_playwright() as p:
     assert a.evaluate("document.documentElement.dataset.area") == 'log' and a.locator('.crumb').count() == 0
     # En el móvil no hay barra abajo: todo va por el menú de tres rayas
     assert not a.locator('#nav').is_visible() and a.locator('#drawer').is_hidden()
-    # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (Material)
+    # Menú por niveles: al abrirlo se ve desplegado solo el camino de la sección actual (USAR → Revisión)
     a.click('#menuBtn'); assert a.locator('#drawer').is_visible()
-    assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['Actividades', 'Material', 'Equipo', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
-    # Vehículos, Guía de campo y Apuntalamientos van sueltos, sin desplegar nada
+    assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['Actividades', 'USAR', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
+    # Personal y Vehículos (de toda la sección) van sueltos, sin desplegar nada; lo de USAR, dentro de su grupo
     tops = [t.split('\n')[0] for t in a.locator('#drawer .dr-item:not(.sub)').all_inner_texts()]
-    assert tops == ['Inicio', 'Vehículos', 'Guía de campo', 'Apuntalamientos'], tops
+    assert tops == ['Inicio', 'Personal', 'Vehículos'], tops
     assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 1 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
     assert a.locator('#drawer .dr-item:has-text("Calendario")').count() == 0, 'Actividades está plegada'
     a.click('#drawer .dr-group-head:has-text("Actividades")')
@@ -84,7 +84,7 @@ with sync_playwright() as p:
     b.on('pageerror', lambda e: problems.append(f'PC ERROR {e}')); b.on('dialog', lambda x: x.accept())
     b.goto(APP); b.wait_for_selector('#view > *')
     assert b.evaluate("getComputedStyle(document.getElementById('nav')).position") == 'fixed'
-    for g in ['Actividades', 'Material', 'Equipo', 'Ajustes']:
+    for g in ['Actividades', 'USAR', 'Ajustes']:
         assert b.locator(f'#nav .dr-group-head:has-text("{g}")').is_visible(), 'la barra lateral va por áreas desplegables'
     b.click('#nav .dr-group-head:has-text("Actividades")'); b.wait_for_timeout(150)
     assert b.locator('#nav .dr-item:has-text("Calendario")').is_visible(), 'al tocar un área se ven sus secciones'

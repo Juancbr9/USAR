@@ -174,7 +174,9 @@ async function doPin(form) {
   btn.disabled = true; loginMsg('');
   try {
     await Sync.pinSignIn(name, pin);
-    const o = opByName(name);
+    // En un móvil nuevo el personal de la sección aún no ha bajado: se descarga antes de buscar a la persona
+    let o = opByName(name);
+    if (!o) { loginMsg('Descargando los datos de la sección…'); await Sync.pull().catch(() => {}); o = opByName(name); loginMsg(''); }
     if (!o) { Sync.signOut(); return loginMsg(`${name} no está en el personal del equipo de este móvil.`); }
     await saveLlave(Sync.user, pin);
     prefs.loginPick = null;
@@ -253,7 +255,7 @@ async function bioAvailable() {
 async function bioRegister(o = me()) {
   try {
     const cred = await navigator.credentials.create({ publicKey: {
-      challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: 'USAR 242' },
+      challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: UNIDAD },
       user: { id: new TextEncoder().encode(o.id), name: o.name, displayName: o.name },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },

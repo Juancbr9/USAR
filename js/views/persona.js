@@ -1,5 +1,5 @@
 'use strict';
-// USAR 242 · Base de datos del personal: ficha de cada persona con foto, teléfono, documentos escaneados con caducidad,
+// SIER 242 · Base de datos del personal (la lista de la sección está en sier.js): ficha de cada persona con foto, teléfono, documentos escaneados con caducidad,
 // cualificaciones, EPI, historial de operaciones y datos médicos. Y la vista de Vencimientos de todo.
 
 const docsOf = op => list('docs').filter(d => d.op === op).sort((a, b) => (a.expires || '9999').localeCompare(b.expires || '9999'));
@@ -15,36 +15,6 @@ const maskNo = s => s && s.length > 4 ? '•••' + s.slice(-4) : (s || '');
 const openPerson = id => { setPref({ tab: 'personal', person: id, ptab: 'datos' }); scrollTo(0, 0); };
 const personPhoto = (o, cls = '') => o.photo ? `<img class="avatar-img ${cls}" data-img="op:${o.id}" alt="">` : avatar(o.name, cls);
 
-function viewPersonal() {
-  const o = prefs.person && get('operators', prefs.person);
-  if (o) return viewPerson(o);
-  const ops = operators(), cells = [...new Set(ops.map(x => x.cell || 'Sin célula'))];
-  const epiBad = op => list('epis').filter(e => e.holder === op && epiState(e).cls !== 'ok').length;
-  return `
-    <div class="panel">
-      <div class="between wrap-row sec-head"><div><h2>Personal</h2>
-        </div>
-        <div class="row"><button class="btn btn-a" onclick="newPersonForm()">${ic('plus')} Persona</button>
-          <button class="btn btn-g" onclick="printPersonCards()">${ic('printer')} Tarjetas QR</button></div></div>
-      <label class="lbl">Perfil de misión (reparte células y puestos de todos)
-        <select class="input" onchange="applyPreset(this.value)">${Object.entries(PRESETS).map(([k, [label]]) => `<option value="${k}" ${mission() === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label>
-    </div>
-    <div class="grid g3">${cells.map(cell => { const members = ops.filter(x => (x.cell || 'Sin célula') === cell); return `
-      <div class="panel">
-        <div class="between sec-head"><h3>${esc(cell)}</h3><span class="muted">${members.length}</span></div>
-        <div class="list pers-list">${members.map(p => { const issues = readinessIssues(p.id), eb = epiBad(p.id), n = issues.length + (eb ? 1 : 0); return `
-          <button class="item" onclick="openPerson('${p.id}')">
-            <div class="who-row">${personPhoto(p)}<div><b>${esc(p.name)}</b><small>${esc([p.role, ...(p.funcs || [])].filter(Boolean).join(' · '))}</small>
-              ${((d, x) => x ? `<small>${x}</small>` : '')(0, [docsOf(p.id).length ? docsOf(p.id).length + ' documentos' : '', eb ? `${eb} EPI por revisar` : ''].filter(Boolean).join(' · '))}</div></div>
-            <span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : n ? 'warn' : 'ok'}">${n ? n + (n === 1 ? ' aviso' : ' avisos') : 'Al día'}</span>
-          </button>`; }).join('')}</div>
-      </div>`; }).join('')}</div>
-    ${(() => { const gone = allOperators().filter(o => o.active === false); return gone.length ? `
-    <details class="panel"><summary class="sec-title" style="cursor:pointer">De baja (${gone.length})</summary>
-      <div class="list" style="margin-top:10px">${gone.map(o => `<button class="item" onclick="openPerson('${o.id}')"><div class="who-row">${avatar(o.name, 'sm')}<div><b>${esc(o.name)}</b><small>${esc(o.role || '')}</small></div></div><span class="tag neutral">Baja</span></button>`).join('')}</div>
-    </details>` : ''; })()}`;
-}
-
 function viewPerson(o) {
   const r = readiness(o.id), md = medical(o.id), docs = docsOf(o.id), issues = readinessIssues(o.id);
   const epis = list('epis').filter(e => e.holder === o.id), epiBad = epis.filter(e => epiState(e).cls !== 'ok');
@@ -58,17 +28,20 @@ function viewPerson(o) {
   return `
     <button class="link" onclick="setPref({ person: null })">${ic('back', 'i-sm')} Todo el personal</button>
     <div class="panel carne">
-      <div class="carne-top"><span class="carne-unit">USAR 242 · ${esc(o.cell || 'Sin célula')}</span><span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : issues.length ? 'warn' : 'ok'}">${issues.length ? issues.length + (issues.length === 1 ? ' aviso' : ' avisos') : 'Al día'}</span></div>
+      <div class="carne-top"><span class="carne-unit">${UNIDAD} · ${esc(o.peloton || o.cell || 'Sin pelotón')}</span><span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : issues.length ? 'warn' : 'ok'}">${issues.length ? issues.length + (issues.length === 1 ? ' aviso' : ' avisos') : 'Al día'}</span></div>
       <div class="person-head">
         ${o.photo ? `<img class="person-photo" data-img="op:${o.id}" alt="">` : `<button class="add-photo" onclick="personForm('${o.id}')" aria-label="Poner foto de ${esc(o.name)}"><span class="avatar xl">${esc(initials(o.name))}</span><span class="cam">${ic('camera', 'i-sm')}</span></button>`}
-        <div class="grow"><h2>${esc(o.name)}${o.active === false ? ' <span class="tag neutral">De baja</span>' : ''}</h2><p class="muted">${esc(r.fullName || '')}</p><p class="carne-role">${esc(o.role || 'Sin puesto')}</p>
-          ${(o.funcs || []).length ? `<div class="row tags" style="margin-top:6px">${o.funcs.map(f => `<span class="tag info">${esc(f)}</span>`).join('')}</div>` : ''}</div>
+        <div class="grow"><h2>${o.empleo ? `<span class="pers-emp">${esc(o.empleo)}</span> ` : ''}${esc(o.name)}${o.active === false ? ' <span class="tag neutral">De baja</span>' : ''}</h2><p class="muted">${esc(r.fullName || '')}</p>
+          <p class="carne-role">${esc(opEsp(o) === 'USAR' ? o.role || 'Sin puesto' : espLabel(o))}</p>
+          ${[opEsp(o) === 'USAR' ? 'USAR' : '', ...opEquipos(o), ...(o.funcs || [])].filter(Boolean).length ? `<div class="row tags" style="margin-top:6px">${[opEsp(o) === 'USAR' ? 'USAR' : '', ...opEquipos(o), ...(o.funcs || [])].filter(Boolean).map(f => `<span class="tag info">${esc(f)}</span>`).join('')}</div>` : ''}</div>
         ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}
       </div>
+      ${esAusente(o) ? `<div class="callout bad" style="margin-top:12px"><p>${ic('alert', 'i-sm')} Ausente: ${esc(ausTxt(o))}${o.aus.nota ? ' · ' + esc(o.aus.nota) : ''}</p></div>` : ''}
       ${issues.length ? `<div class="stack" style="margin-top:12px">${issues.map(([cls, t]) => `<span class="tag ${cls}">${esc(t)}</span>`).join(' ')}</div>` : ''}
       <div class="row carne-acts" style="margin-top:12px">
         ${o.phone ? `<a class="btn btn-a" href="tel:${esc(o.phone.replace(/\s/g, ''))}">${ic('phone')} Llamar</a>
           <a class="btn btn-g" target="_blank" rel="noopener" href="https://wa.me/${esc(o.phone.replace(/\D/g, '').replace(/^(?!34)(\d{9})$/, '34$1'))}">${ic('chat')} WhatsApp</a>` : ''}
+        ${esAusente(o) ? `<button class="btn btn-g" onclick="marcarPresente('${o.id}')">${ic('check')} Marcar presente</button>` : `<button class="btn btn-g" onclick="ausenciaForm('${o.id}')">${ic('out')} Marcar ausente</button>`}
         <button class="btn btn-g" onclick="personForm('${o.id}')">${ic('pencil')} Editar datos</button>
         <button class="btn btn-g" onclick="readinessForm('${o.id}')">${ic('flag')} Pasaporte y emergencia</button>
       </div>
@@ -80,7 +53,8 @@ function viewPerson(o) {
     ${tab === 'datos' ? `<div class="grid g2">
       <div class="panel">
         <h3 class="sec-title">${ic('shield')} Datos personales</h3>
-        <dl class="dl">${f('Teléfono', esc(o.phone))}${f('Correo', esc(o.email))}${f('Nacimiento', r.birth ? fmtDate(r.birth) : '')}
+        <dl class="dl">${f('Empleo', esc(o.empleo))}${f('Pelotón', esc(o.peloton))}${f('Especialidad', esc(espLabel(o)))}${f('Equipos', esc((o.eq || []).map(k => EQUIPOS[k]).join(', ')))}${f('Motosierrista', esc(motoTxt(o.moto)))}
+          ${f('Teléfono', esc(o.phone))}${f('Correo', esc(o.email))}${f('Nacimiento', r.birth ? fmtDate(r.birth) : '')}
           ${f('Emergencias', esc([r.emergencyName, r.emergencyPhone].filter(Boolean).join(' · ')))}
           ${f('Grupo sanguíneo', esc(md.blood))}${f('Alergias', esc(md.allergies))}</dl>
         <p class="muted">Los datos de salud los ve todo el personal del equipo; no salen por WhatsApp.</p>
@@ -125,13 +99,25 @@ function viewPerson(o) {
       </div>` : ''}`;
 }
 
-// Datos de la persona en un solo formulario: nombre, célula, puesto, contacto y foto (y dar de baja o eliminar)
+// Campos de la organización de la sección, comunes al alta y a la ficha
+const sierFields = (o = {}) => [
+  { k: 'empleo', label: 'Empleo', value: o.empleo || '', options: [['', '—'], ...EMPLEOS.map(e => [e, e])] },
+  { k: 'peloton', label: 'Pelotón', value: o.peloton || '', options: [['', '—'], ...PELOTONES.map(e => [e, e])] },
+  { k: 'esp', label: 'Especialidad', value: o.id ? opEsp(o) : (o.esp ?? ''), options: [['', ESP_NINGUNA], ...ESPECIALIDADES.map(e => [e, e])], wide: true },
+  { k: 'eq', label: 'Equipos', type: 'checks', value: o.eq || [], options: Object.entries(EQUIPOS).filter(([k]) => k !== 'moto'), wide: true },
+  { k: 'motoTipo', label: 'Motosierrista', value: o.moto?.tipo || '', options: [['', 'No'], ['T', 'Titular'], ['S', 'Suplente']] },
+  { k: 'motoEq', label: 'Equipo de motosierra (nº)', value: o.moto?.eq || '', placeholder: 'Ej.: 6…' },
+  { k: 'motoAut', label: 'AUT. (nº)', value: o.moto?.aut || '', placeholder: 'Ej.: 13…' }];
+const sierValues = v => ({ empleo: v.empleo || '', peloton: v.peloton || '', esp: v.esp || '', eq: v.eq || [], moto: v.motoTipo ? { tipo: v.motoTipo, eq: v.motoEq || '', aut: v.motoAut || '' } : null });
+// Datos de la persona en un solo formulario: nombre, organización, puesto en USAR, contacto y foto (y dar de baja o eliminar)
 function personForm(op) {
   const o = get('operators', op), cells = [...new Set(allOperators().map(x => x.cell).filter(Boolean))];
   openForm(`Datos de ${o.name}`, [
-    { k: 'name', label: 'Nombre', value: o.name, required: true, wide: true },
-    { k: 'cell', label: 'Célula', value: o.cell, list: cells, required: true },
-    { k: 'role', label: 'Puesto', value: o.role, required: true },
+    { k: 'name', label: 'Nombre en la app (con él entra)', value: o.name, required: true, wide: true },
+    { k: 'fullName', label: 'Apellidos y nombre', value: readiness(op).fullName || '', wide: true },
+    ...sierFields(o),
+    { k: 'cell', label: 'Célula (USAR)', value: o.cell, list: cells },
+    { k: 'role', label: 'Puesto (USAR)', value: o.role },
     { k: 'funcs', label: 'Otras funciones (puede tener varias)', type: 'checks', catalog: 'opFuncs', value: o.funcs || [], wide: true },
     { k: 'phone', label: 'Teléfono', type: 'tel', value: o.phone, placeholder: '600 000 000' },
     { k: 'email', label: 'Correo', type: 'email', value: o.email },
@@ -143,8 +129,9 @@ function personForm(op) {
     if (v.name !== o.name && allOperators().some(x => x.id !== o.id && x.name === v.name)) return toast('Ya hay otra persona con ese nombre', 'bad');
     if (v.photo) await Img.put(`op:${op}`, v.photo);
     if (prefs.activeOperator === o.name) { prefs.activeOperator = v.name; writeJSON(KEY.prefs, prefs); }
-    const { photo, logi, ...rest } = v, logistica = logi ? logi.includes('logistica') : !!o.logistica;
-    put('operators', { ...o, ...rest, logistica, photo: photo ? true : o.photo || false },
+    const { photo, logi, fullName, motoTipo, motoEq, motoAut, ...rest } = v, logistica = logi ? logi.includes('logistica') : !!o.logistica;
+    if ((fullName || '') !== (readiness(op).fullName || '')) stamp('readiness', { ...readiness(op), id: op, fullName: fullName || '' });
+    put('operators', { ...o, ...rest, ...sierValues(v), logistica, photo: photo ? true : o.photo || false },
       logistica !== !!o.logistica ? `${v.name}: ${logistica ? 'con' : 'sin'} permiso de logística` : `Datos de ${v.name} actualizados`);
   }, `<div class="row span2" style="gap:8px">
     ${o.active === false ? `<button type="button" class="btn btn-g" onclick="setActive('${o.id}', true)">${ic('check')} Volver a dar de alta</button>`

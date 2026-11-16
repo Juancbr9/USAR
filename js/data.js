@@ -74,7 +74,7 @@ const OLD_BASE_IDS = ['G-101', 'G-102', 'G-103', 'G-104', 'G-105', 'G-201', 'G-2
 function defaultData() {
   const ops = TEAM.map((name, i) => {
     const [cell, role] = PRESETS.estandar[1][i].split('|');
-    return { id: opId(i), name, cell, role };
+    return { id: opId(i), name, cell, role, esp: 'USAR' };
   });
   return {
     operators: ops,
@@ -232,6 +232,13 @@ const get = (kind, id) => { const r = db[kind][id]; return r && !r._del ? r : nu
 const allOperators = () => list('operators').sort((a, b) => a.id.localeCompare(b.id));
 const operators = () => allOperators().filter(o => o.active !== false);
 const opName = id => get('operators', id)?.name || 'Reserva almacén';
+// Especialidad de cada persona; las fichas de antes de la SIER (sin el dato) son del equipo USAR
+const opEsp = o => o?.esp ?? 'USAR';
+const usarOps = () => operators().filter(o => opEsp(o) === 'USAR');
+const esAusente = o => !!o?.aus && (!o.aus.hasta || o.aus.hasta >= todayISO());
+// Orden de la hoja de la sección: por pelotón y, dentro, por empleo
+const ordenSier = (a, b) => (PELOTONES.indexOf(a.peloton || '') + 1 || 99) - (PELOTONES.indexOf(b.peloton || '') + 1 || 99)
+  || (EMPLEOS.indexOf(a.empleo || '') + 1 || 99) - (EMPLEOS.indexOf(b.empleo || '') + 1 || 99) || a.name.localeCompare(b.name, 'es');
 const mission = () => get('meta', 'mission')?.value || 'estandar';
 // Huecos del contenedor (ver HUECOS en config.js); 0 = sin ubicar
 const DOOR_IDS = HUECOS.map(h => h.id).sort((a, b) => a - b);

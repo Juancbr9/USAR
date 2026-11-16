@@ -1,5 +1,5 @@
 'use strict';
-// USAR 242 · Perfiles de misión y alta, baja y borrado de personal
+// SIER 242 · Perfiles de misión del equipo USAR y alta, baja y borrado de personal
 
 function operatorForm(id) {
   if (!id) return newPersonForm();
@@ -9,7 +9,8 @@ function operatorForm(id) {
 function applyPreset(key) {
   const slots = PRESETS[key][1];
   stamp('meta', { id: 'mission', value: key });
-  putMany('operators', operators().map((o, i) => {
+  // Los perfiles de misión son del equipo USAR: el resto de la sección conserva su célula y su puesto
+  putMany('operators', usarOps().map((o, i) => {
     if (!slots[i]) return o;
     const [cell, role] = slots[i].split('|');
     return { ...o, cell, role };
@@ -20,16 +21,22 @@ function applyPreset(key) {
 function newPersonForm() {
   const cells = [...new Set(allOperators().map(o => o.cell).filter(Boolean))];
   openForm('Nueva persona', [
-    { k: 'name', label: 'Nombre (como se le conoce en el equipo)', required: true, wide: true, placeholder: 'Ej: PÉREZ' },
-    { k: 'cell', label: 'Célula', list: cells, wide: true, placeholder: 'Ej: Corte y Penetración' },
-    { k: 'role', label: 'Puesto', wide: true, placeholder: 'Ej: Rescatador' },
-    { k: 'phone', label: 'Teléfono', type: 'tel', placeholder: '600 000 000' }
+    { k: 'name', label: 'Nombre en la app (como se le conoce; con él entra)', required: true, wide: true, placeholder: 'Ej.: PÉREZ…' },
+    { k: 'fullName', label: 'Apellidos y nombre', wide: true, placeholder: 'Ej.: PÉREZ LÓPEZ, JUAN…' },
+    // Desde «Puestos USAR» (o mientras no haya datos de la sección) lo normal es dar de alta a alguien de USAR
+    ...sierFields({ esp: (PVIEWS.some(x => x[0] === prefs.pview) ? prefs.pview : operators().some(x => x.peloton) ? 'peloton' : 'puestos') === 'puestos' ? 'USAR' : '' }),
+    { k: 'cell', label: 'Célula (USAR)', list: cells, placeholder: 'Ej.: Corte y Penetración…' },
+    { k: 'role', label: 'Puesto (USAR)', placeholder: 'Ej.: Rescatador…' },
+    { k: 'phone', label: 'Teléfono', type: 'tel', placeholder: '600 000 000…' }
   ], v => {
     const name = v.name.trim().toUpperCase();
     if (allOperators().some(o => o.name === name)) return toast('Ya hay una persona con ese nombre', 'bad');
-    const o = { id: uid('OP'), name, cell: v.cell || 'Sin célula', role: v.role || 'Rescatador', phone: v.phone || '' };
+    const usar = v.esp === 'USAR';
+    const o = { id: uid('OP'), name, cell: v.cell || (usar ? 'Sin célula' : ''), role: v.role || (usar ? 'Rescatador' : ''), phone: v.phone || '', ...sierValues(v) };
     stamp('operators', o);
-    Object.keys(EPI_TYPES).forEach(type => stamp('epis', newEpi(type, o.id)));
+    if (v.fullName) stamp('readiness', { id: o.id, fullName: v.fullName });
+    // El EPI (casco, protectores y mono) es del equipo USAR
+    if (usar) Object.keys(EPI_TYPES).forEach(type => stamp('epis', newEpi(type, o.id)));
     addLog(`Alta de ${name} en la unidad`); commit();
     toast(`${name} añadido a la unidad`);
     if (prefs.tab === 'personal') setPref({ person: o.id });

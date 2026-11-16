@@ -1,9 +1,17 @@
 'use strict';
-// USAR 242 · Configuración del equipo: personas, puertas, EPI y perfiles de misión
+// SIER 242 · Configuración de la sección y del equipo USAR: organización, puertas, EPI y perfiles de misión
 
 /* ==================== CONFIGURACIÓN ==================== */
 const TEAM = ['GRANADOS', 'CABRERA', 'IBAÑEZ', 'BRAYAN', 'AGUIAR', 'DORTA', 'CRISTOFER',
               'RODRI', 'AREVALO', 'NUÑEZ', 'LENIS', 'FERNANDEZ', 'MANOLO'];
+// Organización de la SIER 242 (sin datos personales: el personal está solo en la base de datos del equipo)
+const UNIDAD = 'SIER 242';
+const PELOTONES = ['PLMSecc', 'PIEN 1', 'PIEN 2'];
+const ESPECIALIDADES = ['USAR', 'Res. Terrestre', 'Res. Acuático'];
+const EMPLEOS = ['TTE', 'STTE', 'BG', 'SGT 1º', 'SGT', 'CBO 1º', 'CBO', 'SDO'];   // de más a menos antigüedad
+// Equipos transversales: una persona puede estar en varios, además de su especialidad
+const EQUIPOS = { rpas: 'RPAS', sva: 'SVA', moto: 'Motosierristas' };
+const MOTIVOS_AUSENCIA = ['Permiso', 'Baja médica', 'Curso', 'Comisión de servicio', 'Guardia o servicio', 'Asuntos propios', 'Otro'];
 const STATUS_TAG = { 'OPERATIVO': 'ok', 'REVISIÓN': 'warn', 'AVERIADO': 'bad' };
 // Huecos del contenedor, como en las hojas pegadas en él. Cada lateral: 4 columnas; en las dos del centro hay tres huecos
 // (el de arriba es compartido: «B3 y B6», «B13 y B16») y en las de los extremos, dos (arriba uno alto y abajo otro).
@@ -60,7 +68,7 @@ const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections'
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento
 const MANT_PASAN = [];   // quien entra también durante el mantenimiento (ADMIN lo elige en Ajustes)
-const MANT_MSG = 'USAR 242 EN FASE DE MANTENIMIENTO';
+const MANT_MSG = 'SIER 242 EN FASE DE MANTENIMIENTO';
 // Base de datos compartida del equipo (Supabase, modo seguro). Va integrada en la app: nadie tiene que configurarla,
 // cada persona solo entra con su correo (dado de alta antes por un jefe en Ajustes → Miembros y permisos).
 const SUPA = { url: 'https://lxjkpgdvhzjwkmxnllqp.supabase.co', key: 'sb_publishable_boxlf-dFI3dd-tdSMd3SJg_otPOwFCq' };

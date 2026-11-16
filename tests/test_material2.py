@@ -22,10 +22,10 @@ with sync_playwright() as p:
     a.goto(APP); a.wait_for_selector('#view > *'); a.evaluate("window.print = () => {}")
     save = lambda: (a.click('#modalForm button:has-text("Guardar")'), a.wait_for_timeout(400))
 
-    # ---------- Menú: Material con sus subopciones ----------
-    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.sub').count() == 0, 'Material empieza plegado'
-    a.click('#drawer .dr-group-head:has-text("Material")'); a.wait_for_timeout(100)
-    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub').all_inner_texts()] == ['Almacén', 'Fuera', 'Revisión', 'Revista']
+    # ---------- Menú: el material está dentro de USAR, con sus subopciones ----------
+    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.sub').count() == 0, 'USAR empieza plegado'
+    a.click('#drawer .dr-group-head:has-text("USAR")'); a.wait_for_timeout(100)
+    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub').all_inner_texts()][:4] == ['Almacén', 'Fuera', 'Revisión', 'Revista']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
     # Contenedor y almacén: arriba lo que se arrastra (contenedor, pasillo, armarios, escalón) y el fungible al final, plegado
     a.click('#drawer .dr-item:has-text("Almacén")'); a.wait_for_timeout(150)

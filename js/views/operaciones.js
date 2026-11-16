@@ -470,7 +470,7 @@ function deleteMission(mid) {
 function missionText(m) {
   const opn = id => get('operators', id)?.name || '—';
   const ex = m.type === 'ejercicio';
-  const L = waHead(ex ? '🏋️' : '🚨', `USAR 242 · ${ex ? 'EJERCICIO' : 'INTERVENCIÓN'}`, m.title);
+  const L = waHead(ex ? '🏋️' : '🚨', `${UNIDAD} · ${ex ? 'EJERCICIO' : 'INTERVENCIÓN'}`, m.title);
   L.push(`📅 *Fecha:* ${fmtDT(m.date)}`);
   if (m.location) L.push(`📍 *Lugar:* ${m.location}`, `🗺️ ${mapsUrl(m.location)}`);
   if (m.meeting) L.push(`🤝 *Reunión:* ${m.meeting}`);
@@ -515,7 +515,7 @@ function printMission(mid) {
   const diary = list('mlog').filter(e => e.mission === mid).sort((a, b) => a.ts - b.ts);
   const pre = t => `<p style="white-space:pre-wrap">${esc(t) || '—'}</p>`;
   $('print').innerHTML = `
-    <h1>USAR 242 · ${m.type === 'ejercicio' ? 'Ejercicio' : 'Intervención'}: ${esc(m.title)}</h1>
+    <h1>${UNIDAD} · ${m.type === 'ejercicio' ? 'Ejercicio' : 'Intervención'}: ${esc(m.title)}</h1>
     <p>${fmtDT(m.date)} · ${esc(m.location || 'Sin ubicación')} · Reunión: ${esc(m.meeting || '—')} · Jefe: ${opn(m.chief)} · Radio: ${esc(m.channel || '—')}</p>
     ${m.objective ? pre(m.objective) : ''}
     <h2>Personal y puestos</h2>

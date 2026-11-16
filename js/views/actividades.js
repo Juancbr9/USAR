@@ -218,7 +218,7 @@ function actDayForm(id, dayId) {
 /* ---------- Mensaje para el grupo ---------- */
 function actText(x) {
   const man = x.type === 'maniobra', opn = id => get('operators', id)?.name || '—';
-  const L = waHead(man ? '⛺' : '🚚', `USAR 242 · ${man ? 'MANIOBRA' : 'CONVOY'}`, x.title);
+  const L = waHead(man ? '⛺' : '🚚', `${UNIDAD} · ${man ? 'MANIOBRA' : 'CONVOY'}`, x.title);
   if (man) L.push(`📅 *Cuándo:* ${actWhen(x)}`, ...(x.place ? [`📍 *Lugar:* ${x.place}`] : []));
   else L.push(`🛣️ *Ruta:* ${actRoute(x)}`, `➡️ *Ida:* ${fmtDT(x.start)}`, `⬅️ *Vuelta:* ${x.round ? (x.back ? fmtDT(x.back) : 'sin fecha') : 'solo ida'}`);
   if (x.meeting) L.push(`🤝 *Reunión:* ${x.meeting}`);

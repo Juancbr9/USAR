@@ -69,6 +69,15 @@ with sync_playwright() as p:
     # Quitar el acceso: ese móvil deja de ver los datos del servidor
     a.click('#modal .item:has-text("DORTA") button:has-text("Quitar")'); a.wait_for_timeout(500)
     assert a.locator('#modal .item:has-text("DORTA")').count() == 0
+    # Importar personal de la sección siendo jefe: a los nuevos se les da acceso con el PIN 0000 (y entran con él)
+    a.evaluate("closeModal(); go('personal')"); a.wait_for_timeout(150)
+    a.click('#view button:has-text("Importar")'); a.wait_for_selector('#impTxt')
+    assert a.locator('#impPin').is_checked()
+    a.fill('#impTxt', 'NUEVOPIN; CBO; NUEVO PIN, PRUEBA; PIEN 1; Res. Terrestre; 600000009;'); a.wait_for_timeout(100); a.click('#impGo'); a.wait_for_timeout(900)
+    assert a.evaluate("Sync.people().then(ps => ps.some(p => p.name === 'NUEVOPIN' && p.role === 'miembro'))"), 'el importado no tiene PIN'
+    n = br.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, autologin=False, supa=MOCK).new_page()
+    n.goto(APP); nombre(n, 'NUEVOPIN'); pin(n, '0000'); n.wait_for_selector('.topbar:visible')
+    assert n.evaluate("me()?.name") == 'NUEVOPIN', 'en un móvil nuevo, la persona importada entra tras descargar el personal'
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

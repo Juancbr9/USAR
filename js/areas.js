@@ -1,12 +1,11 @@
 'use strict';
-// USAR 242 · Orden de la app: cada cosa en un solo sitio, con el color de su área para saber siempre dónde estás.
+// SIER 242 · Orden de la app: cada cosa en un solo sitio, con el color de su área para saber siempre dónde estás.
 //   Inicio                → resumen del día, avisos y vencimientos
 //   Actividades (rojo)    → una sola lista (intervenciones, ejercicios, maniobras y convoyes) y el calendario
-//   Material (azul)       → almacén, fuera, revisión y revista
+//   Personal (petróleo)   → toda la sección: pelotones, especialidades, equipos y presentes
 //   Vehículos (azul)      → flota, ITV y revista de salida
-//   Equipo (petróleo)     → personal y EPI
-//   Guía de campo (gris)  → consulta en la zona
-//   Apuntalamientos       → todos los tipos (dibujo, piezas, datos y montaje) y la calculadora de arcos
+//   USAR                  → lo propio del equipo USAR: material (almacén, fuera, revisión y revista), EPI,
+//                           guía de campo y apuntalamientos
 //   Ajustes (gris)        → ajustes, listas y manual de uso
 // Cuando hay una operación en curso, una barra fija lo recuerda en todas las pantallas.
 
@@ -14,11 +13,14 @@ const AREAS = {
   home: { name: 'Inicio', icon: 'home', desc: 'Resumen del día, avisos y vencimientos' },
   ops: { name: 'Actividades', icon: 'radio', desc: 'Intervenciones, ejercicios, maniobras, convoyes y calendario', hub: 'operaciones' },
   log: { name: 'Material', icon: 'case', desc: 'Almacén, lo que está fuera, revisión y revista', hub: 'logistica' },
-  team: { name: 'Equipo', icon: 'users', desc: 'Personas, documentación, formación y EPI', hub: 'equipo' },
+  team: { name: 'Personal', icon: 'users', desc: 'Toda la sección: pelotones, especialidades, equipos y EPI', hub: 'equipo' },
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'ops', 'log', 'vehiculos', 'team', 'guia', 'apuntalamientos', 'help'];
+const MENU = ['avisos', 'ops', 'personal', 'vehiculos', 'usar', 'help'];
+// Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
+// las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
+const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };
 // [id, icono, título, descripción, área, grupo, oculta (no sale en el menú: se llega desde otra pantalla)]
 const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
@@ -41,7 +43,7 @@ const SECTIONS = [
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],
   ['entregas', 'out', 'Entregas con firma', 'Material prestado a personal de fuera, con firma', 'log', 'mat', true],
   ['vehiculos', 'truck', 'Vehículos', 'Flota, ITV y revista de salida', 'log'],
-  ['personal', 'users', 'Personal', 'Ficha de cada persona: puesto, foto, documentos y EPI', 'team'],
+  ['personal', 'users', 'Personal', 'Toda la sección: pelotones, especialidades, equipos, presentes y la ficha de cada persona', 'team'],
   ['epi', 'hardhat', 'EPI', 'Qué lleva cada uno y la reserva', 'team'],
   ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help'],
   ['apuntalamientos', 'wrench', 'Apuntalamientos', 'Todos los tipos de los temas de la UME: dibujo, piezas, datos y montaje', 'help'],
@@ -89,7 +91,7 @@ const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];
 function almacenGo(id, smooth) {
   almUnfold(id); document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
 // Ya no hay franja «Área › Sección»: el color de la cabecera y el menú dicen dónde estás
-const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || 'USAR 242')}</h1>`;
+const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || UNIDAD)}</h1>`;
 
 /* ---------- Vehículos (antes dentro de Operaciones) ---------- */
 // Aviso en la tarjeta del modelo si alguna de sus matrículas tiene la ITV caducada o en los próximos 30 días
