@@ -35,24 +35,26 @@ class H(BaseHTTPRequestHandler):
         return a[len('Bearer tok:'):] if a.startswith('Bearer tok:anon:') else None
     def rpc(self, fn, b):
         email, role = self.who(); uid = self.uid()
-        if fn == 'usar_nombres': return [{'name': n} for n in sorted(pins)]
+        if fn == 'usar_nombres': return []   # ya no se enseña la lista de nombres
         if fn == 'usar_entrar':
             if not uid: return {'error': 'Sin sesión'}
-            n = str(b.get('p_name', '')).strip().upper(); p = pins.get(n)
-            if not p: return {'error': 'Ese nombre no tiene PIN: pide a un jefe que te lo ponga'}
+            q = str(b.get('p_name', '')).strip(); n = q.upper() if q.upper() in pins else next((k for k, v in pins.items() if v.get('usuario') == q), '')
+            p = pins.get(n)   # el usuario es el nombre o las cifras del móvil; el mismo aviso si no existe que si la contraseña no es
+            if not p: return {'error': 'Usuario o contraseña incorrectos'}
             if p['fails'] >= 5: return {'error': 'Demasiados intentos. Espera 5 min o pide a un jefe un PIN nuevo'}
-            if p['pin'] != b.get('p_pin'): p['fails'] += 1; return {'error': 'PIN incorrecto'}
-            p['fails'] = 0; sesiones[uid] = n; return {'name': n, 'role': p['role']}
+            if p['pin'] != b.get('p_pin'): p['fails'] += 1; return {'error': 'Usuario o contraseña incorrectos'}
+            p['fails'] = 0; sesiones[uid] = n; return {'name': n, 'role': p['role'], 'cambiar': bool(p.get('cambiar'))}
         if fn == 'usar_salir': sesiones.pop(uid, None); return None
         if fn == 'usar_cambiar_mi_pin':
             p = pins.get(sesiones.get(uid))
             if not p: return {'error': 'Entra con tu nombre y PIN'}
             if p['pin'] != b.get('p_old'): return {'error': 'El PIN actual no es correcto'}
-            p['pin'] = b.get('p_new'); return {'ok': True}
+            p['pin'] = b.get('p_new'); p['cambiar'] = False; return {'ok': True}
         if role != 'jefe': return [] if fn == 'usar_personas' else {'error': 'Solo un jefe'}
         if fn == 'usar_personas': return [{'name': n, 'role': p['role'], 'bloqueado': p['fails'] >= 5} for n, p in sorted(pins.items())]
         if fn == 'usar_poner_pin':
-            pins[b['p_name'].strip().upper()] = {'role': b['p_role'], 'pin': b['p_pin'], 'fails': 0}; return {'ok': True}
+            n = b['p_name'].strip().upper()   # un PIN que pone un jefe es de partida; el usuario de la persona no cambia
+            pins[n] = {'role': b['p_role'], 'pin': b['p_pin'], 'fails': 0, 'usuario': pins.get(n, {}).get('usuario', ''), 'cambiar': True}; return {'ok': True}
         if fn == 'usar_cambiar_permiso': pins[b['p_name'].strip().upper()]['role'] = b['p_role']; return {'ok': True}
         if fn == 'usar_quitar':
             n = b['p_name'].strip().upper(); pins.pop(n, None)
@@ -75,7 +77,7 @@ class H(BaseHTTPRequestHandler):
         if u.path == '/_secure': SECURE[0] = True; return self.reply(200, {})
         if u.path == '/_abierto': ABIERTO[0] = True; return self.reply(200, {})
         if u.path == '/_pin':   # alta directa de un PIN (para preparar las pruebas)
-            pins[q['name'][0].upper()] = {'role': q.get('role', ['miembro'])[0], 'pin': q['pin'][0], 'fails': 0}; return self.reply(200, {})
+            pins[q['name'][0].upper()] = {'role': q.get('role', ['miembro'])[0], 'pin': q['pin'][0], 'fails': 0, 'usuario': q.get('usuario', [''])[0], 'cambiar': q.get('cambiar', [''])[0] == '1'}; return self.reply(200, {})
         if self.bad_jwt(): return
         if u.path.endswith('/usar_members'):
             f = q.get('email', [None])[0]
