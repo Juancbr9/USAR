@@ -149,6 +149,10 @@ create table if not exists private.usar_sesiones (
   name       text not null references private.usar_pins (name) on update cascade on delete cascade,
   created_at timestamptz not null default now()
 );
+-- Entrada con usuario y contraseña, sin lista de nombres: el «usuario» de cada persona son las últimas cifras de su móvil
+-- (también vale su nombre). «cambiar»: la contraseña es la de partida (la que se le dijo) y debe poner una propia al entrar.
+alter table private.usar_pins add column if not exists usuario text unique check (usuario ~ '^[0-9]{4,9}$');
+alter table private.usar_pins add column if not exists cambiar boolean not null default false;
 alter table private.usar_pins enable row level security;       -- solo se usan a través de las funciones de abajo
 alter table private.usar_sesiones enable row level security;
 revoke all on private.usar_pins, private.usar_sesiones from public, anon, authenticated;
@@ -166,17 +170,18 @@ grant execute on function private.usar_role() to authenticated;
 -- Nombres que pueden entrar (para la lista de la pantalla de entrada; solo los nombres)
 create or replace function public.usar_nombres() returns table (name text)
 language sql stable security definer set search_path = '' as $$
-  select p.name from private.usar_pins p order by p.name
+  select p.name from private.usar_pins p where false   -- ya no se enseña la lista de nombres (queda para las versiones antiguas de la app)
 $$;
 
--- Entrar con nombre y PIN: si es correcto, este móvil (su usuario invitado) queda con ese nombre y su rol
+-- Entrar con usuario (el nombre o las cifras del móvil) y contraseña: si es correcto, este móvil (su usuario invitado)
+-- queda con el nombre de esa persona y su rol. El mismo aviso si no existe que si la contraseña no es: no da pistas.
 create or replace function public.usar_entrar(p_name text, p_pin text) returns json
 language plpgsql security definer set search_path = '' as $$
 declare r private.usar_pins;
 begin
   if (select auth.uid()) is null then return json_build_object('error', 'Sin sesión'); end if;
-  select * into r from private.usar_pins where name = upper(trim(p_name)) for update;
-  if not found then return json_build_object('error', 'Ese nombre no tiene PIN: pide a un jefe que te lo ponga'); end if;
+  select * into r from private.usar_pins where name = upper(trim(p_name)) or usuario = trim(p_name) order by (name = upper(trim(p_name))) desc limit 1 for update;
+  if not found then return json_build_object('error', 'Usuario o contraseña incorrectos'); end if;
   if r.locked_until > now() then
     return json_build_object('error', 'Demasiados intentos. Espera ' || ceil(extract(epoch from r.locked_until - now()) / 60) || ' min o pide a un jefe un PIN nuevo');
   end if;
@@ -184,12 +189,12 @@ begin
     update private.usar_pins set fails = fails + 1,
       locked_until = case when fails + 1 >= 5 then now() + make_interval(mins => 5 * (fails + 1 - 4)) end
       where name = r.name;
-    return json_build_object('error', 'PIN incorrecto');
+    return json_build_object('error', 'Usuario o contraseña incorrectos');
   end if;
   update private.usar_pins set fails = 0, locked_until = null where name = r.name;
   insert into private.usar_sesiones (uid, name) values ((select auth.uid()), r.name)
     on conflict (uid) do update set name = excluded.name, created_at = now();
-  return json_build_object('name', r.name, 'role', r.role);
+  return json_build_object('name', r.name, 'role', r.role, 'cambiar', r.cambiar);
 end $$;
 
 -- Salir: este móvil deja de tener nombre (y rol)
@@ -207,24 +212,36 @@ begin
   if not found then return json_build_object('error', 'Entra con tu nombre y PIN'); end if;
   if p_new !~ '^[0-9]{4,8}$' then return json_build_object('error', 'El PIN son de 4 a 8 cifras'); end if;
   if r.pin_hash <> extensions.crypt(coalesce(p_old, ''), r.pin_hash) then return json_build_object('error', 'El PIN actual no es correcto'); end if;
-  update private.usar_pins set pin_hash = extensions.crypt(p_new, extensions.gen_salt('bf')), fails = 0, locked_until = null where name = r.name;
+  update private.usar_pins set pin_hash = extensions.crypt(p_new, extensions.gen_salt('bf')), fails = 0, locked_until = null, cambiar = false where name = r.name;
   return json_build_object('ok', true);
 end $$;
 
--- Jefes: ver quién tiene PIN, ponerlo (alta o PIN nuevo, también desbloquea) y quitarlo
-create or replace function public.usar_personas() returns table (name text, role text, bloqueado boolean)
+-- Jefes: ver quién tiene PIN (y su usuario), ponerlo (alta o PIN nuevo, también desbloquea) y quitarlo
+drop function if exists public.usar_personas();
+create function public.usar_personas() returns table (name text, role text, bloqueado boolean, usuario text)
 language sql stable security definer set search_path = '' as $$
-  select p.name, p.role, coalesce(p.locked_until > now(), false) from private.usar_pins p
+  select p.name, p.role, coalesce(p.locked_until > now(), false), p.usuario from private.usar_pins p
   where (select private.usar_role()) = 'jefe' order by p.name
 $$;
+-- El usuario de una persona (cifras del final de su móvil): lo pone un jefe; no puede repetirse
+create or replace function public.usar_poner_usuario(p_name text, p_usuario text) returns json
+language plpgsql security definer set search_path = '' as $$
+begin
+  if (select private.usar_role()) is distinct from 'jefe' then return json_build_object('error', 'Solo un jefe pone los usuarios'); end if;
+  if nullif(trim(p_usuario), '') is not null and trim(p_usuario) !~ '^[0-9]{4,9}$' then return json_build_object('error', 'El usuario son de 4 a 9 cifras'); end if;
+  if exists (select 1 from private.usar_pins where usuario = trim(p_usuario) and name <> upper(trim(p_name))) then return json_build_object('error', 'Ese usuario ya lo tiene otra persona: pon una cifra más'); end if;
+  update private.usar_pins set usuario = nullif(trim(p_usuario), '') where name = upper(trim(p_name));
+  return json_build_object('ok', true);
+end $$;
 create or replace function public.usar_poner_pin(p_name text, p_role text, p_pin text) returns json
 language plpgsql security definer set search_path = '' as $$
 begin
   if (select private.usar_role()) is distinct from 'jefe' then return json_build_object('error', 'Solo un jefe pone los PIN'); end if;
   if coalesce(trim(p_name), '') = '' or p_role not in ('jefe', 'miembro') then return json_build_object('error', 'Faltan el nombre o el permiso'); end if;
   if p_pin !~ '^[0-9]{4,8}$' then return json_build_object('error', 'El PIN son de 4 a 8 cifras'); end if;
-  insert into private.usar_pins (name, role, pin_hash) values (upper(trim(p_name)), p_role, extensions.crypt(p_pin, extensions.gen_salt('bf')))
-    on conflict (name) do update set role = excluded.role, pin_hash = excluded.pin_hash, fails = 0, locked_until = null;
+  -- Un PIN que pone un jefe es de partida: la persona elige el suyo la primera vez que entra
+  insert into private.usar_pins (name, role, pin_hash, cambiar) values (upper(trim(p_name)), p_role, extensions.crypt(p_pin, extensions.gen_salt('bf')), true)
+    on conflict (name) do update set role = excluded.role, pin_hash = excluded.pin_hash, fails = 0, locked_until = null, cambiar = true;
   return json_build_object('ok', true);
 end $$;
 create or replace function public.usar_cambiar_permiso(p_name text, p_role text) returns json
@@ -244,10 +261,9 @@ begin
 end $$;
 
 revoke execute on function public.usar_nombres(), public.usar_entrar(text, text), public.usar_salir(), public.usar_cambiar_mi_pin(text, text),
-  public.usar_personas(), public.usar_poner_pin(text, text, text), public.usar_cambiar_permiso(text, text), public.usar_quitar(text) from public, anon;
+  public.usar_personas(), public.usar_poner_pin(text, text, text), public.usar_cambiar_permiso(text, text), public.usar_quitar(text), public.usar_poner_usuario(text, text) from public, anon;
 grant execute on function public.usar_nombres(), public.usar_entrar(text, text), public.usar_salir(), public.usar_cambiar_mi_pin(text, text),
-  public.usar_personas(), public.usar_poner_pin(text, text, text), public.usar_cambiar_permiso(text, text), public.usar_quitar(text) to authenticated;
-grant execute on function public.usar_nombres() to anon;   -- la lista de nombres de la entrada, antes de entrar
+  public.usar_personas(), public.usar_poner_pin(text, text, text), public.usar_cambiar_permiso(text, text), public.usar_quitar(text), public.usar_poner_usuario(text, text) to authenticated;
 
 -- Invitados de móviles que ya no se usan (más de 60 días sin nombre): se pueden borrar de vez en cuando con
 -- delete from auth.users u where u.is_anonymous and u.created_at < now() - interval '60 days'

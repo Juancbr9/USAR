@@ -164,7 +164,7 @@ function checklistForm(owner) {
   if (!veh && !mat.length) return toast('Aún no hay material apuntado para revisar', 'bad');
   const ini = m => m.status === 'FALTA' ? 'falta' : m.status === 'AVERIADO' ? 'roto' : 'ok';
   openForm(`${chk ? 'Checklist' : 'Revista'} · ${duenoNombre(owner)}`, [
-    ...(veh ? [{ k: 'ok', label: 'El vehículo: deja marcado lo que está bien (lo que quede sin marcar es un fallo)', type: 'checks', options: VCHECK.map(x => [x, x]), value: VCHECK, wide: true },
+    ...(veh ? [{ k: 'ok', label: 'El vehículo: deja marcado lo que está bien (lo que quede sin marcar es un fallo)', type: 'checks', one: true, options: VCHECK.map(x => [x, x]), value: VCHECK, wide: true },
       { k: 'km', label: 'Kilómetros', type: 'number', value: '', placeholder: prev?.km ? `La última vez: ${prev.km}` : 'Ej: 45210' },
       { k: 'fuel', label: 'Combustible', value: 'Lleno', options: FUEL.map(x => [x, x]) }] : []),
     ...(mat.length ? [{ k: 'mat', label: `${veh ? 'El material' : 'El material'}: todo sale como «Bien»; marca lo que falta o está roto`, type: 'estados', wide: true, estados: CHK_ESTADOS,

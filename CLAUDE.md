@@ -33,6 +33,13 @@
   (hueco de pasillo), `door` (contenedor o armario) o `enveh` (un vehículo que no es el suyo); usar siempre `matLugar`,
   `matPoner` y `huecoTxt`. Cualquier cosa se mueve a cualquier sitio con `moverA(kind, id)` («Mover») o arrastrándola
   (`moverCon`, con «Deshacer»); mover no cambia de quién es.
+- Entrada (`js/sesion.js`): usuario y contraseña, sin lista de nombres (lo pidió el usuario; no volver a enseñarla). El
+  usuario es el nombre en la app; cuando se aplique en la base de datos el cambio de `supabase.sql` (columna `usuario`
+  de `private.usar_pins`), también las últimas cifras del móvil: entonces poner `LOGIN_CIFRAS = true` en `js/config.js`.
+  Una contraseña de partida (`cambiar`) obliga a elegir una propia al entrar (`pinPropio`).
+- Tipografía: IBM Plex va dentro de la app (`fonts/*.woff2`, `@font-face` al principio de `styles.css`, en `FILES` de
+  `sw.js`); no volver a cargarla de internet. Ningún texto puede salirse de su recuadro ni cortarse: lo comprueba
+  `tests/test_desbordes.py` en todas las pantallas y ventanas (al añadir una pantalla o ventana, añadirla a su lista).
 - Vehículos (`js/views/vehiculos.js`): lo que importa es cada matrícula (`units` de cada modelo), no el modelo. Cada una
   tiene su ficha (`unidadView`), su pelotón (`unitPel`: campo `pel`, o se saca de `use`), su material (dueño
   `'veh:<id>#<unidad>'`; `duenoDe` da `{ veh, unit }`) y su checklist. La autobomba Renault lleva por matrícula su
