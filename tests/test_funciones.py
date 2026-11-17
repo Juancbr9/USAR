@@ -57,18 +57,20 @@ with sync_playwright() as p:
     a.click('#modal button:has-text("Terminar")'); a.wait_for_timeout(150)
     a.evaluate("setPref({ draft: null })")
 
-    # ---------- Revista de salida de un vehículo ----------
-    a.evaluate("setPref({ tab: 'vehiculos' })"); a.wait_for_timeout(200)
-    a.click('.veh-item:has-text("Amarok")'); a.wait_for_selector('#modal .unit-row')
-    assert a.locator('#modal .unit-row').count() == 3 and 'Sin revista de salida' in a.inner_text('#modal')
-    plate = a.inner_text('#modal .unit-row >> nth=0 >> b')
-    a.click('#modal .unit-row >> nth=0 >> button:has-text("Revista")'); a.wait_for_selector('#modalForm [name=km]')
+    # ---------- Checklist de un vehículo (el modelo enseña sus matrículas; cada una abre su ficha) ----------
+    a.evaluate("setPref({ tab: 'vehiculos', vehVista: 'modelo' })"); a.wait_for_timeout(200)
+    a.click('.veh-item:has-text("Amarok")'); a.wait_for_selector('#modal .veh-u')
+    assert a.locator('#modal .veh-u').count() == 3
+    plate = a.inner_text('#modal .veh-u >> nth=0 >> b')
+    a.click('#modal .veh-u >> nth=0'); a.wait_for_selector('#modal .uni-datos'); assert 'Aún no se ha hecho ningún checklist' in a.inner_text('#modal')
+    a.click('#modal .veh-mat button:has-text("Checklist")'); a.wait_for_selector('#modalForm [name=km]')
     a.locator('#modalForm .check-row:has-text("Luces y rotativos") input').uncheck()
     a.fill('#modalForm [name=km]', '45210'); a.select_option('#modalForm [name=fuel]', '1/2'); a.fill('#modalForm [name=notes]', 'Rotativo trasero roto'); save()
     vc = a.evaluate("list('vchecks')[0]")
     assert vc['plate'] == plate and vc['fails'] == ['Luces y rotativos'] and vc['km'] == 45210 and vc['fuel'] == '1/2', vc
-    assert 'Fallo: luces y rotativos' in a.inner_text('#modal .unit-row >> nth=0'), 'la ficha enseña la última revista'
-    a.click('#modal .unit-row >> nth=0 >> .vc-line'); a.wait_for_timeout(150)
+    a.wait_for_selector('#modal .uni-datos')
+    assert 'Mal: Luces y rotativos' in a.inner_text('#modal .chk-ult') and 'GRANADOS' in a.inner_text('#modal .chk-ult') and a.locator('#modal .uni-tags .tag.bad:has-text("Fallo")').count() == 1, 'la ficha enseña el último checklist'
+    a.click('#modal .chk-ult .link'); a.wait_for_timeout(150)
     assert 'Rotativo trasero roto' in a.inner_text('#modal') and '45.210 km' in a.inner_text('#modal'), 'historial de la matrícula'
     a.keyboard.press('Escape'); a.wait_for_timeout(150)
     assert a.locator('.veh-item:has-text("Amarok") .tag:has-text("Fallo en revista")').count() == 1

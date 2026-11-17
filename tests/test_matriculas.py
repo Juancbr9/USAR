@@ -61,12 +61,8 @@ with sync_playwright() as p:
     # Autobomba Renault: un solo modelo, vacía detrás (ya no hay modelos con módulo)
     assert a.evaluate("get('vehicles', 'V-AB-CHASIS').name") == 'Autobomba Renault'
     assert a.evaluate("['V-AB-CONT', 'V-AB-CONT2', 'V-AB-LCIF'].filter(id => get('vehicles', id)).length") == 0
-    assert 'v-ab-chasis.webp' in a.evaluate("vehArt(get('vehicles', 'V-AB-CHASIS'))")
-    assert 'v-ab-lcif.webp' in a.evaluate("vehArt(get('vehicles', 'V-AB-CHASIS'), '', 'lcif')")
-    # En su ficha se ve con cada módulo
-    a.keyboard.press('Escape'); a.evaluate("vehicleForm('V-AB-CHASIS')"); a.wait_for_selector('#modal .veh-mods')
-    a.click('#modal .veh-mods button:has-text("Contenedor pequeño 2")')
-    assert 'v-ab-cont2.webp' in a.get_attribute('#modal .veh-mods img', 'src')
+    assert 'v-ab-lcif.webp' in a.evaluate("vehArt(get('vehicles', 'V-AB-CHASIS'))"), 'de serie, con el módulo LCIF'
+    assert 'v-ab-chasis.webp' in a.evaluate("vehArt(get('vehicles', 'V-AB-CHASIS'), '', '')")
     a.keyboard.press('Escape')
     # Matrícula repetida: no se admite
     a.keyboard.press('Escape')
@@ -74,12 +70,46 @@ with sync_playwright() as p:
     a.fill('#modalForm [name=plate]', 'et 124277'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(300)
     assert n('V-AMAROK') == 3 and n('V-SANGYONG') == 6
 
-    # La Renault viene vacía y en su ficha se ve con cada módulo
-    a.evaluate("vehicleView('V-AB-CHASIS')"); a.wait_for_selector('#modal .veh-mods')
-    assert 'v-ab-chasis.webp' in a.get_attribute('#modal .veh-mods img', 'src'), 'viene vacía'
-    a.click('#modal .veh-mods button:has-text("LCIF")'); assert 'v-ab-lcif.webp' in a.get_attribute('#modal .veh-mods img', 'src')
-    assert a.evaluate("vehLabel({ id: 'V-AB-CHASIS', mod: 'lcif' })").startswith('Autobomba Renault (módulo LCIF)')
-    a.keyboard.press('Escape'); a.wait_for_timeout(150)
+    # Cada matrícula de la Renault tiene su configuración (de serie, el módulo LCIF), su pelotón y su material
+    ren = a.evaluate("unitsOf_(get('vehicles', 'V-AB-CHASIS')).map(u => [u.id, u.plate, unitPel(u), unitMod(u)])")
+    assert [r[2:] for r in ren] == [['PIEN 1', 'lcif'], ['PIEN 2', 'lcif']], ren
+    a.evaluate("vehicleView('V-AB-CHASIS')"); a.wait_for_selector('#modal .veh-u'); assert a.locator('#modal .veh-u').count() == 2
+    a.click(f'#modal .veh-u:has-text("{ren[0][1]}")'); a.wait_for_selector('#modal .uni-datos')
+    dat = ' '.join(a.inner_text('#modal .uni-datos').split()); assert 'Asignado a PIEN 1' in dat and 'Configuración Módulo LCIF' in dat, dat
+    assert 'v-ab-lcif.webp' in a.get_attribute('#modal .veh-hero img', 'src')
+    a.click('#modal button:has-text("Editar matrícula")'); a.wait_for_selector('#modalForm [name=mod]'); assert a.input_value('[name=mod]') == 'lcif' and a.input_value('[name=pel]') == 'PIEN 1'
+    a.select_option('[name=mod]', 'cont2'); a.select_option('[name=pel]', 'Común'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_selector('#modal .uni-datos')
+    assert 'v-ab-cont2.webp' in a.get_attribute('#modal .veh-hero img', 'src') and a.evaluate(f"unitPel(get('vehicles', 'V-AB-CHASIS').units.find(u => u.id === '{ren[0][0]}'))") == 'Común'
+    assert a.evaluate(f"unitMod(get('vehicles', 'V-AB-CHASIS').units.find(u => u.id === '{ren[1][0]}'))") == 'lcif', 'la otra matrícula sigue con la suya'
+    # El material es de cada matrícula: lo de una no sale en la otra
+    a.click('#modal .veh-mat button:has-text("Material")'); a.wait_for_selector('#modal [name=name]'); assert a.input_value('[name=unit]') == ren[0][0]
+    a.fill('[name=name]', 'Mangotes'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_selector('#modal .veh-mat .list .item')
+    assert a.evaluate(f"[matDe({{ veh: 'V-AB-CHASIS', unit: '{ren[0][0]}' }}).length, matDe({{ veh: 'V-AB-CHASIS', unit: '{ren[1][0]}' }}).length, matDe({{ veh: 'V-AB-CHASIS' }}).length]") == [1, 0, 1]
+    # Checklist de la matrícula: el vehículo y su material, con lo que falta o está roto, quién lo hizo, y aviso cada cierto tiempo
+    a.click('#modal .veh-mat button:has-text("Checklist")'); a.wait_for_selector('#modal .est-row'); assert a.locator('#modal .est-row').count() == 1 and a.locator('#modalForm [name=km]').count() == 1
+    a.click('#modal .est-row:has-text("Mangotes") .est-roto'); a.fill('#modal .est-row:has-text("Mangotes") .est-nota', 'Junta rajada'); a.fill('#modalForm [name=km]', '1200')
+    a.click('#modalForm button:has-text("Guardar")'); a.wait_for_selector('#modal .uni-datos')
+    vc = a.evaluate("list('vchecks').sort((x, y) => y.date - x.date)[0]"); assert vc['unit'] == ren[0][0] and vc['by'] == 'GRANADOS' and vc['mat'] == [{'id': vc['mat'][0]['id'], 'name': 'Mangotes', 'st': 'roto', 'nota': 'Junta rajada'}] and vc['km'] == 1200, vc
+    assert a.evaluate(f"matDe({{ veh: 'V-AB-CHASIS', unit: '{ren[0][0]}' }})[0].status") == 'AVERIADO' and 'Mal: Mangotes' in a.inner_text('#modal .chk-ult')
+    assert a.evaluate("needsAbiertas('veh').map(n => n.text + ' | ' + n.nota)") == [f'Mangotes (roto) | Autobomba Renault {ren[0][1]}: Junta rajada'], 'lo roto pasa a Necesidades'
+    a.click('#modal .chk-ult .link'); a.wait_for_selector('#modal .chk-hist'); h = ' '.join(a.inner_text('#modal .chk-hist').split()); assert 'GRANADOS' in h and 'Roto: Mangotes (Junta rajada)' in h and '1200 km' in h, h
+    a.click('#modal button:has-text("Volver al vehículo")'); a.wait_for_selector('#modal .mat-cada select'); a.select_option('#modal .mat-cada select', '7'); a.wait_for_selector('#modal .uni-datos')
+    assert a.evaluate(f"revFalta('veh:V-AB-CHASIS#{ren[0][0]}')") == 7 and a.evaluate(f"revFalta('veh:V-AB-CHASIS#{ren[1][0]}')") is None
+    a.evaluate(f"revCadaSet('veh:V-AB-CHASIS#{ren[1][0]}', 7)"); a.wait_for_timeout(200)
+    assert a.evaluate("revPendientes().map(r => r[0])") == [f'veh:V-AB-CHASIS#{ren[1][0]}'], 'a la que nunca se le ha hecho, ya le toca'
+    a.evaluate("closeModal(); setPref({ tab: 'vehiculos', vehVista: 'pel', vehGrupo: 'todos' })"); a.wait_for_timeout(250)
+    assert a.locator(f'#view .veh-u:has-text("{ren[1][1]}") .tag:has-text("Toca checklist")').count() == 1 and a.locator(f'#view .veh-u:has-text("{ren[0][1]}") .tag.bad:has-text("falta o está roto")').count() == 1
+    assert ' '.join(a.inner_text('#view .veh-res').split()).endswith('Toca checklist 1')
+    # Por pelotón: un botón por grupo con sus matrículas; los contenedores pequeños van aparte, como módulos con su material
+    grupos = [' '.join(t.split()) for t in a.locator('#view .veh-grupos .chip').all_inner_texts()]; assert grupos[0].startswith('Todos') and any(g.startswith('PIEN 1') for g in grupos) and any(g.startswith('Común') for g in grupos), grupos
+    a.click('#view .veh-grupos .chip:has-text("PIEN 2")'); a.wait_for_timeout(150)
+    assert a.locator('#view .veh-grupo').count() == 1 and a.inner_text('#view .veh-grupo h3') == 'PIEN 2' and a.locator(f'#view .veh-u:has-text("{ren[1][1]}")').count() == 1 and a.locator(f'#view .veh-u:has-text("{ren[0][1]}")').count() == 0
+    assert a.evaluate("['V-MOD-CONT', 'V-MOD-CONT2'].map(id => get('vehicles', id).tipo)") == ['modulo', 'modulo'] and a.evaluate("flotaEstado().some(x => esModulo(x.v))") is False
+    a.click('#view .veh-mods-p .veh-item:has-text("Contenedor pequeño") >> nth=0'); a.wait_for_selector('#modal .veh-mat'); assert 'Dónde está' in a.inner_text('#modal') and a.locator('#modal [name=km]').count() == 0
+    a.click('#modal button:has-text("Empezar con lo habitual")'); a.wait_for_selector('#modal .veh-mat .list .item'); a.click('#modal .veh-mat button:has-text("Checklist")'); a.wait_for_selector('#modal .est-row')
+    assert a.locator('#modalForm [name=km]').count() == 0, 'un módulo no lleva lo del vehículo: solo su material'
+    a.keyboard.press('Escape'); a.wait_for_timeout(250)
+    a.evaluate("matDe({ veh: 'V-MOD-CONT' }).forEach(m => stamp('matesp', { id: m.id, _del: true })); matDe({ veh: 'V-AB-CHASIS' }).forEach(m => stamp('matesp', { id: m.id, _del: true })); needsAbiertas('veh').forEach(n => stamp('needs', { id: n.id, _del: true })); put('meta', { id: 'revcada', value: {} }); setPref({ vehGrupo: 'todos' })"); a.wait_for_timeout(200)
 
     # Migración v9: las matrículas de los modelos con módulo pasan a la Renault y las actividades guardan el módulo
     a.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)), t = Date.now();

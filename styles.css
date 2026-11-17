@@ -2286,7 +2286,7 @@ p, small, .muted { text-wrap: pretty; }
 .motion .ctab.on.slide::after { animation: ind-slide .34s var(--ease-out); }
 /* Misma pantalla, otra pestaña: lo que hay debajo entra con un fundido corto (no vuelve a subir todo) */
 @keyframes swap-in { from { opacity: 0; transform: translateY(8px); } }
-.motion #view.swap > .ctabs ~ *, .motion #view.swap .px, .motion #view.swap .cq-scroll, .motion #view.swap .cvi { animation: swap-in .26s var(--ease-out) both; }
+.motion #view.swap > .ctabs ~ *, .motion #view.swap .veh-grupo, .motion #view.swap .px, .motion #view.swap .cq-scroll, .motion #view.swap .cvi { animation: swap-in .26s var(--ease-out) both; }
 /* Barras: crecen desde cero al entrar en la pantalla */
 @keyframes bar-grow { from { transform: scaleX(0); } }
 .motion #view.enter .meter > i u, .motion #view.enter .hero-bar u { transform-origin: left center; animation: bar-grow .9s var(--ease) .12s both; }
@@ -2307,7 +2307,7 @@ p, small, .muted { text-wrap: pretty; }
 @media (hover: hover) and (pointer: fine) { .toast-act:hover { background: rgba(255, 255, 255, .2); } }
 /* Ventanas en el móvil: un asa arriba (se cierran arrastrando hacia abajo) y la cabecera siempre a la vista */
 @media (max-width: 719px) {
-  .sheet-head { position: sticky; top: 0; z-index: 3; margin: -18px -18px 14px; padding: 22px 18px 12px; background: var(--surface); touch-action: none; }
+  .sheet-head { position: sticky; top: -18px; z-index: 3; margin: -18px -18px 14px; padding: 22px 18px 12px; background: var(--surface); touch-action: none; }
   .sheet-head::before { content: ''; position: absolute; left: 50%; top: 8px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--line-2); }
 }
 /* Estados vacíos: una frase en su marco, sin adorno */
@@ -2367,3 +2367,39 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .plano .chip.on .plano-e i { background: var(--yellow); }
 .motion #view.enter .plano-e i { transform-origin: bottom center; animation: plano-sube .8s var(--ease) .1s both; }
 @keyframes plano-sube { from { transform: scaleY(0); } }
+
+/* ==================== VEHÍCULOS Y CHECKLIST ==================== */
+/* Lista de cosas con tres estados (bien, falta, roto): el nombre a la izquierda y, a la derecha, un botón por estado */
+.est-list { display: grid; gap: 1px; margin-top: 6px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.est-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 8px 10px; background: var(--surface); }
+.est-t { min-width: 0; } .est-t b { display: block; font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.est-t small { display: block; color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.est-ops { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; flex: none; }
+.est-op { position: relative; cursor: pointer; }
+.est-op input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.est-op span { display: grid; place-items: center; min-width: 52px; min-height: 40px; padding: 0 8px; font-size: 13.5px; font-weight: 600; color: var(--muted); background: var(--surface); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+.est-op + .est-op span { border-left: 1px solid var(--line-2); }
+.est-op.est-ok input:checked + span { background: var(--ok-soft); color: var(--ok); }
+.est-op.est-falta input:checked + span, .est-op.est-roto input:checked + span { background: var(--bad); color: #ffffff; }
+.est-op input:focus-visible + span { outline: 3px solid var(--focus, var(--yellow)); outline-offset: -3px; }
+.est-nota { grid-column: 1 / -1; }
+.est-row[data-est="ok"] .est-nota { display: none; }
+.est-row:not([data-est="ok"]) { background: color-mix(in srgb, var(--bad) 6%, var(--surface)); }
+/* Vehículos: una fila por matrícula, con su dibujo, y la ficha de cada una */
+.item.veh-u { display: flex; align-items: center; gap: 12px; text-align: left; }
+.veh-u > .grow { min-width: 0; flex: 1 1 0; }
+.veh-u .tags { margin-top: 4px; justify-content: flex-start; gap: 4px; flex-wrap: wrap; }
+.veh-u > .tags { margin: 0; justify-content: flex-end; flex: 0 1 auto; }
+.veh-vista { margin-top: 14px; }
+.veh-res { margin-top: 12px; }
+.veh-res .sier-kpi b { font: 500 24px/1.1 var(--num); letter-spacing: -.5px; }
+.uni-tags { justify-content: center; gap: 6px; margin: 10px 0 4px; flex-wrap: wrap; }
+.uni-datos { margin-top: 8px; }
+.uni-datos .log-row { width: 100%; text-align: left; }
+.chk-hist .item { align-items: flex-start; }
+.chk-hist small { display: block; overflow-wrap: anywhere; }
+.chk-ult .link { font-weight: 600; }
+.veh-grupos { margin-top: 10px; }
+.veh-grupos .chip { gap: 5px; } .veh-grupos .chip .muted { font: 500 12.5px var(--num); }
+@media (min-width: 1200px) { .veh-grupo .list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border: 0; background: none; }
+  .veh-grupo .list > .item { border: 1px solid var(--line); border-radius: var(--r-sm); } }

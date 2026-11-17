@@ -410,6 +410,14 @@ function seedDefaults(share = false) {
       .forEach(x => stampIt(kind, { ...x, door: +x.door - (+x.door % 10) + 1 })));
     stampIt('meta', { id: 'pasbase', value: 1 });
   }
+  // Módulos v1: los contenedores pequeños de la autobomba Renault van aparte de los vehículos, con su propio material
+  // (ids fijos: no se duplican entre móviles). La Renault lleva de serie el módulo LCIF en cada matrícula.
+  if (!(get('meta', 'modbase')?.value >= 1)) {
+    const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    [['V-MOD-CONT', 'Contenedor pequeño', 'v-ab-cont'], ['V-MOD-CONT2', 'Contenedor pequeño 2', 'v-ab-cont2']].forEach(([id, name, art]) =>
+      !db.vehicles[id] && stampIt('vehicles', { id, name, tipo: 'modulo', art, plate: '', seats: '', notes: 'Se monta en la autobomba Renault', units: [] }));
+    stampIt('meta', { id: 'modbase', value: 1 });
+  }
   // Almacén v2: el pasillo de USAR pasa a ser uno más del almacén (el 3, o el que se haya dicho): cada cosa va al mismo
   // módulo y altura, en el lado izquierdo. Se repasa siempre, por si un móvil sin actualizar apunta algo con el número antiguo.
   { const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };

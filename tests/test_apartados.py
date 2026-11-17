@@ -61,15 +61,19 @@ with sync_playwright() as p:
     seen('material de agua'); wide('material de agua'); a.screenshot(path=f'{OUT}/apartado-material.png', full_page=True)
 
     # Revista: se desmarca lo que falla; pasa a revisión y queda apuntada. La moto averiada sale ya desmarcada
-    a.click('#view button:has-text("Pasar revista")'); a.wait_for_selector('#modal input[name=ok]')
-    assert a.locator('#modal input[name=ok]').count() == n and a.locator('#modal input[name=ok]:checked').count() == n - 1
-    a.uncheck('#modal .check-row:has-text("Remos") input'); a.fill('[name=nota]', 'Falta un remo'); save()
-    remos = a.evaluate("apMat('agua').find(m => m.name === 'Remos')"); assert remos['status'] == 'REVISIÓN' and 'Falta un remo' in remos['notes'], remos
+    a.click('#view button:has-text("Pasar revista")'); a.wait_for_selector('#modal .est-row')
+    assert a.locator('#modal .est-row').count() == n and a.locator('#modal .est-row[data-est="ok"]').count() == n - 1 and a.locator('#modal .est-row:has-text("Moto de agua")').get_attribute('data-est') == 'roto'
+    assert not a.locator('#modal .est-row:has-text("Remos") .est-nota').is_visible(), 'la nota solo sale cuando algo no está bien'
+    a.click('#modal .est-row:has-text("Remos") .est-falta'); a.fill('#modal .est-row:has-text("Remos") .est-nota', 'Falta un remo'); save()
+    remos = a.evaluate("apMat('agua').find(m => m.name === 'Remos')"); assert remos['status'] == 'FALTA' and 'Falta un remo' in remos['notes'], remos
+    assert a.evaluate("apRevistas('agua')[0].items.map(x => [x.name, x.st, x.nota])") == [['Moto de agua', 'roto', ''], ['Remos', 'falta', 'Falta un remo']]
+    assert a.evaluate("needsAbiertas('agua').map(n => n.text + ' | ' + n.nota)") == ['Moto de agua (roto) | Agua', 'Remos | Agua: Falta un remo'], 'lo que falta o está roto pasa a Necesidades'
+    a.evaluate("needsAbiertas('agua').forEach(x => stamp('needs', { id: x.id, _del: true })); commit()")
     rev = a.evaluate("apRevistas('agua')[0]"); assert rev['total'] == n and rev['fails'] == ['Moto de agua', 'Remos'] and rev['by'] == 'GRANADOS', rev
     assert 'Última revista' in a.inner_text('#view') and 'Fallos: Moto de agua, Remos' in a.inner_text('#view') and a.locator('#view .sier-kpi b').nth(2).inner_text() != '—'
     # Otra revista con todo bien lo devuelve a operativo
-    a.click('#view button:has-text("Pasar revista")'); a.wait_for_selector('#modal input[name=ok]')
-    for x in ['Remos', 'Moto de agua']: a.check(f'#modal .check-row:has-text("{x}") input')
+    a.click('#view button:has-text("Pasar revista")'); a.wait_for_selector('#modal .est-row')
+    for x in ['Remos', 'Moto de agua']: a.click(f'#modal .est-row:has-text("{x}") .est-ok')
     save(); assert a.evaluate("apMat('agua').every(m => m.status === 'OPERATIVO')") and a.evaluate("apRevistas('agua').length") == 2
     a.evaluate("(() => { const m = apMat('agua').find(m => m.name === 'Remos'); put('matesp', { ...m, status: 'REVISIÓN' }); })()"); a.wait_for_timeout(150)
 
@@ -205,11 +209,11 @@ with sync_playwright() as p:
     assert '× 4' in fila and 'Cofre izquierdo' in fila and placa in fila, fila   # tras guardar se vuelve a la ficha del vehículo
     a.click('#modal .veh-mat button:has-text("Material")'); a.wait_for_selector('#modal [name=name]'); a.fill('[name=name]', 'Motobomba portátil'); save(); a.wait_for_selector('#modal .veh-mat')
     assert a.evaluate(f"matDe({{ veh: '{vid}' }}).length") == nv + 1
-    a.click('#modal .veh-mat button:has-text("Pasar revista")'); a.wait_for_selector('#modal input[name=ok]')
-    a.uncheck('#modal .check-row:has-text("Calzos") input'); a.fill('[name=nota]', 'Falta un calzo'); save(); a.wait_for_selector('#modal .veh-mat')
-    assert 'En revisión' in a.inner_text('#modal .veh-mat .item:has-text("Calzos")') and 'Fallos: Calzos' in a.inner_text('#modal .veh-mat')
+    a.click('#modal .veh-mat button:has-text("Checklist")'); a.wait_for_selector('#modal .est-row')
+    a.click('#modal .est-row:has-text("Calzos") .est-falta'); a.fill('#modal .est-row:has-text("Calzos") .est-nota', 'Falta un calzo'); a.uncheck('#modal [name=nec]'); save(); a.wait_for_selector('#modal .veh-mat')
+    assert 'Falta' in a.inner_text('#modal .veh-mat .item:has-text("Calzos") .tag') and 'Mal: Calzos' in a.inner_text('#modal .veh-mat') and a.evaluate("needsAbiertas('veh').length") == 0
     assert a.evaluate(f"matRevistas('veh:{vid}')[0].fails") == ['Calzos'] and a.evaluate("apRevistas('agua').length") == 2, 'cada dueño guarda sus revistas'
-    a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    a.evaluate("closeModal(); setPref({ vehVista: 'modelo' })"); a.wait_for_timeout(250)
     assert f'{nv + 1} de material' in a.inner_text(f'#view .veh-item:has-text("{vn}")')
     # Sale en los avisos de Inicio, en Logística y en el buscador
     a.evaluate("go('avisos')"); a.wait_for_timeout(200)
