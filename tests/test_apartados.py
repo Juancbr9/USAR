@@ -115,28 +115,34 @@ with sync_playwright() as p:
     # Pasillo de la especialidad: el suyo por número (Agua, el 4), con lado izquierdo y derecho, módulos y baldas
     a.evaluate("setPref({ session: 'OP-01', tab: 'agua', aptab: 'material' })"); a.wait_for_timeout(200)
     assert a.evaluate("apPasillos('agua')") == [4] and a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 4'
-    assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Sin colocar' in a.inner_text('#view .px-suelto')
+    assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Sin colocar' in a.inner_text('#view .px-sueltos')
+    # Un hueco del dibujo (el mismo número que guarda el material de USAR) y un toque en su esquina, donde no hay nada
+    hueco = lambda pas, lado, mod, niv: a.locator(f'#view .px-cell[data-door="{100000 + pas * 10000 + (5000 if lado == "D" else 0) + mod * 100 + niv}"]')
+    toca = lambda *h: hueco(*h).click(position={'x': 14, 'y': 10})
     assert [t.split('\n')[0] for t in a.locator('#view .panel:has(.px) .seg-row button').all_inner_texts()] == ['Izquierda', 'Derecha']
     # Se configura el lado que se ve (3 módulos y 1 balda); el otro lado sigue como estaba
     a.click('#view button:has-text("Pasillos y baldas")'); a.wait_for_selector('#modal [name=mods]'); a.fill('[name=mods]', '3'); a.fill('[name=baldas]', '1'); save()
     assert a.locator('#view .px .px-cell').count() == 3 * 2 and a.evaluate("pasLado('agua', 4, 'I')") == {'mods': 3, 'baldas': 1} and a.evaluate("pasLado('agua', 4, 'D')") == {'mods': 4, 'baldas': 2}
-    a.click('#view .px-cell[aria-label^="Módulo 2, balda"]'); a.wait_for_selector('#modal h3:has-text("Pasillo 4 izquierda · M2 · Balda")')
+    toca(4, 'I', 2, 1); a.wait_for_selector('#modal h3:has-text("Pasillo 4 · izquierda · módulo 2 · balda")')
     assert 'Este hueco está vacío' in a.inner_text('#modal')
     a.click('#modal .item:has-text("Chalecos de rescate")'); a.wait_for_timeout(250)
-    assert a.evaluate("enHueco('agua', 4, 'I', 2, 1).map(m => m.name)") == ['Chalecos de rescate'] and a.locator('#modal .item:has-text("Chalecos de rescate") button:has-text("Quitar")').count() == 1
+    assert a.evaluate("enHueco('agua', 4, 'I', 2, 1).map(m => m.name)") == ['Chalecos de rescate'] and a.locator('#modal .item:has-text("Chalecos de rescate") button:has-text("Mover")').count() == 1
     a.click('#modal button:has-text("Material aquí")'); a.wait_for_selector('#modal [name=name]')
     assert a.input_value('[name=lado]') == 'I' and a.input_value('[name=mod]') == '2' and a.input_value('[name=niv]') == '1', 'el material nuevo nace en ese hueco'
-    assert a.locator('#modal [name=pas]').count() == 0, 'con un solo pasillo no se pregunta cuál'
+    assert a.input_value('#modal [name=pas]') == '4', 'el pasillo, el de ese hueco (se puede elegir cualquiera del almacén)'
     a.fill('[name=name]', 'Boyas'); save()
-    cel = a.inner_text('#view .px-cell[aria-label^="Módulo 2, balda"]'); assert 'Boyas' in cel and 'Chalecos' in cel, cel
+    cel = hueco(4, 'I', 2, 1).inner_text(); assert 'Boyas' in cel and 'Chalecos' in cel, cel
     assert 'Pasillo 4 · izquierda · módulo 2 · balda' in a.inner_text('#view .list .item:has-text("Boyas")')
     # Desde la ficha se pasa al lado derecho; el dibujo cambia de lado con el botón
     a.click('#view .list .item:has-text("Boyas")'); a.wait_for_selector('#modal [name=mod]'); a.select_option('[name=lado]', 'D'); a.select_option('[name=mod]', '4'); a.select_option('[name=niv]', '2'); save()
     assert a.evaluate("enHueco('agua', 4, 'D', 4, 2).map(m => m.name)") == ['Boyas'] and 'Boyas' not in a.inner_text('#view .px')
     a.click('#view .panel:has(.px) .seg-row button:has-text("Derecha")'); a.wait_for_timeout(200)
-    assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Boyas' in a.inner_text('#view .px-cell[aria-label^="Módulo 4, balda 2"]')
-    a.click('#view .px-cell[aria-label^="Módulo 4, balda 2"]'); a.wait_for_selector('#modal .item:has-text("Boyas")')
-    a.click('#modal .item:has-text("Boyas") button:has-text("Quitar")'); a.wait_for_timeout(250)
+    assert a.locator('#view .px .px-cell').count() == 4 * 3 and 'Boyas' in hueco(4, 'D', 4, 2).inner_text()
+    toca(4, 'D', 4, 2); a.wait_for_selector('#modal .item:has-text("Boyas")')
+    # «Mover» → «Sin colocar»: vuelve a la zona de lo que no tiene sitio
+    a.click('#modal .item:has-text("Boyas") button:has-text("Mover")'); a.wait_for_selector('#modal .mv-tipos'); assert 'Pasillo 4 · derecha · módulo 4 · balda 2' in a.inner_text('#modal .mv-ahora')
+    a.click('#modal button:has-text("Sin colocar")'); a.wait_for_timeout(300); assert 'Boyas' in a.inner_text('#view .px-sueltos')
+    a.evaluate("cellModal(pasDoor(4, 'D', 4, 2))"); a.wait_for_timeout(250)
     assert a.evaluate("sinColocar('agua').some(m => m.name === 'Boyas')") and 'Este hueco está vacío' in a.inner_text('#modal')
     a.evaluate("closeModal(); setPref({ pasLado: 'I' })"); a.wait_for_timeout(250)
     # Al quitar módulos, lo que estaba en ellos pasa a «Sin colocar»: no se borra nada
@@ -156,7 +162,7 @@ with sync_playwright() as p:
     assert a.evaluate("apPasillos('parque')") == [1, 2] and a.locator('#view .panel:has(.px) .chips .chip').count() == 2
     a.click('#view button:has-text("Empezar con lo habitual")'); a.wait_for_timeout(250)
     a.click('#view .panel:has(.px) .chips .chip:has-text("Pasillo 2")'); a.wait_for_timeout(150); assert a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 2'
-    a.click('#view .px-cell[aria-label^="Módulo 1, suelo"]'); a.wait_for_selector('#modal h3:has-text("Pasillo 2 izquierda · M1 · Suelo")')
+    toca(2, 'I', 1, 0); a.wait_for_selector('#modal h3:has-text("Pasillo 2 · izquierda · módulo 1 · suelo")')
     a.click('#modal .item:has-text("Palas")'); a.wait_for_timeout(250); a.evaluate("closeModal()"); a.wait_for_timeout(250)
     assert a.evaluate("enHueco('parque', 2, 'I', 1, 0).map(m => m.name)") == ['Palas'] and 'Pasillo 2 · izquierda · módulo 1 · suelo' in a.inner_text('#view .list .item:has-text("Palas")')
     a.click('#view .list .item:has-text("Palas")'); a.wait_for_selector('#modal [name=pas]'); assert a.input_value('[name=pas]') == '2'
@@ -169,7 +175,7 @@ with sync_playwright() as p:
     # Se le puede añadir otro pasillo, o quitárselos todos
     a.click('#view button:has-text("Pasillos y baldas")'); a.wait_for_selector('#modal [name=nums]'); a.fill('[name=nums]', '1, 2, 7'); save()
     assert a.evaluate("apPasillos('parque')") == [1, 2, 7] and a.locator('#view .panel:has(.px) .chips .chip').count() == 3
-    assert a.evaluate("apPasillos('rpas')") == [] and a.evaluate("(setPref({ tab: 'rpas', aptab: 'material' }), document.querySelector('#view').innerText.includes('no tiene pasillo apuntado'))")
+    assert a.evaluate("apPasillos('rpas')") == [] and a.evaluate("(setPref({ tab: 'rpas', aptab: 'material' }), document.querySelector('#view').innerText.includes('no tiene pasillo propio'))")
     seen('parque'); wide('parque')
 
     # Material asignado a una persona: se elige en la ficha del material y sale en la suya y en Logística

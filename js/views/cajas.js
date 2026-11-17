@@ -61,9 +61,13 @@ function putInBox(gid, bid) {
   put('gear', { ...g, box: bid, door: b.door, shelf: 'A', vehicle: b.vehicle || '' }, `"${g.name}" dentro de la caja ${b.code}`);
 }
 
-// El material se guarda en el contenedor; a los vehículos se carga en cada actividad (Operación → Personal → Vehículo)
-const placeOptions = () => [...DOOR_IDS.map(d => [String(d), `Contenedor · ${doorName(d)} (${sideName(d)})`]), ['0', 'Contenedor · sin ubicar (pendiente de colocar)'],
-  ...PLACES.map(p => [String(p.id), p.label])];
+// Sitios que ofrecen los formularios de USAR: el contenedor, los huecos de su pasillo, los armarios y el escalón, y el sitio
+// actual si es otro (un hueco de otro pasillo). Para llevar algo a cualquier otro sitio está «Mover» (moverA, en pasillo.js).
+const pasOpciones = () => usarPasillos().flatMap(n => ['I', 'D'].flatMap(l => { const g = pasGeo(n, l);
+  return Array.from({ length: g.mods }, (_, m) => Array.from({ length: g.baldas + 1 }, (_, niv) => pasDoor(n, l, m + 1, niv))).flat(); }));
+const placeOptions = (actual = 0, veh = '') => { const pas = pasOpciones();
+  return [...DOOR_IDS.map(d => [String(d), `Contenedor · ${doorName(d)} (${sideName(d)})`]), ['0', 'Contenedor · sin ubicar (pendiente de colocar)'], ...(veh ? [['V:' + veh, 'Vehículo · ' + vehName(veh)]] : []),
+    ...[...(enPasillo(actual) && !pas.includes(+actual) ? [+actual] : []), ...pas].map(d => [String(d), pasNombre(d)]), ...PLACES.map(p => [String(p.id), p.label])]; };
 const parsePlace = pl => pl.startsWith('V:') ? { vehicle: pl.slice(2), door: 0 } : { vehicle: '', door: +pl };
 
 /* ---------- Formularios ---------- */
@@ -76,7 +80,7 @@ function boxForm(id, at = {}) {
     { k: 'name', label: 'Qué lleva', value: b.name, required: true, placeholder: 'Ej: Cizallas Holmatro' },
     { k: 'model', label: 'Modelo de caja', value: b.model, catalog: 'boxModels', carry: 'boxModel' },
     { k: 'color', label: 'Color', value: b.color || 'negro', options: Object.entries(BOX_COLORS).filter(([k]) => BOX_PICK.includes(k) || k === b.color).map(([k, [l]]) => [k, l]) },
-    { k: 'place', label: 'Dónde va', value: b.vehicle ? 'V:' + b.vehicle : String(b.door ?? 1), options: placeOptions() },
+    { k: 'place', label: 'Dónde va', value: b.vehicle ? 'V:' + b.vehicle : String(b.door ?? 1), options: placeOptions(b.door, b.vehicle) },
     { k: 'func', label: 'Tipo de material', value: b.func, catalog: 'gearFuncs' },
     { k: 'tare', label: 'Peso de la caja vacía (kg)', type: 'number', value: b.tare },
     { k: 'measured', label: 'Peso total pesada (kg)', type: 'number', value: b.measured, placeholder: 'Si la habéis pesado llena' },
@@ -160,17 +164,8 @@ function boxFill(id) {
   };
 }
 
-// Mover una caja o un equipo sin arrastrar (también sirve para pasar de un lateral a otro)
-function moveForm(kind, id) {
-  const it = kind === 'box' ? get('boxes', id) : get('gear', id);
-  openForm(`Mover ${kind === 'box' ? 'la caja ' + it.code : it.name}`, [
-    { k: 'place', label: 'A dónde', value: it.vehicle ? 'V:' + it.vehicle : String(it.door ?? 1), options: placeOptions(), wide: true }
-  ], v => {
-    const { door, vehicle } = parsePlace(v.place);
-    kind === 'box' ? moveBox(id, door, vehicle) : moveGear(id, door, vehicle);
-    kind === 'box' ? boxDetail(id) : gearDetail(id);
-  });
-}
+// Mover una caja o un equipo sin arrastrar: a un hueco de cualquier pasillo, del contenedor, a un armario o a un vehículo
+function moveForm(kind, id) { moverA(kind, id); }
 
 function printBoxLabels(ids = boxes().map(b => b.id)) {
   const bs = ids.map(id => get('boxes', id)).filter(Boolean);
@@ -299,6 +294,7 @@ function cvClick(e, door, veh = '') {
   if (tok?.dataset.epi) return epiForm(tok.dataset.epi);
   if (tok?.dataset.box) return boxDetail(tok.dataset.box);
   if (tok?.dataset.gear) return gearDetail(tok.dataset.gear);
+  if (tok?.dataset.mat) { const m = get('matesp', tok.dataset.mat); return m && matForm(duenoTxt(m), m.id); }
   cellModal(door, veh);
 }
 
@@ -306,12 +302,13 @@ function cellModal(door, veh = '') {
   const inCell = x => enAlmacen(x) && (veh ? x.vehicle === veh : !x.vehicle && (x.door || 0) === door);
   const bs = list('boxes').filter(inCell).sort((a, b) => (a.pos || 0) - (b.pos || 0));
   const loose = list('gear').filter(g => inCell(g) && (!g.box || !get('boxes', g.box))).sort(byName);
-  const cons = veh ? [] : consIn(d => d === door);
+  const cons = veh ? [] : consIn(d => d === door), mat = matEn(door, veh), enPas = !veh && enPasillo(door);
+  const sueltos = enPas ? pasDuenos(pasDe(door).pas).filter(d => d !== 'usar').flatMap(sinColocar) : [];
   const total = bs.reduce((s, b) => s + boxWeight(b).kg, 0) + loose.reduce((s, g) => s + (parseFloat(g.weight) || 0) * (+g.qty > 1 ? +g.qty : 1), 0);
   const title = veh ? vehName(veh) : placeRec(door)?.label || placeOf({ door });
   const at = JSON.stringify(veh ? { vehicle: veh, door: 0 } : { door }).replace(/"/g, '&quot;');
   openModal(title, `
-    <p class="muted" style="margin-bottom:10px">${bs.length} cajas · ${loose.length} equipos sueltos${cons.length ? ` · ${cons.length} fungibles` : ''}${total ? ' · ' + kg(total) : ''}</p>
+    <p class="muted" style="margin-bottom:10px">${[bs.length || !enPas ? bs.length + ' cajas' : '', loose.length || !enPas ? loose.length + ' equipos sueltos' : '', cons.length ? cons.length + ' fungibles' : '', mat.length ? mat.length + (mat.length === 1 ? ' material de apartados' : ' materiales de apartados') : '', total ? kg(total) : ''].filter(Boolean).join(' · ') || 'Este hueco está vacío.'}</p>
     ${bs.map(b => { const items = boxItems(b.id), [, hex, ink] = colorOf(b); return `
       <details class="cell-box" open><summary><span class="sw" style="background:${hex}"></span><b>${esc(b.code)}</b> ${esc(b.name || '')}<small class="muted"> · ${esc(boxWeightText(b))}</small>
         <button class="link" style="margin-left:auto" onclick="event.preventDefault(); boxDetail('${b.id}')">Abrir</button></summary>
@@ -319,11 +316,15 @@ function cellModal(door, veh = '') {
     ${loose.length ? `<h4 class="sec-title" style="margin-top:12px">Suelto</h4><div class="list">${loose.map(g => `
       <button class="item" onclick="gearDetail('${g.id}')"><div class="who-row">${artMini(g)}<div><b>${esc(g.name)}${qtyText(g)}</b><small>${g.weight ? kg(g.weight) : 'sin peso'}</small></div></div>${revTag(g)}${novTag(g)}${g.out ? `<span class="tag info">${ic('out', 'i-sm')} ${esc(g.out.who)}</span>` : ''}</button>`).join('')}</div>` : ''}
     ${veh ? '' : `<div style="margin-top:12px">${consList(cons)}</div>`}
-    ${!bs.length && !loose.length && !cons.length ? '<p class="muted">Vacío.</p>' : ''}
+    ${mat.length ? `<div class="list" style="margin-top:12px">${mat.map(matFila).join('')}</div>` : ''}
+    ${!bs.length && !loose.length && !cons.length && !mat.length && !enPas ? '<p class="muted">Vacío.</p>' : ''}
     <div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:14px">
-      ${puedeFlota() ? `<button class="btn btn-a span2" onclick="addMaterial(${at})">${ic('plus')} Material aquí</button>` : ''}
+      ${enPas ? `<button class="btn btn-a span2" onclick="materialAqui(${door})">${ic('plus')} Material aquí</button>` : puedeFlota() ? `<button class="btn btn-a span2" onclick="addMaterial(${at})">${ic('plus')} Material aquí</button>` : ''}
       ${bs.length || loose.length ? `<button class="btn btn-g span2" onclick="printLabels(${door})">${ic('qr')} Etiquetas de lo que hay aquí</button>` : ''}
-    </div>`);
+    </div>
+    ${sueltos.length ? `<h4 class="sec-title" style="margin:16px 0 8px">Colocar aquí lo que no tiene sitio</h4>
+      <div class="list">${sueltos.map(m => `<button class="item" onclick="matPoner('${m.id}', ${door}); cellModal(${door})"><div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
+        <small>${esc([matDueno(m), m.place || 'Sin sitio apuntado'].join(' · '))}</small></div>${ic('in', 'i-sm')}</button>`).join('')}</div>` : ''}`);
 }
 function gearFormAt(at = {}) { if (at.vehicle || at.door !== undefined) setPref({ door: at.vehicle || at.door }); gearForm(null); }
 
@@ -342,7 +343,7 @@ function dragTarget(x, y) {
 function dragDock() {
   const z = (attr, icon, label) => `<div class="dock-zone" ${attr}>${ic(icon, 'i-sm')}<span>${label}</span></div>`;
   const dock = Object.assign(document.createElement('div'), { id: 'dragDock', className: 'drag-dock' });
-  dock.innerHTML = z('data-door="0"', 'box', 'Sin ubicar') + (DRAG?.cons || DRAG?.epi ? '' : z(`data-door="${ESCALON}"`, 'wrench', 'Escalón'))
+  dock.innerHTML = z('data-door="0"', 'box', DRAG?.mat ? 'Sin colocar' : 'Sin ubicar') + (DRAG?.cons || DRAG?.epi || DRAG?.mat ? '' : z(`data-door="${ESCALON}"`, 'wrench', 'Escalón'))
     + (DRAG?.cons ? '' : z('data-person="1"', 'hardhat', 'Persona'));
   document.body.appendChild(dock);
 }
@@ -357,12 +358,12 @@ function startDrag(d) {
 }
 function endDrag() {
   if (!DRAG) return;
-  clearTimeout(DRAG.timer); clearTimeout(DRAG.sideTimer); clearInterval(DRAG.scroll); DRAG.ghost?.remove(); DRAG.tok.classList.remove('dragging'); DRAG.over?.classList.remove('drop-on');
+  clearTimeout(DRAG.timer); clearTimeout(DRAG.sideTimer); clearTimeout(DRAG.hopTimer); clearInterval(DRAG.scroll); DRAG.ghost?.remove(); DRAG.tok.classList.remove('dragging'); DRAG.over?.classList.remove('drop-on');
   document.body.classList.remove('cv-dragging'); $('dragDock')?.remove(); DRAG = null;
 }
 document.addEventListener('pointerdown', e => {
   const tok = e.target.closest('#view .tok, .drag-it, .cons-item'); if (!tok || e.button > 0 || e.target.closest('.btn-sm, #modal')) return;
-  DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, epi: tok.dataset.epi, touch: e.pointerType !== 'mouse', started: false };
+  DRAG = { tok, x: e.clientX, y: e.clientY, box: tok.dataset.box, gear: tok.dataset.gear, cons: tok.dataset.cons, epi: tok.dataset.epi, mat: tok.dataset.mat, touch: e.pointerType !== 'mouse', started: false };
   if (DRAG.touch) { const d = DRAG; d.timer = setTimeout(() => DRAG === d && startDrag(d), 280); }
 });
 document.addEventListener('pointermove', e => {
@@ -384,6 +385,9 @@ document.addEventListener('pointermove', e => {
   // Encima del botón del otro lateral del contenedor, al poco se cambia de lateral para soltar allí
   const side = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-cside]')?.dataset.cside;
   if (side !== d.side) { clearTimeout(d.sideTimer); d.side = side; if (side && side !== prefs.cside) d.sideTimer = setTimeout(() => DRAG === d && setPref({ cside: side }), 450); }
+  // Igual con los botones de pasillo y de lado del almacén (data-hop: las preferencias que se cambian al quedarse encima)
+  const hopEl = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-hop]'), hop = hopEl && !hopEl.classList.contains('on') ? hopEl.dataset.hop : '';
+  if (hop !== d.hop) { clearTimeout(d.hopTimer); d.hop = hop; if (hop) d.hopTimer = setTimeout(() => { if (DRAG === d) { haptic(12); setPref(JSON.parse(hop)); } }, 450); }
 });
 document.addEventListener('touchmove', e => { if (DRAG?.started) e.preventDefault(); }, { passive: false });
 document.addEventListener('contextmenu', e => { if (e.target.closest('.tok')) e.preventDefault(); });
@@ -395,15 +399,16 @@ document.addEventListener('pointerup', e => {
   endDrag();
   CV_SUPPRESS = true; setTimeout(() => { CV_SUPPRESS = false; }, 50);
   if (!t) return;
-  if (t.person) return givePicker(d);
+  if (t.person) return d.mat ? matDar(d.mat) : givePicker(d);
+  if (d.mat) { const { door, veh } = t.cell.dataset; return moverCon('mat', d.mat, +door || 0, veh || ''); }
   if (d.epi) { const x = get('epis', d.epi), door = +t.cell.dataset.door || 0; if (x && !t.cell.dataset.veh && +x.door !== door) put('epis', { ...x, door }, `${epiLabel(x)} → ${placeName(door, '')}`); return; }
   if (t.box) return putInBox(d.gear, t.box);
   const { door, veh } = t.cell.dataset;
   if (d.cons) { const c = get('consumables', d.cons); if (c && !veh && consDoor(c) !== +door) put('consumables', { ...c, door: +door || 0, location: '' }, `"${c.name}" → ${placeName(+door || 0, '')}`); return; }
   const same = it => veh ? it.vehicle === veh : !it.vehicle && (it.door || 0) === +door;
-  if (d.box) { const b = get('boxes', d.box); if (!same(b)) moveBox(d.box, +door || 0, veh || ''); }
+  if (d.box) { const b = get('boxes', d.box); if (!same(b)) moverCon('box', d.box, +door || 0, veh || ''); }
   else {
-    const g = get('gear', d.gear); if (!same(g) || g.box) moveGear(d.gear, +door || 0, veh || '');
+    const g = get('gear', d.gear); if (!same(g) || g.box) moverCon('gear', d.gear, +door || 0, veh || '');
     // Al escalón va lo que se revisa: si estaba operativo, se apunta qué le pasa
     if (+door === ESCALON && !veh && g.status === 'OPERATIVO') revForm(g.id);
   }
@@ -458,7 +463,7 @@ function whereIs(x) {
   return placeOf(x);
 }
 // Pestaña de Material donde se ve cada sitio
-const placeTab = () => 'contenedor';   // todo está en «Contenedor y almacén»
+const placeTab = () => 'contenedor';
 function findResults(q) {
   const t = fold(q).trim(); if (!t) return [];
   const words = t.split(/\s+/), hit = (...f) => { const h = fold(f.join(' ')); return words.every(w => h.includes(w)); };
@@ -479,7 +484,8 @@ function findItems(r) {
 function findGo(kind, id) {
   const x = kind === 'box' ? get('boxes', id) : kind === 'cons' ? get('consumables', id) : get('gear', id); if (!x) return;
   const box = kind === 'gear' ? boxOf(x) : kind === 'box' ? x : null, door = kind === 'cons' ? consDoor(x) : x.door;
-  setPref({ tab: 'contenedor', ...(x.vehicle || !door || door > 20 ? {} : { cside: door <= 10 ? 'izq' : 'der' }) });
+  const u = !x.vehicle && pasDe(+(box || x).door || (kind === 'cons' ? door : 0));   // en un pasillo: se ve en el Almacén
+  setPref(u ? { tab: 'almacen', almPas: u.pas, pasLado: u.lado } : { tab: 'contenedor', ...(x.vehicle || !door || door > 20 ? {} : { cside: door <= 10 ? 'izq' : 'der' }) });
   const sec = kind === 'cons' ? 'fungible' : x.vehicle ? '' : almSecOf(+(box || x).door || 0); if (sec) almUnfold(sec);
   const sel = box ? `[data-box="${box.id}"]` : kind === 'cons' ? `[data-cons="${id}"]` : `[data-gear="${id}"]`;
   const el = document.querySelector(sel);
@@ -525,21 +531,7 @@ function viewArmarios() {
 `;
 }
 
-/* ---------- Pasillo: estantería de palés, 5 módulos con suelo y balda 1 ---------- */
-function viewPasillo() {
-  return `
-    <div class="panel">
-      <p class="muted" style="margin:0 0 12px">${usarPasillos().length ? 'El pasillo ' + usarPasillos().join(' y ') + ' (el de USAR)' : 'La estantería del pasillo'}: 5 módulos, con el suelo y la primera balda. Toca un hueco para verlo; mantén pulsado para arrastrar.</p>
-      <div class="pas-scroll"><div class="pas" style="--mods:${PAS_MOD}">
-        ${[...PAS_NIV.keys()].reverse().map(nv => `
-          <div class="pas-lvl${nv ? '' : ' floor'}">${nv ? 'Balda' : 'Suelo'}</div>
-          ${Array.from({ length: PAS_MOD }, (_, m) => hueco(100 + (m + 1) * 10 + nv, 'pas-cell' + (nv ? '' : ' pas-floor'), nv === PAS_NIV.length - 1 ? 'M' + (m + 1) : '')).join('')}`).join('')}
-      </div></div>
-    </div>
-`;
-}
-
-// Pasillo 3 y Otros: lista de lo que hay, con sus cajas
+// Un sitio sin dibujo (el escalón): lista de lo que hay, con sus cajas
 function viewPlace(door, title, hint = '') {
   const at = JSON.stringify({ door }).replace(/"/g, '&quot;');
   const bs = list('boxes').filter(b => !b.vehicle && enAlmacen(b) && b.door === door).sort((a, b) => (a.code || '').localeCompare(b.code || '', 'es', { numeric: true }));

@@ -1,14 +1,14 @@
 'use strict';
-// USAR 242 · Material: contenedor, revisión, pasillo 3, armarios y otros; préstamos y QR
+// USAR 242 · Material: contenedor, revisión, armarios y otros; préstamos y QR (el pasillo de USAR está en el Almacén: pasillo.js)
 
 /* ==================== VISTA: MATERIAL ==================== */
-// Contenedor y almacén: una página con sus partes (contenedor, sin ubicar, pasillo, armarios, escalón y fungible). Cada
+// Contenedor: una página con sus partes (contenedor, sin ubicar, armarios, escalón y fungible; el pasillo de USAR está en
+// el Almacén, con los demás: js/views/pasillo.js). Cada
 // parte se pliega tocando su barra y se ordena arrastrándola por el asa (⋮⋮); el orden y lo plegado se recuerdan.
 // De serie, arriba lo que se arrastra y, al final, el fungible, plegado.
 const ALM_SECS = {
   contenedor: ['Contenedor', 'box', () => viewContVisual()],
   sinubicar: ['Sin ubicar', 'alert', () => viewSinUbicar()],
-  pasillo: ['Pasillo', 'layers', () => viewPasillo()],
   armarios: ['Armarios', 'case', () => viewArmarios()],
   escalon: ['Escalón', 'wrench', () => viewPlace(ESCALON, '', 'Material en revisión o arreglándose. Suelta aquí lo que se va a revisar.')],
   fungible: ['Fungible', 'package', () => viewFungible()]
@@ -30,8 +30,10 @@ function almCount(id) {
   return [b ? b + (b === 1 ? ' caja' : ' cajas') : '', g ? g + (g === 1 ? ' equipo' : ' equipos') : '', e ? e + ' EPI' : ''].filter(Boolean).join(' · ') || 'Vacío';
 }
 function viewContenedor() {
-  const all = almOrder().every(almFolded);
-  return `    <div class="alm-tools"><button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
+  const all = almOrder().every(almFolded), n = usarPasillos()[0];
+  const enPas = [...list('gear').filter(g => !get('boxes', g.box)), ...list('boxes')].filter(x => !x.vehicle && enAlmacen(x) && enPasillo(x.door)).length;
+  return `    <div class="alm-tools"><button class="link alm-alpas" onclick="go('pasillo')">${ic('layers', 'i-sm')} ${n ? 'Pasillo ' + n : 'Pasillos'}, en el Almacén${enPas ? ` (${enPas})` : ''}</button>
+      <button class="link" onclick="almFoldAll()">${all ? 'Desplegar todo' : 'Plegar todo'}</button></div>
     ${almOrder().map(id => {
       if (id === 'sinubicar' && almCount(id) === 'Vacío') return '';
       const [title, icon, view] = ALM_SECS[id], folded = almFolded(id);
@@ -260,7 +262,7 @@ function gearForm(id) {
   const cur = prefs.door, g = get('gear', id) || { door: typeof cur === 'number' ? cur : 1 };
   openForm(id ? 'Editar material' : 'Añadir material', [
     { k: 'name', label: 'Herramienta / equipo', value: g.name, required: true, wide: true },
-    { k: 'place', label: 'Dónde va', value: String(g.door ?? 1), options: placeOptions(), wide: true },
+    { k: 'place', label: 'Dónde va', value: g.vehicle ? 'V:' + g.vehicle : String(g.door ?? 1), options: placeOptions(g.door, g.vehicle), wide: true },
     { k: 'qty', label: 'Cantidad', type: 'number', value: g.qty || 1 },
     { k: 'serial', label: 'Nº serie', value: g.serial },
     { k: 'service', label: 'Próximo mantenimiento / calibración', type: 'date', value: g.service, wide: true },
@@ -275,8 +277,8 @@ function gearForm(id) {
   ], v => {
     const base = get('gear', id) || { id: uid('G'), out: null, lastCheck: '', status: 'OPERATIVO' };
     const { place: pl, ...rest } = v, bx = get('boxes', v.box);
-    const door = bx ? bx.door : +pl;
-    const item = { ...base, ...rest, where: '', shelf: 'A', door, vehicle: '', qty: +v.qty > 1 ? +v.qty : '', weight: parseFloat(v.weight) || '', volume: parseFloat(v.volume) || '', value: parseFloat(v.value) || '' };
+    const { door, vehicle } = bx ? { door: bx.door, vehicle: bx.vehicle || '' } : parsePlace(pl);
+    const item = { ...base, ...rest, where: '', shelf: 'A', door, vehicle, qty: +v.qty > 1 ? +v.qty : '', weight: parseFloat(v.weight) || '', volume: parseFloat(v.volume) || '', value: parseFloat(v.value) || '' };
     put('gear', item, `${id ? 'Editado' : 'Añadido'} "${v.name}" en ${placeShort(item)}`);
     setPref({ door });
   });

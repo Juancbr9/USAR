@@ -24,12 +24,12 @@ with sync_playwright() as p:
     # ---------- Menú: el material está dentro de USAR, con sus subopciones ----------
     a.click('#menuBtn'); assert a.locator('#drawer .dr-item.sub').count() == 0, 'USAR empieza plegado'
     a.click('#drawer .dr-group-head:has-text("USAR")'); a.wait_for_timeout(100)
-    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub').all_inner_texts()][:4] == ['Almacén', 'Fuera', 'Revisión', 'Revista']
+    assert [t.split('\n')[0].strip() for t in a.locator('#drawer .dr-item.sub').all_inner_texts()][:4] == ['Contenedor', 'Fuera', 'Revisión', 'Revista']
     assert a.locator('#drawer .dr-item:has-text("Revista")').count() == 1
     # Contenedor y almacén: arriba lo que se arrastra (contenedor, pasillo, armarios, escalón) y el fungible al final, plegado
-    a.click('#drawer .dr-item:has-text("Almacén")'); a.wait_for_timeout(150)
+    a.click('#drawer .dr-item:has-text("Contenedor")'); a.wait_for_timeout(150)
     secs = lambda: a.evaluate("[...document.querySelectorAll('#view .alm-sec')].map(s => s.dataset.sec)")
-    assert [s for s in secs() if s != 'sinubicar'] == ['contenedor', 'pasillo', 'armarios', 'escalon', 'fungible'], secs()
+    assert [s for s in secs() if s != 'sinubicar'] == ['contenedor', 'armarios', 'escalon', 'fungible'], secs()   # el pasillo de USAR está en el Almacén, con los demás
     assert a.locator('#view .alm-jump').count() == 0, 'sin barra «Ir a»'
     assert a.locator('#alm-fungible.folded').count() == 1 and a.locator('#view .cons-item').count() == 0, 'el fungible, plegado'
     # Cada parte se pliega tocando su barra (y se ve cuánto tiene); «Plegar todo» / «Desplegar todo»
@@ -57,9 +57,13 @@ with sync_playwright() as p:
     assert a.locator('.arm-list[data-arm="2"] .item').count() == 5 and a.locator('.arm-list').count() == 1
     a.click('.arm-top:has-text("Armario 2")'); a.wait_for_timeout(100); assert a.locator('.arm-list').count() == 0
     # Buscar algo de una parte plegada la despliega
-    a.click('#alm-pasillo .alm-tog'); a.wait_for_timeout(100); assert a.locator('#alm-pasillo.folded').count() == 1
-    gp = a.evaluate("const g = list('gear').find(g => !g.vehicle && !g.out && !g.box && g.door >= 1 && g.door <= 20); moveGear(g.id, 131); g.id")
-    a.evaluate(f"findGo('gear', '{gp}')"); a.wait_for_timeout(100); assert a.locator('#alm-pasillo.folded').count() == 0
+    a.click('#alm-armarios .alm-tog'); a.wait_for_timeout(100); assert a.locator('#alm-armarios.folded').count() == 1
+    gp = a.evaluate("const g = list('gear').find(g => !g.vehicle && !g.out && !g.box && g.door >= 1 && g.door <= 20); moveGear(g.id, 235); g.id")
+    a.evaluate(f"findGo('gear', '{gp}')"); a.wait_for_timeout(100); assert a.locator('#alm-armarios.folded').count() == 0
+    # Y lo que está en un pasillo se busca en el Almacén, en su pasillo y su lado
+    a.evaluate(f"moveGear('{gp}', pasDoor(3, 'D', 2, 1)); findGo('gear', '{gp}')"); a.wait_for_timeout(150)
+    assert a.evaluate("[prefs.tab, prefs.almPas, prefs.pasLado]") == ['almacen', 3, 'D'] and a.locator(f'#view .px .tok[data-gear="{gp}"]').count() == 1
+    assert 'Pasillo 3, en el Almacén' in a.evaluate("(go('contenedor'), document.querySelector('#view .alm-alpas').innerText)")
     a.evaluate("setPref({ almOrder: null, almFold: null })"); a.wait_for_timeout(100)
     assert a.locator('#view .arm-cab').count() == 3 and a.locator('#view .cvi').count() == 1
     # Sin botón «Caja» suelto: «+ Material» deja elegir equipo, caja o fungible
@@ -67,19 +71,20 @@ with sync_playwright() as p:
     a.click('#view button.btn-a:has-text("Material")'); a.wait_for_timeout(100)
     assert [t.split('\n')[0] for t in a.locator('#modal .add-mat button').all_inner_texts()] == ['Equipo o herramienta', 'Caja', 'Material fungible']
     # Fungible nuevo en el pasillo: sale en la lista del fungible (con su sitio) y al ir a «Fungible» se despliega
-    a.click('#modal .add-mat [data-add=package]'); a.fill('#modalForm [name=name]', 'Bridas grandes'); a.select_option('#modalForm [name=place]', '110')
+    a.click('#modal .add-mat [data-add=package]'); a.fill('#modalForm [name=name]', 'Bridas grandes'); a.select_option('#modalForm [name=place]', '130100')
     a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
     cid = a.evaluate("list('consumables').find(c => c.name === 'Bridas grandes').id")
     a.evaluate("go('consumibles')"); a.wait_for_timeout(300)
-    assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible() and 'Pasillo M1 suelo' in a.inner_text(f'#alm-fungible [data-cons="{cid}"]')
+    assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible() and 'Pasillo 3 izq. M1 suelo' in a.inner_text(f'#alm-fungible [data-cons="{cid}"]')
     a.click(f'#alm-fungible [data-cons="{cid}"] button:has-text("+5")'); a.wait_for_timeout(100)
     assert a.locator(f'#alm-fungible [data-cons="{cid}"]').is_visible(), 'sigue desplegado al cambiar el stock'
     assert a.evaluate(f"get('consumables', '{cid}').stock") == 15
     # Los antiguos (solo con el texto «Ubicación») salen en su sitio: «Caja H-2» → el hueco de esa caja
     assert a.evaluate("consDoor({ location: 'Caja H-2' })") == a.evaluate("boxes().find(b => b.code === 'H-2')?.door || 0")
     assert a.evaluate("consDoor({ location: 'Escalón' })") == 302 and a.evaluate("consDoor({ location: 'B11' })") == 11
-    # Los nombres antiguos (pasillo, armarios, otros, fungible, fuera) llevan a esta página
-    for t in ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles']:
+    # Los nombres antiguos (armarios, otros, fungible, fuera) llevan a esta página; el pasillo, al Almacén (el 3, el de USAR)
+    a.evaluate("go('avisos'); go('pasillo')"); a.wait_for_timeout(100); assert a.evaluate("[prefs.tab, prefs.almPas]") == ['almacen', 3]
+    for t in ['armarios', 'escalon', 'otros', 'consumibles']:
         a.evaluate(f"go('avisos'); go('{t}')"); a.wait_for_timeout(100); assert a.evaluate("prefs.tab") == 'contenedor', t
     # Fuera: lo que lleva cada persona (se devuelve desde aquí) y lo prestado con firma, en una lista
     gf = a.evaluate("const g = list('gear').find(g => !g.out && !g.box && g.door >= 1 && g.door <= 20); giveTo(JSON.stringify({ gear: g.id }), 'OP-02'); g.id")
@@ -91,7 +96,7 @@ with sync_playwright() as p:
     a.evaluate(f"itemHistory('gear', '{gf}')"); a.wait_for_timeout(100)
     assert a.locator('#modal .timeline li').count() >= 2 and 'CABRERA' in a.inner_text('#modal .timeline'); a.keyboard.press('Escape')
     a.evaluate("go('contenedor')"); a.wait_for_timeout(100)
-    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Almacén")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
+    a.click('#menuBtn'); assert a.locator('#drawer .dr-item.on:has-text("Contenedor")').count() == 1; a.click('#drawer [aria-label="Cerrar menú"]')
 
     # ---------- Entrega con firma ----------
     a.evaluate("go('entregas')"); a.wait_for_timeout(150); a.click('#view button:has-text("Entrega")')
@@ -129,7 +134,7 @@ with sync_playwright() as p:
     g1, g2, g3, g4 = ids[0], ids[1], ids[2], ids[3]
     a.evaluate(f"mark('{g1}', 'bad')"); a.fill(f'.check:has([onclick="mark(\'{g1}\', \'bad\')"]) input.input', 'No arranca')
     a.evaluate(f"markMore('{g2}')"); a.click('#modal .item:has-text("Está en el taller")')
-    a.evaluate(f"markMore('{g3}')"); a.click('#modal .item:has-text("Está en otro sitio")'); a.select_option('[name=place]', '121'); save()
+    a.evaluate(f"markMore('{g3}')"); a.click('#modal .item:has-text("Está en otro sitio")'); a.select_option('[name=place]', '130201'); save()
     a.evaluate(f"markMore('{g4}')"); a.click('#modal .item:has-text("De baja")')
     a.click('.check-row:has-text("Solo lo que falta")'); a.wait_for_timeout(150)
     assert a.locator(f'[onclick="mark(\'{g1}\', \'ok\')"]').count() == 0, '«Solo lo que falta» esconde lo marcado'
@@ -137,7 +142,7 @@ with sync_playwright() as p:
     a.locator('.panel:not(.progress) button:has-text("Todo OK")').first.click(); a.wait_for_timeout(150)
     a.click('button:has-text("Finalizar revista")'); a.wait_for_timeout(400)
     st = a.evaluate(f"['{g1}', '{g2}', '{g3}', '{g4}'].map(id => {{ const g = get('gear', id); return [g.status, g.rev?.state || '', g.door]; }})")
-    assert st[0][:2] == ['REVISIÓN', 'espera'] and st[1][:2] == ['REVISIÓN', 'taller'] and st[2][2] == 121 and st[3][:2] == ['AVERIADO', 'baja'], st
+    assert st[0][:2] == ['REVISIÓN', 'espera'] and st[1][:2] == ['REVISIÓN', 'taller'] and st[2][2] == 130201 and st[3][:2] == ['AVERIADO', 'baja'], st
     r = a.evaluate("list('inspections').sort((a, b) => b.date - a.date)[0]")
     assert r['reason'] == 'Mensual' and len(r['fails']) == 1 and len(r['other']) == 3 and 'izquierdo' in r['scope'], r
 

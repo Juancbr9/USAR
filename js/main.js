@@ -5,7 +5,7 @@
 const VIEWS = {
   avisos: viewAvisos, contenedor: viewContenedor, revista: viewRevista,
   ajustes: viewAjustes, guia: viewGuia, personal: viewPersonal, listas: viewListas, calendario: viewCalendario, manual: viewManual,
-  vehiculos: viewVehiculos, recursos: viewLogistica, ...Object.fromEntries(Object.keys(APARTADOS).map(k => [k, () => viewApartado(k)])), revision: viewRevision, entregas: viewEntregas, fuera: viewFuera, epi: viewEpi,
+  vehiculos: viewVehiculos, recursos: viewLogistica, almacen: viewAlmacen, ...Object.fromEntries(Object.keys(APARTADOS).map(k => [k, () => viewApartado(k)])), revision: viewRevision, entregas: viewEntregas, fuera: viewFuera, epi: viewEpi,
   arcos: viewArcos, apuntalamientos: viewApuntalamientos
 };
 

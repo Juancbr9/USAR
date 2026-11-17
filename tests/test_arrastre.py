@@ -28,13 +28,15 @@ with sync_playwright() as p:
         a.mouse.move(t['x'] + t['width'] / 2, t['y'] + t['height'] / 2, steps=12); a.mouse.up(); a.wait_for_timeout(300)
         assert a.locator('#dragDock').count() == 0, 'la barra se va al soltar'
 
-    # Un equipo suelto del contenedor (sin ubicar) → un hueco del pasillo
+    # Un equipo suelto del contenedor (sin ubicar) → una balda de un armario; sale el aviso con «Deshacer», que lo deja como estaba
     gid = a.evaluate("list('gear').find(g => !g.vehicle && (g.door || 0) === 0 && !get('boxes', g.box) && g.status === 'OPERATIVO').id")
-    arrastra(f'.cv-unplaced .tok[data-gear="{gid}"]', '#alm-pasillo .pas-cell[data-door="110"]')
-    assert a.evaluate(f"get('gear', '{gid}').door") == 110
-    # Del pasillo al Escalón (barra de abajo): como estaba operativo, se abre su ficha de revisión
+    arrastra(f'.cv-unplaced .tok[data-gear="{gid}"]', '.arm-shelf[data-door="212"]')
+    assert a.evaluate(f"get('gear', '{gid}').door") == 212 and 'Deshacer' in a.inner_text('#toast')
+    a.click('#toast .toast-act'); a.wait_for_timeout(200); assert a.evaluate(f"get('gear', '{gid}').door") == 0 and 'como estaba' in a.inner_text('#toast')
+    arrastra(f'.cv-unplaced .tok[data-gear="{gid}"]', '.arm-shelf[data-door="212"]')
+    # Del armario al Escalón (barra de abajo): como estaba operativo, se abre su ficha de revisión
     assert a.locator('#dragDock').count() == 0
-    arrastra(f'#alm-pasillo .tok[data-gear="{gid}"]', '#dragDock .dock-zone[data-door="302"]')
+    arrastra(f'.arm-shelf .tok[data-gear="{gid}"]', '#dragDock .dock-zone[data-door="302"]')
     assert a.evaluate(f"get('gear', '{gid}').door") == 302
     assert 'Revisión' in a.text_content('#modal') and a.locator('#modalForm [name=state]').count() == 1, 'se abre la ficha de revisión'
     assert a.locator('#modalForm [name=esc]').count() == 0, 'ya está en el escalón'

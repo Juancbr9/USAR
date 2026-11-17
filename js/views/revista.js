@@ -124,7 +124,7 @@ function markMore(id) {
 }
 function markMoved(id) {
   const g = get('gear', id);
-  openForm(`${g.name}: ¿dónde está?`, [{ k: 'place', label: 'Dónde está', value: String(g.door ?? 0), options: placeOptions(), wide: true }],
+  openForm(`${g.name}: ¿dónde está?`, [{ k: 'place', label: 'Dónde está', value: String(g.door ?? 0), options: placeOptions(g.door), wide: true }],
     v => mark(id, 'moved', { door: +v.place }));
 }
 function markNote(id, note) { prefs.draft.res[id].note = note; writeJSON(KEY.prefs, prefs); }

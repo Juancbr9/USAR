@@ -23,6 +23,12 @@ const modPreview = (mod = '', title = 'Módulo detrás') => `<div class="lbl wid
     onclick="const w = this.closest('.veh-mods'); w.querySelector('img').src = ${jsq(vehArtSrc(RENAULT, k))}; w.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === this)); const s = $('modalForm')?.elements.mod; if (s) s.value = '${k}'">${esc(l.replace(' (sin módulo)', ''))}</button>`).join('')}</div></div>`;
 // Ficha de un modelo para todo el equipo: su dibujo (la Renault, con cada módulo), sus matrículas con la ITV y la última
 // revista de salida de cada una. Quien gestiona la flota, además, la edita.
+// Lo que va en un vehículo sin ser suyo: material de un apartado o de otro vehículo, y equipos o cajas de USAR
+function vehOtros(id) {
+  const usar = (x, kind) => `<div class="item"><button class="link-row grow" onclick="${kind === 'box' ? 'boxDetail' : 'gearDetail'}('${x.id}')"><div class="who-row"><span class="cons-ico">${ic(kind === 'box' ? 'case' : 'hardhat')}</span><div><b>${esc(kind === 'box' ? 'Caja ' + x.code : x.name)}${kind === 'box' ? '' : qtyText(x)}</b><small>${esc(['USAR', kind === 'box' ? x.name : ''].filter(Boolean).join(' · '))}</small></div></div></button>
+    <button class="btn btn-g btn-sm" onclick="moverA('${kind}', '${x.id}')">${ic('move', 'i-sm')} Mover</button></div>`;
+  return [...matEn(0, id).map(matFila), ...list('boxes').filter(b => b.vehicle === id).map(b => usar(b, 'box')), ...list('gear').filter(g => g.vehicle === id && !get('boxes', g.box)).sort(byName).map(g => usar(g, 'gear'))].join('');
+}
 function vehicleView(id) {
   const v = get('vehicles', id); if (!v) return;
   const units = unitsOf_(v);
@@ -39,6 +45,7 @@ function vehicleView(id) {
     ${units.length ? `<div class="list">${units.map(unitRow).join('')}</div>`
       : `<button class="btn btn-g full" onclick="vcheckForm('${id}')">${ic('clipboard')} Revista de salida</button>`}
     <div class="veh-mat">${matBloque('veh:' + id, 'Apunta lo que lleva: mangotes, mangueras, puntas de lanza, herramientas, calzos, cadenas…')}</div>
+    ${(o => o ? `<h4 class="sec-title" style="margin:16px 0 8px">También va en este vehículo</h4><div class="list veh-otros">${o}</div>` : '')(vehOtros(id))}
     ${puedeFlota() ? `<button class="btn btn-g full" style="margin-top:12px" onclick="vehicleForm('${id}')">${ic('pencil')} Editar modelo y matrículas</button>` : ''}`);
 }
 

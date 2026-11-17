@@ -1,7 +1,8 @@
 'use strict';
 // SIER 242 · Material de las especialidades, los equipos y los vehículos (registros «matesp»). Cada cosa tiene un dueño
 // —un apartado (ap) o un vehículo (veh)—, cantidad, sitio, estado, revisión, caducidad, foto e historial. En las funciones
-// el dueño se pasa como texto: «ap:agua» o «veh:V-…». (El material de USAR sigue en su almacén: contenedor, pasillo y armarios.)
+// el dueño se pasa como texto: «ap:agua» o «veh:V-…». Dónde está cada cosa (un hueco de cualquier pasillo, el contenedor, un
+// armario o un vehículo) y cómo se mueve está en js/views/pasillo.js (matLugar, matPoner, moverA).
 
 // «Para dar de baja»: sigue en la lista hasta que se retire, pero ya no cuenta como material ni entra en las revistas
 const AP_ESTADOS = { OPERATIVO: ['Operativo', 'ok'], 'REVISIÓN': ['En revisión', 'warn'], AVERIADO: ['Averiado', 'bad'], BAJA: ['Para dar de baja', 'neutral'] };
@@ -77,18 +78,20 @@ function matForm(owner, id, pre = {}) {
   if (!matPuede(owner)) return;
   const d = duenoDe(owner), m = id ? get('matesp', id) : { status: 'OPERATIVO', qty: 1, ...pre }, units = d.veh ? get('vehicles', d.veh)?.units || [] : [];
   if (id && !m) return toast('Ese material ya no está apuntado', 'bad');
-  // Pasillo: los del apartado; el desplegable de módulos y alturas llega hasta el lado más grande
-  const nums = d.ap ? apPasillos(d.ap) : [], enSitio = nums.length && colocado(d.ap, m), u = enSitio || (pre.pas && !id) ? ubic({ ap: d.ap, ...m }) : { pas: nums[0], lado: 'I', mod: 0, niv: 0 };
-  const tope = f => Math.max(...nums.flatMap(n => ['I', 'D'].map(l => pasLado(d.ap, n, l)[f])));
+  // Hueco: cualquier pasillo del almacén (primero, los del apartado); los desplegables llegan hasta el lado más grande.
+  // Lo de un vehículo va en su vehículo: para llevarlo a otro sitio (o lo de un apartado al contenedor o a un vehículo), «Mover».
+  const nums = d.ap ? almacenNums() : [], l0 = matLugar({ ...d, ...m }), u0 = pasDe(l0.door), u = u0 || { pas: apPasillos(d.ap || '')[0] || nums[0], lado: 'I', mod: 0, niv: 0 };
+  const tope = f => Math.max(...nums.flatMap(n => ['I', 'D'].map(l => pasGeo(n, l)[f])));
+  const otro = !u0 && (l0.door || l0.veh) ? lugarTxt(l0) : '';
   const hist = id ? list('logs').filter(l => l.ref === 'matesp:' + id).sort((a, b) => b.ts - a.ts).slice(0, 8) : [];
   openForm(id ? m.name : `Material de ${duenoNombre(owner)}`, [
     { k: 'name', label: 'Qué es', value: m.name || '', required: true, wide: true, placeholder: 'Ej.: ' + duenoHabitual(owner)[0] },
     { k: 'qty', label: 'Cuántos', type: 'number', value: m.qty || 1 },
     { k: 'status', label: 'Estado', value: m.status || 'OPERATIVO', options: Object.entries(AP_ESTADOS).map(([v, [l]]) => [v, l]) },
     ...(units.length > 1 ? [{ k: 'unit', label: 'Matrícula', value: m.unit || '', wide: true, options: [['', 'Todas las de este modelo'], ...units.map(u => [u.id, u.plate])] }] : []),
-    ...(nums.length ? [...(nums.length > 1 ? [{ k: 'pas', label: 'Pasillo', value: u.pas, options: nums.map(n => [n, 'Pasillo ' + n]) }] : []),
+    ...(nums.length ? [{ k: 'pas', label: 'Pasillo', value: u.pas, options: nums.map(n => [n, `Pasillo ${n}${pasDuenos(n).length ? ' · ' + pasDuenos(n).map(pasDuenoTxt).join(' y ') : ''}`]) },
       { k: 'lado', label: 'Lado del pasillo', value: u.lado, options: Object.entries(LADOS) },
-      { k: 'mod', label: 'Módulo', value: u.mod, options: [[0, 'Sin colocar'], ...Array.from({ length: tope('mods') }, (_, i) => [i + 1, 'Módulo ' + (i + 1)])] },
+      { k: 'mod', label: 'Módulo', value: u.mod, options: [[0, otro ? 'No está en un pasillo: ' + otro : 'Sin colocar'], ...Array.from({ length: tope('mods') }, (_, i) => [i + 1, 'Módulo ' + (i + 1)])] },
       { k: 'niv', label: 'Altura', value: u.niv, options: Array.from({ length: tope('baldas') + 1 }, (_, n) => [n, nivNombre(n)]) }] : []),
     { k: 'place', label: d.veh ? 'Dónde va (cofre, cabina, techo…)' : 'Otro sitio o detalle', value: m.place || '', wide: true, placeholder: d.veh ? 'Ej.: Cofre lateral izquierdo' : 'Ej.: En la caja roja' },
     { k: 'holder', label: 'Asignado a (si lo tiene alguien a su cargo)', value: m.holder || '', wide: true, options: [['', 'Nadie: está en su sitio'], ...operators().sort(byName).map(o => [o.id, conEmpleo(o)])] },
@@ -100,13 +103,18 @@ function matForm(owner, id, pre = {}) {
     { k: 'photo', label: m.photo ? 'Cambiar la foto' : 'Foto', type: 'photo', value: '', wide: true }
   ], async v => {
     const mid = m.id || uid('ME');
+    // El hueco solo se toca si se ha cambiado en el formulario (lo que está en el contenedor o en un vehículo sigue donde estaba)
+    const nu = nums.length && +v.mod ? { pas: +v.pas || u.pas, lado: v.lado === 'D' ? 'D' : 'I', mod: +v.mod, niv: +v.niv || 0 } : null;
+    const igual = nu ? !!u0 && pasDoor(nu.pas, nu.lado, nu.mod, nu.niv) === l0.door : !u0;
+    const sitio = !nums.length || igual ? {} : nu ? { ...nu, door: 0, enveh: '' } : { pas: 0, lado: 'I', mod: 0, niv: 0 };
     if (v.photo) await Img.put('mat:' + mid, v.photo);
-    put('matesp', { ...m, id: mid, ...d, name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: v.unit || '', ...(nums.length ? { pas: +v.pas || nums[0], lado: v.lado === 'D' ? 'D' : 'I', mod: +v.mod || 0, niv: +v.mod ? +v.niv || 0 : 0 } : {}), place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}),
+    put('matesp', { ...m, id: mid, ...d, name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: v.unit || '', ...sitio, place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}),
       review: v.review || '', caduca: v.caduca || '', fab: v.fab || '', serial: v.serial || '', notes: v.notes || '', photo: v.photo ? true : m.photo || false },
       id ? `${duenoNombre(owner)}: ${v.name}${v.status !== (m.status || 'OPERATIVO') ? ' pasa a «' + AP_ESTADOS[v.status][0].toLowerCase() + '»' : v.holder !== (m.holder || '') ? (v.holder ? ' asignado a ' + opName(v.holder) : ' vuelve a su sitio') : ' actualizado'}` : `${duenoNombre(owner)}: añadido ${v.name}`); matVuelve(owner); },
   id ? `${m.photo ? `<img class="photo span2" data-img="mat:${id}" alt="Foto de ${esc(m.name)}">` : ''}
     ${m.holder === me()?.id ? `<button type="button" class="btn btn-g span2" onclick="matLlevar('${owner}', '${id}', false)">${ic('in')} Lo devuelvo a su sitio</button>`
       : `<button type="button" class="btn btn-g span2" onclick="matLlevar('${owner}', '${id}', true)">${ic('out')} Me lo llevo yo</button>`}
+    <button type="button" class="btn btn-g span2" onclick="moverA('mat', '${id}')">${ic('move')} Mover a otro sitio</button>
     <button type="button" class="btn btn-g span2" onclick="matEtiquetas('${owner}', '${id}')">${ic('qr')} Etiqueta QR</button>
     ${hist.length ? `<details class="span2 mat-hist"><summary class="link">${ic('history', 'i-sm')} Historial (${hist.length})</summary>
       <ul>${hist.map(l => `<li><b>${fmtWhen(l.ts)}</b> · ${esc(l.operator || '')}: ${esc(l.action.replace(/^[^:]+: /, ''))}</li>`).join('')}</ul></details>` : ''}

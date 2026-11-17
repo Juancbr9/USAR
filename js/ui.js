@@ -25,7 +25,20 @@ function countUp() {
 addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 4), { passive: true });
 
 // Al cambiar de pantalla (no en cada actualización de datos) el contenido entra con una transición corta
-let LAST_SCREEN = '';
+let LAST_SCREEN = '', LAST_SUB = '';
+// Lo que cambia dentro de una misma pantalla (pestañas, vistas, pasillo y lado, mes…)
+const SUB_KEYS = ['aptab', 'pview', 'ptab', 'almPas', 'pasN', 'pasLado', 'cuadMes', 'cside', 'cview', 'logDia'];
+// Dónde estaba la pestaña (o el botón) activo de cada grupo antes de redibujar, para que su marca se deslice hasta el nuevo
+const IND_SEL = '.ctabs, .seg-row, .tabs';
+function indSnap() {
+  return [...document.querySelectorAll('#view ' + IND_SEL.split(', ').join(', #view '))].map(g => { const on = g.querySelector('.on'); return on ? { k: g.getAttribute('aria-label') || '', left: on.offsetLeft, width: on.offsetWidth } : null; });
+}
+function indSlide(antes) {
+  if (!antes) return;
+  document.querySelectorAll('#view ' + IND_SEL.split(', ').join(', #view ')).forEach((g, i) => { const on = g.querySelector('.on'), a = antes[i];
+    if (!on || !a || a.k !== (g.getAttribute('aria-label') || '') || !on.offsetWidth || (a.left === on.offsetLeft && a.width === on.offsetWidth)) return;
+    on.style.setProperty('--dx', a.left - on.offsetLeft + 'px'); on.style.setProperty('--sx', a.width / on.offsetWidth); on.classList.add('slide'); });
+}
 function render() {
   $('boot')?.remove();
   if (!loggedIn()) return renderLogin();
@@ -38,10 +51,14 @@ function render() {
   renderHeader();
   renderNav();
   // Si una pantalla falla, se ve un aviso con salida (y el error sigue llegando a la consola)
+  const marcas = motion() ? indSnap() : null;
   try { $('view').innerHTML = areaHeader(prefs.tab) + (VIEWS[prefs.tab] || VIEWS.avisos)(); }
   catch (e) { $('view').innerHTML = errorState(); setTimeout(() => { throw e; }); }
-  const screen = [prefs.tab, prefs.person].join('|');
-  if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
+  const screen = [prefs.tab, prefs.person].join('|'), sub = SUB_KEYS.map(k => JSON.stringify(prefs[k] ?? '')).join('|');
+  if (screen !== LAST_SCREEN) { LAST_SCREEN = screen; const v = $('view'); v.classList.remove('enter', 'swap'); void v.offsetWidth; v.classList.add('enter'); if (motion()) countUp(); }
+  // Misma pantalla, otra pestaña u otro pasillo: el indicador se desliza a su sitio y el contenido cambia con un fundido corto
+  else if (sub !== LAST_SUB && motion()) { const v = $('view'); v.classList.remove('enter', 'swap'); void v.offsetWidth; v.classList.add('swap'); indSlide(marcas); }
+  LAST_SUB = sub;
   if (document.querySelector('.cvi')) fitCells();
   if (prefs.tab === 'apuntalamientos') apuKeepFocus();
   if (prefs.tab === 'personal') persKeepFocus();
@@ -118,6 +135,8 @@ function toggleDrawer(open) {
 }
 
 function go(tab) {
+  // El pasillo de USAR ya es uno más del Almacén
+  if (tab === 'pasillo') { prefs.almPas = usarPasillos()[0] || prefs.almPas; tab = 'almacen'; }
   const sub = ALMACEN_TABS.includes(tab) && tab;
   tab = sub ? 'contenedor' : HUB_TO[tab] || tab;
   toggleDrawer(false); haptic(8);
@@ -355,6 +374,9 @@ function openModal(title, html) {
   $('modalBody').innerHTML = html;
   $('modal').classList.remove('hidden');
   const sheet = $('modal').querySelector('.sheet');
+  sheet.style.transform = ''; sheet.style.transition = '';
+  // Si ya había una ventana abierta (un paso más), el contenido nuevo entra con un fundido corto
+  if (wasOpen && motion()) $('modalBody').animate?.([{ opacity: .35, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.22, 1, .36, 1)' });
   sheet.setAttribute('tabindex', '-1'); sheet.focus({ preventScroll: true });
 }
 function closeModal() {
@@ -366,6 +388,21 @@ function closeModal() {
   if (modalReturn?.isConnected) modalReturn.focus({ preventScroll: true });
   modalReturn = null;
 }
+// En el móvil, la ventana se cierra arrastrándola hacia abajo desde su cabecera (sigue al dedo; si se suelta pronto, vuelve)
+let SHEET_DRAG = null;
+document.addEventListener('pointerdown', e => {
+  const head = e.target.closest('#modal .sheet-head'); if (!head || e.pointerType === 'mouse' || e.target.closest('button') || WIDE.matches) return;
+  const sheet = head.parentElement; if (sheet.scrollTop > 0) return;
+  SHEET_DRAG = { sheet, y: e.clientY, dy: 0 };
+});
+document.addEventListener('pointermove', e => {
+  const d = SHEET_DRAG; if (!d) return;
+  d.dy = Math.max(0, e.clientY - d.y); d.sheet.style.transition = 'none'; d.sheet.style.transform = d.dy ? `translateY(${d.dy}px)` : '';
+});
+const sheetDrop = () => { const d = SHEET_DRAG; if (!d) return; SHEET_DRAG = null;
+  if (d.dy > 110) { haptic(10); return closeModal(); }
+  d.sheet.style.transition = 'transform .24s cubic-bezier(.22, 1, .36, 1)'; d.sheet.style.transform = ''; };
+document.addEventListener('pointerup', sheetDrop); document.addEventListener('pointercancel', sheetDrop);
 // Con teclado, el tabulador no sale de la ventana abierta
 addEventListener('keydown', e => {
   if (e.key !== 'Tab' || $('modal').classList.contains('hidden')) return;
@@ -524,10 +561,12 @@ function handleHash() {
     matForm(duenoTxt(m), m.id);
   }
   if (key === 'h') {   // apartado.pasillo.lado.módulo.altura
-    const [k, pas, lado, mod, niv] = value.split('.');
-    if (!APARTADOS[k] || !apPasillos(k).includes(+pas)) return toast('Ese hueco ya no existe', 'bad');
-    setPref({ tab: k, aptab: 'material', pasN: { ...prefs.pasN, [k]: +pas }, pasLado: lado === 'D' ? 'D' : 'I' });
-    pasHueco(k, +pas, lado === 'D' ? 'D' : 'I', +mod, +niv || 0);
+    const [k, pas, l, mod, niv] = value.split('.'), lado = l === 'D' ? 'D' : 'I', d = pasDoor(+pas, lado, +mod, +niv || 0);
+    if (!pasVale(d)) return toast('Ese hueco ya no existe', 'bad');
+    // Se abre en su apartado si el pasillo sigue siendo suyo; si no, en el Almacén
+    if (APARTADOS[k] && apPasillos(k).includes(+pas)) setPref({ tab: k, aptab: 'material', pasN: { ...prefs.pasN, [k]: +pas }, pasLado: lado });
+    else setPref({ tab: 'almacen', almPas: +pas, pasLado: lado });
+    cellModal(d);
   }
   if (key === 'k') {
     if (!get('boxes', value)) return toast('Caja no encontrada en este dispositivo', 'bad');
