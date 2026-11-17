@@ -70,7 +70,7 @@ function sectionStatus(id) {
       if (prefs.draft) return ['Revista en curso sin finalizar', 'warn'];
       const t = r => +(r.date || r.ts) || 0, last = list('inspections').sort((x, y) => t(y) - t(x))[0];
       return last && t(last) ? [`Última: ${fmtDate(new Date(t(last)).toISOString().slice(0, 10))}`, 'ok'] : ['Sin revistas', 'neutral']; }
-    case 'vehiculos': return [`${list('vehicles').length} vehículos`, 'neutral'];
+    case 'vehiculos': return [`${list('vehicles').filter(v => !esModulo(v)).length} vehículos`, 'neutral'];
     case 'personal': { const n = operators().reduce((s, o) => s + readinessIssues(o.id).length, 0); return n ? [`${n} ${n === 1 ? 'aviso' : 'avisos'}`, 'warn'] : [`${operators().length} personas`, 'ok']; }
     case 'calendario': { const next = list('events').filter(e => (e.start || '') >= localNow()).sort((x, y) => x.start.localeCompare(y.start))[0];
       return next ? [`Próximo: ${fmtDT(next.start)}`, 'info'] : ['Nada programado', 'neutral']; }
@@ -96,20 +96,6 @@ const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || UNID
 // Aviso en la tarjeta si la última revista de salida de alguna de sus matrículas tuvo fallos
 const vehFails = v => (v.units || []).some(u => lastVcheck(u.id)?.fails.length) ? '<span class="tag bad">Fallo en revista</span>' : '';
 const itvSoon = v => { const n = Math.min(...(v.units || []).filter(u => u.itv).map(u => daysTo(u.itv))); return n < 0 ? '<span class="tag bad">ITV caducada</span>' : n <= 30 ? '<span class="tag warn">ITV pronto</span>' : ''; };
-function viewVehiculos() {
-  return `
-    <div class="panel">
-      <div class="between sec-head"><div><h2>Vehículos</h2><p class="muted">La flota con sus matrículas, la ITV, la revista de salida y el material que lleva cada uno.</p></div>
-        ${puedeFlota() ? `<button class="btn btn-a" onclick="vehicleForm()">${ic('plus')} Modelo</button>` : ''}</div>
-      <div class="grid g3">${vehicles().map(v => {
-        const nm = matDe({ veh: v.id }).length;
-        return `<button onclick="vehicleView('${v.id}')" class="item veh-item">${vehArt(v)}<div class="grow"><b>${esc(v.name)}</b>
-          <small>${[(v.units || []).length ? (v.units.length === 1 ? v.units[0].plate : v.units.length + ' matrículas') : '', v.seats ? v.seats + ' plazas' : '', nm ? nm + ' de material' : '', v.notes].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small>
-          ${vehFails(v)}${itvSoon(v)}</div></button>`; }).join('')
-        || '<p class="muted">Añade los modelos de vehículo de la unidad.</p>'}</div>
-    </div>`;
-}
-
 // Marca el área actual en la página (colores de la cabecera, barra y botones)
 function applyArea() {
   document.documentElement.dataset.area = areaOf(prefs.tab);

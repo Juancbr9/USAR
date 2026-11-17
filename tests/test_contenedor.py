@@ -96,9 +96,13 @@ with sync_playwright() as p:
 
     # Vehículos: modelos de la unidad, cada uno con sus matrículas (la carga se pone en cada salida)
     sesion.menu(a, 'Vehículos')
-    assert a.locator('.veh-item').count() == 27 and a.locator('.veh-item:has-text("Autobomba Renault")').count() == 1
+    # De entrada se ven las matrículas por pelotón; «Por modelo» enseña los 27 modelos (los módulos y contenedores van aparte)
+    assert a.locator('#view .seg-row button.on').inner_text() == 'Por pelotón' and a.locator('#view .veh-u').count() == a.evaluate("flotaEstado().length")
+    a.click('#view .seg-row button:has-text("Por modelo")'); a.wait_for_timeout(150)
+    assert a.locator('.panel:not(.veh-mods-p) .veh-item').count() == 27 and a.locator('.panel:not(.veh-mods-p) .veh-item:has-text("Autobomba Renault")').count() == 1
+    assert [t.split('\n')[0] for t in a.locator('.veh-mods-p .veh-item').all_inner_texts()] == ['Contenedor pequeño', 'Contenedor pequeño 2']
     assert a.evaluate("vehicles().map(v => v.name).join('|') === vehicles().map(v => v.name).sort((x, y) => x.localeCompare(y, 'es', { numeric: true })).join('|')"), 'flota por orden alfabético'
-    assert 'Amarok' in a.locator('.veh-item').first.text_content() and 'VPI' in a.locator('.veh-item').last.text_content()
+    assert 'Amarok' in a.locator('.panel:not(.veh-mods-p) .veh-item').first.text_content() and 'VPI' in a.locator('.panel:not(.veh-mods-p) .veh-item').last.text_content()
     a.click('.veh-item:has-text("Amarok")'); a.click('#modal button:has-text("Editar modelo")'); a.fill('[name=seats]', '5'); save()
     assert a.evaluate("get('vehicles', 'V-AMAROK').seats") in (5, '5')
 

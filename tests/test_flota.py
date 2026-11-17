@@ -35,7 +35,7 @@ def botones(pg):
     r['eliminar'] = pg.locator('#modal button:has-text("Eliminar")').count() > 0
     r['mover'] = pg.locator('#modal button:has-text("Mover")').count() > 0
     pg.keyboard.press('Escape')
-    go(pg, 'vehiculos'); r['vehiculo'] = pg.locator('#view button:has-text("Modelo")').count() > 0
+    go(pg, 'vehiculos'); r['vehiculo'] = pg.locator('#view button.btn-a:has-text("Modelo")').count() > 0
     # Todos abren la ficha de un vehículo (matrículas y revista de salida); solo quien gestiona la flota la edita
     pg.locator('#view button.veh-item').first.click(); pg.wait_for_timeout(100)
     r['veh_editar'] = pg.locator('#modal button:has-text("Editar modelo")').count() > 0

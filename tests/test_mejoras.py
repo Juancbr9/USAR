@@ -108,7 +108,7 @@ with sync_playwright() as p:
     a.click('#view .list .item:has-text("Trípode")'); a.wait_for_selector('#modal [name=status]'); a.select_option('[name=status]', 'BAJA'); save()
     assert a.locator('#view .list .item.mat-baja:has-text("Trípode")').count() == 1 and a.locator('#view .sier-kpi b').nth(1).inner_text().replace('\n', '') == f'{n - 1}/{n - 1}'
     assert a.evaluate("alerts().esp.length") == 0, 'lo que va a darse de baja no es un aviso'
-    a.click('#view button:has-text("Pasar revista")'); a.wait_for_selector('#modal input[name=ok]'); assert a.locator('#modal input[name=ok]').count() == n - 1; a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    a.click('#view button:has-text("Pasar revista")'); a.wait_for_selector('#modal .est-row'); assert a.locator('#modal .est-row').count() == n - 1; a.evaluate("closeModal()"); a.wait_for_timeout(250)
     a.evaluate("window._txt = ''; window.shareText = t => { window._txt = t; }"); a.click('#view button:has-text("Lista de bajas (1)")'); a.wait_for_timeout(150)
     assert 'PARA DAR DE BAJA' in a.evaluate("window._txt") and 'Trípode' in a.evaluate("window._txt")
     # Historial de un material: lo que se le ha ido haciendo
@@ -139,7 +139,7 @@ with sync_playwright() as p:
     a.evaluate("go('avisos')"); a.wait_for_timeout(200)
     assert 'Cuerdas' in a.inner_text('#view .area-panel:has(h3:has-text("Toca pasar revista"))')
     a.evaluate("go('recursos')"); a.wait_for_timeout(150); assert 'Cuerdas' in a.inner_text('#view .panel:has(h3:text-is("Revistas que tocan"))')
-    a.evaluate("setPref({ tab: 'cuerdas', aptab: 'material' }); matRevista('ap:cuerdas')"); a.wait_for_selector('#modal input[name=ok]'); save()
+    a.evaluate("setPref({ tab: 'cuerdas', aptab: 'material' }); matRevista('ap:cuerdas')"); a.wait_for_selector('#modal .est-row'); save()
     assert a.evaluate("revPendientes().length") == 0 and a.evaluate("revFalta('ap:cuerdas')") == 30 and 'La próxima, en 30 días' in a.inner_text('#view')
     # Pasada la fecha, vuelve a avisar
     a.evaluate("(() => { const r = get('meta', 'aprev-cuerdas'); put('meta', { ...r, value: [{ ...r.value[0], ts: Date.now() - 31 * 864e5 }] }); })()"); a.wait_for_timeout(150)

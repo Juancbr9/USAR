@@ -33,6 +33,14 @@
   (hueco de pasillo), `door` (contenedor o armario) o `enveh` (un vehículo que no es el suyo); usar siempre `matLugar`,
   `matPoner` y `huecoTxt`. Cualquier cosa se mueve a cualquier sitio con `moverA(kind, id)` («Mover») o arrastrándola
   (`moverCon`, con «Deshacer»); mover no cambia de quién es.
+- Vehículos (`js/views/vehiculos.js`): lo que importa es cada matrícula (`units` de cada modelo), no el modelo. Cada una
+  tiene su ficha (`unidadView`), su pelotón (`unitPel`: campo `pel`, o se saca de `use`), su material (dueño
+  `'veh:<id>#<unidad>'`; `duenoDe` da `{ veh, unit }`) y su checklist. La autobomba Renault lleva por matrícula su
+  configuración (`unitMod`, de serie `lcif`); los contenedores pequeños ya no son configuraciones: son «módulos»
+  (registros `vehicles` con `tipo: 'modulo'`, sin matrículas; `esModulo`), aparte, con su material.
+- Revista o checklist (`checklistForm` en `js/views/material.js`): de cada cosa, «Bien», «Falta» (estado `FALTA`) o «Roto»
+  (`AVERIADO`), con nota; en una matrícula lleva además lo del vehículo, kilómetros y combustible (registros `vchecks`,
+  con `mat`). Queda quién lo hizo y qué estaba mal (`matRevistas`, `checklistHistorial`); lo que falta pasa a Necesidades.
 - Confianza: cualquiera del equipo rellena todo (material de cualquier apartado, vehículo o USAR, modelos y matrículas);
   lo pidió el usuario, no volver a restringirlo. Con usuario de la base de datos, `puedeFlota` espera al registro
   `meta/flotaabierta`, que crea el cambio de políticas de `supabase.sql` (hasta entonces el servidor solo deja al jefe).

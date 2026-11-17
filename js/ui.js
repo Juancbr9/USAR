@@ -27,7 +27,7 @@ addEventListener('scroll', () => document.body.classList.toggle('scrolled', scro
 // Al cambiar de pantalla (no en cada actualización de datos) el contenido entra con una transición corta
 let LAST_SCREEN = '', LAST_SUB = '';
 // Lo que cambia dentro de una misma pantalla (pestañas, vistas, pasillo y lado, mes…)
-const SUB_KEYS = ['aptab', 'pview', 'ptab', 'almPas', 'pasN', 'pasLado', 'cuadMes', 'cside', 'cview', 'logDia'];
+const SUB_KEYS = ['aptab', 'pview', 'ptab', 'almPas', 'pasN', 'pasLado', 'cuadMes', 'cside', 'cview', 'logDia', 'vehVista', 'vehGrupo'];
 // Dónde estaba la pestaña (o el botón) activo de cada grupo antes de redibujar, para que su marca se deslice hasta el nuevo
 const IND_SEL = '.ctabs, .seg-row, .tabs';
 function indSnap() {
@@ -446,9 +446,14 @@ function openForm(title, fields, onSave, extra = '') {
   });
   const control = f => {
     const attrs = `name="${f.k}" class="input" ${f.required ? 'required' : ''} ${f.catalog ? `data-catalog="${f.catalog}"` : ''}`;
-    if (f.type === 'checks') return (f.filter ? `<input class="input" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.label)}" oninput="const q = fold(this.value); this.nextElementSibling.querySelectorAll('.check-row').forEach(r => r.hidden = q && !fold(r.textContent).includes(q))">` : '') + `<div class="checks${f.filter ? ' scroll' : ''}">${f.options.map(([v, l, max]) => `
+    if (f.type === 'checks') return (f.filter ? `<input class="input" type="search" placeholder="Filtrar…" aria-label="Filtrar ${esc(f.label)}" oninput="const q = fold(this.value); this.nextElementSibling.querySelectorAll('.check-row').forEach(r => r.hidden = q && !fold(r.textContent).includes(q))">` : '') + `<div class="checks${f.filter ? ' scroll' : ''}${f.one ? ' one' : ''}">${f.options.map(([v, l, max]) => `
       <label class="check-row"><input type="checkbox" name="${f.k}" value="${esc(v)}" ${(f.value || []).includes(v) ? 'checked' : ''}><span>${esc(l)}</span>${max > 1 ? `<input class="input sm qty-in" type="number" name="${f.k}__q_${esc(v)}" min="1" max="${max}" value="${Math.min(max, f.qty?.[v] || max)}" inputmode="numeric" aria-label="Unidades de ${esc(l)}" onclick="event.stopPropagation()">` : ''}</label>`).join('')}
       ${f.catalog ? `<input class="input sm check-new" name="${f.k}__new" aria-label="Añadir otra opción" placeholder="➕ Otra (separa con comas)…" autocomplete="off">` : ''}</div>`;
+    // Lista de cosas con un estado cada una (p. ej. bien, falta o roto) y una nota cuando no está en el primero
+    if (f.type === 'estados') return `<div class="est-list">${f.options.map(([v, l, sub]) => { const cur = f.value?.[v] || f.estados[0][0]; return `
+      <div class="est-row" data-est="${cur}" data-ini="${f.estados[0][0]}"><div class="est-t"><b>${esc(l)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+        <div class="est-ops" role="radiogroup" aria-label="${esc(l)}">${f.estados.map(([e, t]) => `<label class="est-op est-${e}"><input type="radio" name="${f.k}__${esc(v)}" value="${e}" ${e === cur ? 'checked' : ''} onchange="this.closest('.est-row').dataset.est = this.value"><span>${t}</span></label>`).join('')}</div>
+        <input class="input sm est-nota" name="${f.k}__n_${esc(v)}" placeholder="Qué le pasa (opcional)" aria-label="Qué le pasa a ${esc(l)}" autocomplete="off"></div>`; }).join('')}</div>`;
     if (f.options) return `<select ${attrs} ${f.catalog ? 'onchange="catalogNew(this)"' : ''}>${f.options.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(f.value ?? '') ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     if (f.type === 'textarea') return `<span class="dictate-wrap"><textarea ${attrs} rows="${f.rows || 4}" placeholder="${esc(f.placeholder)}">${esc(f.value)}</textarea>${micButton()}</span>`;
     // Firma con el dedo (o el ratón): se guarda como imagen
@@ -469,7 +474,7 @@ function openForm(title, fields, onSave, extra = '') {
   };
   openModal(title, `
     <form id="modalForm" class="form">
-      ${fields.map(f => { const tag = ['photo', 'checks', 'signature'].includes(f.type) ? 'div' : 'label'; return `<${tag} class="lbl ${f.wide ? 'wide' : ''}">${f.label}${control(f)}</${tag}>`; }).join('')}
+      ${fields.map(f => { const tag = ['photo', 'checks', 'signature', 'estados'].includes(f.type) ? 'div' : 'label'; return `<${tag} class="lbl ${f.wide ? 'wide' : ''}">${f.label}${control(f)}</${tag}>`; }).join('')}
       <button class="btn btn-a wide">${ic('check')} Guardar</button>
       ${extra}
     </form>`);
@@ -479,6 +484,7 @@ function openForm(title, fields, onSave, extra = '') {
     e.preventDefault();
     const fd = new FormData(form), values = {};
     fields.forEach(f => {
+      if (f.type === 'estados') { values[f.k] = Object.fromEntries(f.options.map(([v]) => [v, { st: fd.get(`${f.k}__${v}`) || f.estados[0][0], nota: String(fd.get(`${f.k}__n_${v}`) || '').trim() }])); return; }
       if (f.type === 'checks') values[f.k] = [...fd.getAll(f.k), ...String(fd.get(f.k + '__new') || '').split(',').map(s => s.trim()).filter(Boolean)];
       else { const v = fd.get(f.k); values[f.k] = typeof v === 'string' ? v.trim() : ''; if (values[f.k] === '__new') values[f.k] = ''; }
       // Opciones con varias unidades (tercer elemento = máximo): cuántas se eligen de cada una
