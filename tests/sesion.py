@@ -36,7 +36,7 @@ def new_context(self, *args, autologin=True, mant=False, flota=False, bloqueo=Fa
 Browser.new_context = new_context
 
 # Ir a una sección por el menú de tres rayas, desplegando sus grupos (Actividades, Material…)
-LABELS = {'Operaciones': 'Todas las actividades', 'Intervenciones': 'Todas las actividades', 'Activación': 'Todas las actividades', 'Actividades': 'Todas las actividades', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Almacén', 'Material': 'Almacén', 'Contenedor': 'Almacén',
+LABELS = {'Operaciones': 'Todas las actividades', 'Intervenciones': 'Todas las actividades', 'Activación': 'Todas las actividades', 'Actividades': 'Todas las actividades', 'Ayuda': 'Manual de uso', 'Más': 'Manual de uso', 'Ajustes': 'General', 'Stock': 'Contenedor', 'Material': 'Contenedor',
           'Avisos': 'Inicio'}
 # Cada tipo de actividad está en «Todas las actividades», con su filtro
 FILTRO = {'Activación': 'Intervenciones', 'Intervenciones': 'Intervenciones', 'Operaciones': 'Intervenciones', 'Ejercicios': 'Ejercicios', 'Maniobras': 'Maniobras', 'Convoy': 'Convoyes'}

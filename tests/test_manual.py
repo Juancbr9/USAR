@@ -41,7 +41,7 @@ with sync_playwright() as p:
     assert a.locator('#drawer .dr-group-head').all_inner_texts() == ['USAR', 'Ajustes'], a.locator('#drawer .dr-group-head').all_inner_texts()
     # Lo de toda la sección y los apartados van sueltos, sin desplegar nada; lo de USAR, dentro de su grupo
     tops = [t.split('\n')[0] for t in a.locator('#drawer .dr-item:not(.sub)').all_inner_texts()]
-    assert tops == ['Inicio', 'Logística', 'Personal', 'Vehículos', 'Parque', 'Calendario', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras'], tops
+    assert tops == ['Inicio', 'Logística', 'Personal', 'Vehículos', 'Almacén', 'Parque', 'Calendario', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras'], tops
     assert a.locator('#drawer .dr-group-head[aria-expanded=true]').count() == 1 and a.locator('#drawer .dr-item.on:has-text("Revisión")').count() == 1
     # Ya no hay actividades (intervenciones, ejercicios, maniobras ni convoyes)
     assert a.locator('#drawer :text("Actividades"), #drawer :text("Intervenciones")').count() == 0 and a.evaluate("!VIEWS.actividades && !VIEWS.operaciones")

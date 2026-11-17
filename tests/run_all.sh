@@ -45,6 +45,7 @@ run test_sier.py
 run test_logistica.py
 run test_apartados.py
 run test_mejoras.py
+run test_almacen.py
 start_mock; run test_campo.py
 run test_contenedor.py
 run test_manual.py

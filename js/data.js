@@ -251,7 +251,10 @@ const mission = () => get('meta', 'mission')?.value || 'estandar';
 // Huecos del contenedor (ver HUECOS en config.js); 0 = sin ubicar
 const DOOR_IDS = HUECOS.map(h => h.id).sort((a, b) => a - b);
 const inCont = d => !d || d <= 20;                       // hueco del contenedor o sin ubicar
-const placeRec = id => PLACES.find(p => p.id === id);
+// Un hueco de un pasillo del almacén, con su nombre («Pasillo 4 · izquierda · módulo 2 · balda 1»)
+const pasNombre = (d, corto) => { const u = pasDe(d); if (!u) return ''; const niv = nivNombre(u.niv, pasGeo(u.pas, u.lado).baldas).toLowerCase();
+  return corto ? `Pasillo ${u.pas} ${u.lado === 'D' ? 'der.' : 'izq.'} M${u.mod} ${niv}` : `Pasillo ${u.pas} · ${LADOS[u.lado].toLowerCase()} · módulo ${u.mod} · ${niv}`; };
+const placeRec = id => PLACES.find(p => p.id === id) || (enPasillo(id) ? { id, label: pasNombre(id), short: pasNombre(id, true), area: 'pasillo' } : undefined);
 const doorName = id => HUECOS.find(h => h.id === id)?.label || placeRec(id)?.short || placeRec(id)?.label || (id ? 'B' + id : 'Sin ubicar');
 const sideName = id => id <= 10 ? 'lateral izquierdo' : id <= 20 ? 'lateral derecho' : '';
 // Dónde está un equipo o una caja: contenedor (hueco), pasillo, armarios, escalón o sin ubicar
@@ -263,7 +266,8 @@ const groupKey = g => g.vehicle || g.door;
 const qtyText = g => +g.qty > 1 ? ` ×${g.qty}` : '';
 // Grupos de material en orden: huecos B1–B20, lo sin ubicar y después los vehículos que llevan material
 function gearGroups(items = list('gear')) {
-  const doors = [...DOOR_IDS, 0, ...PLACES.map(p => p.id)].map(d => [d, placeOf({ door: d }), items.filter(g => !g.vehicle && (g.door || 0) === d)]);
+  const pas = [...new Set(items.filter(g => !g.vehicle && enPasillo(g.door)).map(g => +g.door))].sort((a, b) => a - b);
+  const doors = [...DOOR_IDS, 0, ...pas, ...PLACES.map(p => p.id)].map(d => [d, placeOf({ door: d }), items.filter(g => !g.vehicle && (g.door || 0) === d)]);
   const vs = [...new Set(items.filter(g => g.vehicle).map(g => g.vehicle))].map(v => [v, vehName(v), items.filter(g => g.vehicle === v)]);
   return [...doors, ...vs].filter(([, , gs]) => gs.length).map(([k, l, gs]) => [k, l, gs.sort((a, b) => (a.box || '').localeCompare(b.box || '') || byName(a, b))]);
 }
@@ -406,6 +410,12 @@ function seedDefaults(share = false) {
       .forEach(x => stampIt(kind, { ...x, door: +x.door - (+x.door % 10) + 1 })));
     stampIt('meta', { id: 'pasbase', value: 1 });
   }
+  // Almacén v2: el pasillo de USAR pasa a ser uno más del almacén (el 3, o el que se haya dicho): cada cosa va al mismo
+  // módulo y altura, en el lado izquierdo. Se repasa siempre, por si un móvil sin actualizar apunta algo con el número antiguo.
+  { const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };
+    const n = (get('meta', 'usarpas')?.value || [])[0] || 3;
+    ['gear', 'boxes', 'consumables', 'epis'].forEach(kind => list(kind).filter(x => PAS_VIEJO(x.door))
+      .forEach(x => stampIt(kind, { ...x, door: pasDoor(n, 'I', Math.floor((+x.door - 100) / 10), Math.min(1, +x.door % 10)) }))); }
   // EPI de reserva (27/10/2026): cascos USAR con orejeras por color y monos USAR por talla (ids fijos: no se duplican)
   if (!(get('meta', 'epibase')?.value >= 1)) {
     const stampIt = (kind, rec) => { rec = { ...rec, _u: Date.now() }; db[kind][rec.id] = rec; if (share) Sync.queue(kind, rec); };

@@ -60,7 +60,7 @@ function consForm(id, at = {}) {
     { k: 'stock', label: 'Stock actual', type: 'number', value: c.stock },
     { k: 'min', label: 'Mínimo', type: 'number', value: c.min },
     { k: 'unit', label: 'Unidad', value: c.unit },
-    { k: 'place', label: 'Dónde va', value: String(consDoor(c)), options: placeOptions(), wide: true },
+    { k: 'place', label: 'Dónde va', value: String(consDoor(c)), options: placeOptions(consDoor(c)), wide: true },
     { k: 'location', label: 'Sitio exacto (opcional)', value: c.location, placeholder: 'Ej: caja H-2, balda de arriba', wide: true }
   ], v => {
     const { place, ...rest } = v;

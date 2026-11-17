@@ -35,15 +35,19 @@ const isDueSoon = iso => !!iso && daysTo(iso) <= SOON_DAYS;
 const dueTag = (iso, prefix = '') => { const d = due(iso); return d ? `<span class="tag ${d.cls}">${ic('clock', 'i-sm')} ${prefix}${d.text}</span>` : ''; };
 
 let toastTimer;
-function toast(msg, kind = 'ok') {
+// accion: { label, fn } pone un botón en el aviso (p. ej. «Deshacer»), que entonces dura un poco más
+let toastFn = null;
+function toast(msg, kind = 'ok', accion = null) {
   const el = $('toast');
-  el.innerHTML = ic(kind === 'bad' ? 'x' : 'checkc') + `<span>${esc(msg)}</span>`;
-  el.className = 'toast ' + kind;
+  toastFn = accion?.fn || null;
+  el.innerHTML = ic(kind === 'bad' ? 'x' : 'checkc') + `<span>${esc(msg)}</span>` + (accion ? `<button class="toast-act" onclick="toastAccion()">${esc(accion.label)}</button>` : '');
+  el.className = 'toast ' + kind + (accion ? ' con-accion' : '');
   requestAnimationFrame(() => el.classList.add('show'));
   haptic(kind === 'bad' ? [30, 40, 30] : 12);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+  toastTimer = setTimeout(() => el.classList.remove('show'), accion ? 6000 : 3200);
 }
+function toastAccion() { const fn = toastFn; toastFn = null; clearTimeout(toastTimer); $('toast').classList.remove('show'); fn?.(); }
 
 // Respuesta al tacto en las acciones importantes (como en PadelMetric)
 function haptic(pattern = 12) {

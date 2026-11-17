@@ -71,7 +71,8 @@ with sync_playwright() as p:
     a.click('.color-pick button:has-text("Negra")'); a.wait_for_timeout(150)
     assert a.evaluate(f"get('boxes', '{bid}').color") == 'negro' and a.locator('.color-pick button.on:has-text("Negra")').count() == 1
     # Mover sin arrastrar (al otro lateral)
-    a.click('#modal button:has-text("Mover")'); a.select_option('[name=place]', '18'); save()
+    a.click('#modal button:has-text("Mover")'); a.wait_for_selector('#modal .mv-tipos'); assert a.locator('#modal .mv-tipos button.on').inner_text().strip() == 'Contenedor'
+    a.click('#modal .mv-op:has(b:text-is("B18"))'); a.wait_for_timeout(250); assert 'Deshacer' in a.inner_text('#toast')
     assert a.evaluate(f"[get('boxes', '{bid}').door, get('gear', 'B-102').door]") == [18, 18]
     a.keyboard.press('Escape'); a.click('.seg-row button:has-text("Derecho")'); a.wait_for_timeout(150)
     assert a.locator(f'.cv-cell[data-door="18"] .tok-box[data-box="{bid}"]').count() == 1
@@ -190,10 +191,12 @@ with sync_playwright() as p:
     drag('.arm-shelf[data-door="235"] .tok-gear', '.arm-floor')
     assert b.evaluate("get('gear', 'B-901').door") == 290
     # Pasillo: estantería de 5 módulos × 2 alturas (suelo y balda 1); se arrastra de un hueco a otro
-    b.evaluate("moveGear('B-901', 110)"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
-    assert b.locator('.pas .pas-cell').count() == 10 and b.locator('.pas-cell[data-door="110"] .tok-gear').count() == 1
-    drag('.pas-cell[data-door="110"] .tok-gear', '.pas-cell[data-door="141"]')
-    assert b.evaluate("get('gear', 'B-901').door") == 141 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Pasillo · módulo 4 · balda 1'
+    # (el pasillo de USAR es el 3 del Almacén; lo apuntado con el número antiguo pasa solo a su hueco, en el lado izquierdo)
+    b.evaluate("moveGear('B-901', 110); seedDefaults(false)"); assert b.evaluate("get('gear', 'B-901').door") == 130100
+    b.evaluate("go('pasillo')"); b.wait_for_timeout(150); assert b.evaluate("[prefs.tab, prefs.almPas]") == ['almacen', 3]
+    assert b.locator('.px .px-cell').count() == 10 and b.locator('.px-cell[data-door="130100"] .tok-gear').count() == 1
+    drag('.px-cell[data-door="130100"] .tok-gear', '.px-cell[data-door="130401"]')
+    assert b.evaluate("get('gear', 'B-901').door") == 130401 and b.evaluate("whereIs(get('gear', 'B-901'))") == 'Pasillo 3 · izquierda · módulo 4 · balda'
     b.screenshot(path=f'{OUT}/pasillo.png', full_page=True)
     b.evaluate("moveGear('B-901', 235)"); b.evaluate("go('armarios')"); b.wait_for_timeout(150)
     b.screenshot(path=f'{OUT}/armarios.png', full_page=True)
@@ -205,8 +208,8 @@ with sync_playwright() as p:
     assert b.locator('#alm-escalon .item:has-text("Grupo electrógeno")').count() == 1
     gid = b.evaluate("list('gear').find(g => g.name === 'Grupo electrógeno').id")
     assert b.evaluate(f"whereIs(get('gear', '{gid}'))") == 'Escalón'
-    b.evaluate(f"moveGear('{gid}', {121})"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
-    assert b.locator('#alm-pasillo .pas-cell[data-door="121"] .tok-gear').count() == 1
+    b.evaluate(f"moveGear('{gid}', {130201})"); b.evaluate("go('pasillo')"); b.wait_for_timeout(150)
+    assert b.locator('.px .px-cell[data-door="130201"] .tok-gear').count() == 1
     # Lo que estaba en «Otros» o en el pasillo sin hueco pasa a «sin ubicar» (con el sitio que tenía en las notas)
     b.evaluate("""(() => { const d = JSON.parse(localStorage.getItem(KEY.db)); const g = d.gear['B-901']; g.door = 301; g.where = 'Nave del parque'; g.vehicle = '';
       const c = Object.values(d.consumables)[0]; c.door = 101; sessionStorage.setItem('cid', c.id); delete d.meta.almbase; localStorage.setItem(KEY.db, JSON.stringify(d)); })()""")

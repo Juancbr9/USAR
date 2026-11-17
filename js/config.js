@@ -50,18 +50,22 @@ const HUECO_RECT = { 1: [5.73, 4.48, 19.56, 49.25], 2: [5.73, 56.72, 19.56, 35.8
 // Otros sitios donde se guarda material, fuera del contenedor (mismo campo «door» que los huecos). ESCALON: el material
 // en revisión o arreglándose. PASILLO («pasillo sin hueco») y OTROS ya no se usan: lo que hubiera pasa a «sin ubicar»
 const PASILLO = 101, OTROS = 301, ESCALON = 302;
-// Pasillo: estantería de palés (montantes azules, largueros naranjas) con PAS_MOD módulos y dos alturas: el suelo y la
-// primera balda. id = 100 + módulo × 10 + nivel (nivel 0 = suelo); PASILLO (101) es «en el pasillo, sin sitio concreto».
-const PAS_MOD = 5, PAS_NIV = ['Suelo', 'Balda 1'];
-const PASILLO_SITIOS = Array.from({ length: PAS_MOD }, (_, m) => PAS_NIV.map((nv, n) => ({ id: 100 + (m + 1) * 10 + n, mod: m + 1, niv: n }))).flat();
+// Pasillos del almacén (los de todas las especialidades, también el de USAR): cada hueco es un número en el mismo campo
+// «door» que los demás sitios: 100000 + pasillo × 10000 + (5000 si es el lado derecho) + módulo × 100 + altura (0 = suelo).
+// Cuántos módulos y baldas tiene cada lado se configura en la app (ver js/views/pasillo.js).
+const PAS_BASE = 100000;
+const pasDoor = (pas, lado, mod, niv) => PAS_BASE + (+pas) * 10000 + (lado === 'D' ? 5000 : 0) + (+mod) * 100 + (+niv || 0);
+const pasDe = d => { d = +d; if (!(d >= PAS_BASE)) return null; const r = d - PAS_BASE, s = r % 10000, t = s % 5000;
+  return { pas: Math.floor(r / 10000), lado: s >= 5000 ? 'D' : 'I', mod: Math.floor(t / 100), niv: t % 100 }; };
+// El pasillo antiguo de USAR (un solo lado; id = 100 + módulo × 10 + altura) se pasa al hueco equivalente de su pasillo
+const PAS_VIEJO = d => +d >= 110 && +d < 200;
 // Armarios: tres armarios de dos puertas sobre la estantería; dentro, ARM_BALDAS baldas (1 arriba).
 // id = 200 + armario × 10 + balda; ARM_SUELO es el suelo de la estantería, delante de los armarios (cascos, cajas, nevera…)
 const ARM_BALDAS = 5, ARM_SUELO = 290;
 const ARMARIOS = [1, 2, 3].flatMap(n => Array.from({ length: ARM_BALDAS }, (_, b) => ({ id: 200 + n * 10 + b + 1, n, balda: b + 1 })));
-const enPasillo = d => PASILLO_SITIOS.some(p => p.id === d);
+const enPasillo = d => +d >= PAS_BASE;
 const enArmarios = d => d === ARM_SUELO || ARMARIOS.some(a => a.id === d);
-const PLACES = [...PASILLO_SITIOS.map(p => ({ id: p.id, label: `Pasillo · módulo ${p.mod} · ${PAS_NIV[p.niv].toLowerCase()}`, short: `Pasillo M${p.mod} ${p.niv ? 'balda' : 'suelo'}`, area: 'pasillo' })),
-  ...ARMARIOS.map(a => ({ id: a.id, label: `Armario ${a.n} · balda ${a.balda}`, short: `Armario ${a.n} b${a.balda}`, area: 'armarios' })),
+const PLACES = [...ARMARIOS.map(a => ({ id: a.id, label: `Armario ${a.n} · balda ${a.balda}`, short: `Armario ${a.n} b${a.balda}`, area: 'armarios' })),
   { id: ARM_SUELO, label: 'Delante de los armarios', short: 'Delante armarios', area: 'armarios' },
   { id: ESCALON, label: 'Escalón', short: 'Escalón', area: 'escalon' }];
 // Situación del material en revisión

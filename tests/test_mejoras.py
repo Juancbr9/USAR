@@ -128,7 +128,7 @@ with sync_playwright() as p:
     a.evaluate(f"openScanner(); handleScan('', '{APP}#m={cid}')"); a.wait_for_selector('#modal [name=caduca]')
     assert a.input_value('#modal [name=name]') == 'Cuerdas dinámicas' and a.locator('#modal button:has-text("Me lo llevo yo")').count() == 1
     a.evaluate("closeModal()"); a.wait_for_timeout(250)
-    a.evaluate("location.hash = '#h=cuerdas.5.D.2.1'"); a.wait_for_selector('#modal h3:has-text("Pasillo 5 derecha · M2 · Balda 1")')
+    a.evaluate("location.hash = '#h=cuerdas.5.D.2.1'"); a.wait_for_selector('#modal h3:has-text("Pasillo 5 · derecha · módulo 2 · balda 1")')
     assert a.evaluate("prefs.tab") == 'cuerdas' and a.evaluate("prefs.pasLado") == 'D'
     a.evaluate("closeModal(); setPref({ pasLado: 'I' })"); a.wait_for_timeout(250)
 
@@ -156,7 +156,9 @@ with sync_playwright() as p:
     pas = [' '.join(x.split()) for x in a.locator('#view .panel:has(h3:text-is("Pasillos del almacén")) .log-row').all_inner_texts()]
     assert 'SVA' in pas[1] and pas[5].endswith('Libre') and 'Agua' in pas[6], pas
     a.click('#view .panel:has(h3:text-is("Pasillos del almacén")) .log-row:has-text("Pasillo 7")'); a.wait_for_timeout(200)
-    assert a.evaluate("prefs.tab") == 'agua' and a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 7'
+    assert a.evaluate("prefs.tab") == 'almacen' and a.inner_text('#view .panel:has(.px) h3') == 'Pasillo 7 · izquierda' and 'Agua' in a.inner_text('#view .panel:has(.px) .sec-head')
+    # Y se puede cambiar también desde el Almacén
+    a.click('#view button:has-text("De quién es cada pasillo")'); a.wait_for_selector('#modal [name=p7]'); assert a.input_value('[name=p7]') == 'agua'; a.evaluate("closeModal()"); a.wait_for_timeout(250)
     seen('pasillo cambiado'); wide('pasillo cambiado')
 
     # ---------- Modo noche: el cuadrante y Logística sin desbordes ----------

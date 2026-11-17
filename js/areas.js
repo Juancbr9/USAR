@@ -18,7 +18,7 @@ const AREAS = {
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'recursos', 'personal', 'vehiculos', ...Object.keys(APARTADOS).filter(k => APARTADOS[k].comun), 'calendario', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS).filter(k => !APARTADOS[k].comun), 'help'];
+const MENU = ['avisos', 'recursos', 'personal', 'vehiculos', 'almacen', ...Object.keys(APARTADOS).filter(k => APARTADOS[k].comun), 'calendario', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS).filter(k => !APARTADOS[k].comun), 'help'];
 // Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
 // las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
 const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };
@@ -27,13 +27,14 @@ const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
   ['recursos', 'gauge', 'Logística', 'Lo disponible ahora o el día que elijas: personal, capacidades, vehículos y material', 'log'],
   ['calendario', 'calendar', 'Calendario', 'Ejercicios, formación y guardias, con asistencia y horas', 'ops'],
-  // Todo el material guardado en una sola página: contenedor, pasillo, armarios, escalón y fungible
-  ['contenedor', 'box', 'Almacén', 'Contenedor, pasillo, armarios, escalón y fungible', 'log', 'mat'],
+  // Todos los pasillos del almacén (el Parque, USAR y cada especialidad), con lo que hay en cada hueco
+  ['almacen', 'layers', 'Almacén', 'Todos los pasillos: el Parque, USAR y cada especialidad, con lo que hay en cada hueco', 'log'],
+  // El material de USAR guardado fuera de los pasillos, en una sola página: contenedor, armarios, escalón y fungible
+  ['contenedor', 'box', 'Contenedor', 'Contenedor, armarios, escalón y fungible', 'log', 'mat'],
   ['fuera', 'out', 'Fuera', 'Lo que tiene cada uno y lo prestado con firma', 'log', 'mat'],
   ['revision', 'wrench', 'Revisión', 'En el escalón, en el taller y novedades', 'log', 'mat'],
   ['revista', 'clipboard', 'Revista', 'Comprobar el material', 'log', 'mat'],
   // Apartados de esa página (no salen sueltos en el menú; llevan a la página, a su altura)
-  ['pasillo', 'layers', 'Pasillo', 'La estantería del pasillo: módulos, suelo y balda', 'log', 'mat', true],
   ['armarios', 'case', 'Armarios', 'Tres armarios con sus baldas', 'log', 'mat', true],
   ['otros', 'dots', 'Otros', 'Material en otros sitios', 'log', 'mat', true],
   ['consumibles', 'package', 'Material fungible', 'Discos, cadenas, hojas de sierra y gasolina', 'log', 'mat', true],
@@ -83,7 +84,7 @@ const HUB_TO = { logistica: 'contenedor', equipo: 'personal', mas: 'manual', pue
 // Cada tipo de actividad se ve en «Todas las actividades», ya filtrada por él
 const MAT_TABS = SECTIONS.filter(s => s[5] === 'mat' && !s[6]).map(s => s[0]);
 // Apartados de «Contenedor y almacén»: los nombres antiguos (y «fuera») llevan a la página, a la altura de cada uno
-const ALMACEN_TABS = ['pasillo', 'armarios', 'escalon', 'otros', 'consumibles'];
+const ALMACEN_TABS = ['armarios', 'escalon', 'otros', 'consumibles'];
 // Lleva a una parte de «Contenedor y almacén» (desplegándola), p. ej. desde los nombres antiguos del menú
 function almacenGo(id, smooth) {
   almUnfold(id); document.getElementById('alm-' + id)?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' }); }
