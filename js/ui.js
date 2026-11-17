@@ -72,8 +72,12 @@ WIDE.addEventListener?.('change', () => renderNav());
 function renderNav() {
   const count = alertCount(alerts());
   renderDrawer(count);
-  // Tablet en horizontal y PC: el mismo menú desplegable, fijo a la izquierda. En el móvil, solo el menú de tres rayas
+  // Tablet en horizontal y PC: el mismo menú desplegable, fijo a la izquierda. En el móvil, la barra de abajo con lo de
+  // todos los días y «Más», que abre el menú completo (el mismo de las tres rayas)
   $('nav').innerHTML = WIDE.matches ? `<div class="nav-tree">${menuTree(count)}</div>` : '';
+  const cur = menuTab(prefs.tab), enBarra = BARRA.some(b => b[0] === cur);
+  $('tabbar').innerHTML = WIDE.matches ? '' : BARRA.map(([id, icon, t]) => `<button class="${cur === id ? 'on' : ''}" ${cur === id ? 'aria-current="page"' : ''} onclick="go('${id}')">${ic(icon)}<span>${t}</span>${id === 'avisos' && count ? `<i class="tb-n">${count > 99 ? '99+' : count}</i>` : ''}</button>`).join('')
+    + `<button class="${enBarra ? '' : 'on'}" aria-haspopup="true" aria-label="Más: todo el menú" onclick="toggleDrawer(true)">${ic('grid')}<span>Más</span></button>`;
 }
 
 // Menú por niveles (en el orden de MENU): Inicio, Actividades, Material, Vehículos, Equipo, Guía de campo y Ajustes.
@@ -185,7 +189,7 @@ function alerts() {
     out: gearList.filter(g => g.out && !g.out.mission).sort(byName),   // préstamos; lo que sale con una operación no es un aviso
     ready: operators().flatMap(o => readinessIssues(o.id).map(([cls, text]) => ({ o, cls, text }))),
     // Matrículas cuya última revista de salida tuvo fallos (hasta que otra revista salga bien)
-    veh: vehicles().flatMap(v => (v.units || []).map(u => ({ v, u, c: lastVcheck(u.id) }))).filter(x => x.c?.fails.length),
+    veh: vehicles().flatMap(v => (v.units || []).map(u => ({ v, u, c: lastVcheck(u.id) }))).filter(x => unitFallos(x.v, x.u).length),
     // ITV que ya ha llegado: se pregunta si la ha pasado
     itv: itvPending(),
     // Material de los apartados (Agua, Cuerdas…) en revisión o averiado
@@ -246,7 +250,7 @@ function viewAvisos() {
         `<button class="btn btn-g full" style="margin-top:10px" onclick="pedidoForm()">${ic('share')} Preparar el pedido</button>`)}
       ${section('ITV: ¿la han pasado?', 'warn', a.itv.map(x => row(`itvForm('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`,
         `${daysTo(x.u.itv) < 0 ? 'Caducó' : 'Vence hoy'} (${fmtDate(x.u.itv)}). Toca para apuntar el resultado y la próxima fecha.`)), 'log', '', 'Vehículos')}
-      ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`vehicleView('${x.v.id}')`, `${x.v.name} · ${x.u.plate}`, checkLine(x.c))), 'log', '', 'Vehículos')}
+      ${section('Vehículos con fallos', 'bad', a.veh.map(x => row(`unidadView('${x.v.id}', '${x.u.id}')`, `${x.v.name} · ${x.u.plate}`, unitFallos(x.v, x.u).join(', '))), 'log', '', 'Vehículos')}
       ${section('Material en revisión o averiado', a.esp.some(m => m.status === 'AVERIADO') ? 'bad' : 'warn', a.esp.map(m => row(matIr(m), m.name, `${matDueno(m)} · ${AP_ESTADOS[m.status]?.[0] || m.status}${m.notes ? ' · ' + m.notes : ''}`)), 'team', '', 'Material')}
       ${section('Toca pasar revista', 'warn', a.rev.map(([o]) => row(matIr(duenoDe(o)), duenoNombre(o), (REV_CADA.find(r => r[0] === revCada(o))?.[1] || '') + (matRevistas(o)[0] ? ' · última: ' + fmtWhen(matRevistas(o)[0].ts) : ' · aún no se ha pasado'))), 'team', '', 'Material')}
       ${section('Documentación del personal', 'warn', a.ready.map(r => row(`openPerson('${r.o.id}')`, r.o.name, r.text)), 'team', '', 'Personal')}
@@ -332,7 +336,7 @@ function reportText() {
   block('⏰ Vencimientos', a.due.map(d => `${d.kind === 'gear' ? d.item.name : epiLabel(d.item) + ' de ' + opName(d.item.holder)}: ${due(d.date).text.toLowerCase()}`));
   block('📦 Stock bajo', a.low.map(c => `${c.name}: ${c.stock} ${c.unit} (mín. ${c.min})`));
   block('🚗 ITV sin apuntar', a.itv.map(x => `${x.v.name} ${x.u.plate}: ${fmtDate(x.u.itv)}`));
-  block('🚒 Vehículos con fallos', a.veh.map(x => `${x.v.name} ${x.u.plate}: ${x.c.fails.join(', ')}`));
+  block('🚒 Vehículos con fallos', a.veh.map(x => `${x.v.name} ${x.u.plate}: ${unitFallos(x.v, x.u).join(', ')}`));
   block('↗️ Fuera del contenedor', a.out.map(g => `${g.name} → ${g.out.who}`));
   if (!alertCount(a)) lines.push('', '✅ *Sin incidencias*');
   return lines.join('\n');
@@ -450,9 +454,10 @@ function openForm(title, fields, onSave, extra = '') {
       <label class="check-row"><input type="checkbox" name="${f.k}" value="${esc(v)}" ${(f.value || []).includes(v) ? 'checked' : ''}><span>${esc(l)}</span>${max > 1 ? `<input class="input sm qty-in" type="number" name="${f.k}__q_${esc(v)}" min="1" max="${max}" value="${Math.min(max, f.qty?.[v] || max)}" inputmode="numeric" aria-label="Unidades de ${esc(l)}" onclick="event.stopPropagation()">` : ''}</label>`).join('')}
       ${f.catalog ? `<input class="input sm check-new" name="${f.k}__new" aria-label="Añadir otra opción" placeholder="➕ Otra (separa con comas)…" autocomplete="off">` : ''}</div>`;
     // Lista de cosas con un estado cada una (p. ej. bien, falta o roto) y una nota cuando no está en el primero
-    if (f.type === 'estados') return `<div class="est-list">${f.options.map(([v, l, sub]) => { const cur = f.value?.[v] || f.estados[0][0]; return `
+    if (f.type === 'estados') return `<div class="est-list">${f.options.map(([v, l, sub, pre]) => { const cur = f.value?.[v] || f.estados[0][0]; return `
       <div class="est-row" data-est="${cur}" data-ini="${f.estados[0][0]}"><div class="est-t"><b>${esc(l)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>
         <div class="est-ops" role="radiogroup" aria-label="${esc(l)}">${f.estados.map(([e, t]) => `<label class="est-op est-${e}"><input type="radio" name="${f.k}__${esc(v)}" value="${e}" ${e === cur ? 'checked' : ''} onchange="this.closest('.est-row').dataset.est = this.value"><span>${t}</span></label>`).join('')}</div>
+        ${pre != null ? `<label class="est-pre">Precinto (si está intacto, se da por bueno sin abrir)<input class="input sm" name="${f.k}__p_${esc(v)}" value="${esc(pre)}" autocomplete="off" aria-label="Precinto de ${esc(l)}"></label>` : ''}
         <input class="input sm est-nota" name="${f.k}__n_${esc(v)}" placeholder="Qué le pasa (opcional)" aria-label="Qué le pasa a ${esc(l)}" autocomplete="off"></div>`; }).join('')}</div>`;
     if (f.options) return `<select ${attrs} ${f.catalog ? 'onchange="catalogNew(this)"' : ''}>${f.options.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(f.value ?? '') ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     if (f.type === 'textarea') return `<span class="dictate-wrap"><textarea ${attrs} rows="${f.rows || 4}" placeholder="${esc(f.placeholder)}">${esc(f.value)}</textarea>${micButton()}</span>`;
@@ -484,7 +489,7 @@ function openForm(title, fields, onSave, extra = '') {
     e.preventDefault();
     const fd = new FormData(form), values = {};
     fields.forEach(f => {
-      if (f.type === 'estados') { values[f.k] = Object.fromEntries(f.options.map(([v]) => [v, { st: fd.get(`${f.k}__${v}`) || f.estados[0][0], nota: String(fd.get(`${f.k}__n_${v}`) || '').trim() }])); return; }
+      if (f.type === 'estados') { values[f.k] = Object.fromEntries(f.options.map(([v]) => [v, { st: fd.get(`${f.k}__${v}`) || f.estados[0][0], nota: String(fd.get(`${f.k}__n_${v}`) || '').trim(), pre: fd.has(`${f.k}__p_${v}`) ? String(fd.get(`${f.k}__p_${v}`)).trim() : null }])); return; }
       if (f.type === 'checks') values[f.k] = [...fd.getAll(f.k), ...String(fd.get(f.k + '__new') || '').split(',').map(s => s.trim()).filter(Boolean)];
       else { const v = fd.get(f.k); values[f.k] = typeof v === 'string' ? v.trim() : ''; if (values[f.k] === '__new') values[f.k] = ''; }
       // Opciones con varias unidades (tercer elemento = máximo): cuántas se eligen de cada una

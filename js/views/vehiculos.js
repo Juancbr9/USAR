@@ -33,11 +33,156 @@ function vehOtros(id) {
     <button class="btn btn-g btn-sm" onclick="moverA('${kind}', '${x.id}')">${ic('move', 'i-sm')} Mover</button></div>`;
   return [...matEn(0, id).map(matFila), ...list('boxes').filter(b => b.vehicle === id).map(b => usar(b, 'box')), ...list('gear').filter(g => g.vehicle === id && !get('boxes', g.box)).sort(byName).map(g => usar(g, 'gear'))].join('');
 }
+/* ---------- Cofres: dónde va cada cosa dentro del vehículo ---------- */
+// Cada modelo (o módulo) puede tener cofres: la cabina, los de cada lado (de delante atrás), el techo y la trasera. De
+// serie los llevan las autobombas; en los demás se ponen con «Cofres». El material dice en cuál va (campo «cofre»).
+const COFRES_SERIE = { izq: 3, der: 3, cab: true, techo: true, tras: true }, CON_COFRES = ['V-AB', 'V-AB-CHASIS', 'V-ATB-M1', 'V-ATB-M2'];
+const vehCofres = v => v?.cofres || (CON_COFRES.includes(v?.id) ? COFRES_SERIE : null);
+// En el orden en que se revisan: cabina, lado izquierdo, techo, lado derecho y trasera
+const cofresDe = v => { const c = vehCofres(v); if (!c) return []; const lado = (n, p, t) => Array.from({ length: Math.min(8, +n || 0) }, (_, i) => [p + (i + 1), `Cofre ${t} ${i + 1}`]);
+  return [...(c.cab ? [['CAB', 'Cabina']] : []), ...lado(c.izq, 'I', 'izquierdo'), ...(c.techo ? [['TECHO', 'Techo']] : []), ...lado(c.der, 'D', 'derecho'), ...(c.tras ? [['TRAS', 'Trasera']] : [])]; };
+const cofreNombre = (v, id) => cofresDe(v).find(c => c[0] === id)?.[1] || '';
+// El dibujo: el vehículo visto desde arriba, con la cabina delante; en cada cofre, cuántas cosas lleva (en rojo si algo falta o está roto)
+function cofresPlano(owner) {
+  const d = duenoDe(owner), v = get('vehicles', d.veh), cs = cofresDe(v); if (!cs.length) return '';
+  const mat = matDe(d).filter(matVivo), c = vehCofres(v), n = Math.max(+c.izq || 0, +c.der || 0, 1);
+  const cof = (id, corto, cls = '') => { const ms = mat.filter(m => (m.cofre || '') === id), mal = ms.some(m => !matOk(m));
+    return `<button class="cof ${cls} ${mal ? 'bad' : ''}" aria-label="${esc(cofreNombre(v, id))}: ${ms.length} ${ms.length === 1 ? 'cosa' : 'cosas'}${mal ? ', algo falta o está roto' : ''}" onclick="cofreVer('${owner}', '${id}')"><span>${corto}</span><b>${ms.length}</b></button>`; };
+  const lado = (p, k, t) => Array.from({ length: Math.min(8, +c[k] || 0) }, (_, i) => cof(p + (i + 1), `${t} ${i + 1}`)).join('');
+  const sin = mat.filter(m => !cs.some(x => x[0] === m.cofre)).length;
+  return `<div class="cofres" style="--n:${n}" role="group" aria-label="Cofres del vehículo">
+      ${c.cab ? cof('CAB', 'Cabina', 'cof-cab') : '<span class="cof-morro" aria-hidden="true">Delante</span>'}
+      <div class="cof-lado">${lado('I', 'izq', 'Izq.')}</div>${c.techo ? cof('TECHO', 'Techo', 'cof-techo') : '<span class="cof-techo cof-nada" aria-hidden="true"></span>'}<div class="cof-lado">${lado('D', 'der', 'Der.')}</div>
+      ${c.tras ? cof('TRAS', 'Trasera', 'cof-tras') : ''}
+    </div>
+    <p class="muted cof-pie">Toca un cofre para ver lo que lleva o añadir.${sin ? ` Sin cofre: ${sin}.` : ''} <button class="link" onclick="cofresForm('${d.veh}', '${owner}')">Cambiar los cofres</button></p>`;
+}
+function cofreVer(owner, id) {
+  const d = duenoDe(owner), v = get('vehicles', d.veh), ms = matDe(d).filter(m => matVivo(m) && (m.cofre || '') === id);
+  openModal(`${cofreNombre(v, id)} · ${duenoNombre(owner)}`, `${ms.length ? `<div class="list">${ms.map(m => matRow(owner, m)).join('')}</div>` : '<p class="muted">Este cofre está vacío.</p>'}
+    <button class="btn btn-a full" style="margin-top:12px" onclick="matForm('${owner}', '', { cofre: '${id}' })">${ic('plus')} Material aquí</button>
+    <button class="btn btn-g full" style="margin-top:8px" onclick="${d.unit ? `unidadView('${d.veh}', '${d.unit}')` : `vehicleView('${d.veh}')`}">${ic('back')} Volver al vehículo</button>`);
+}
+// Cuántos cofres tiene el modelo (vale para todas sus matrículas)
+function cofresForm(vid, owner = '') {
+  if (!soloFlota()) return;
+  const v = get('vehicles', vid), c = vehCofres(v) || { izq: 0, der: 0 }, volver = () => { const d = owner ? duenoDe(owner) : {}; d.unit ? unidadView(vid, d.unit) : vehicleView(vid); };
+  openForm(`Cofres de ${v.name}`, [
+    { k: 'izq', label: 'Cofres del lado izquierdo (de 0 a 8)', type: 'number', value: c.izq || 0 },
+    { k: 'der', label: 'Cofres del lado derecho (de 0 a 8)', type: 'number', value: c.der || 0 },
+    { k: 'mas', label: 'Además', type: 'checks', wide: true, value: ['cab', 'techo', 'tras'].filter(k => c[k]), options: [['cab', 'Cabina'], ['techo', 'Techo'], ['tras', 'Trasera']] }
+  ], val => { const n = x => Math.min(8, Math.max(0, Math.round(+x || 0)));
+    put('vehicles', { ...get('vehicles', vid), cofres: { izq: n(val.izq), der: n(val.der), cab: val.mas.includes('cab'), techo: val.mas.includes('techo'), tras: val.mas.includes('tras') } }, `Cofres de ${v.name} cambiados`); volver(); },
+  `<p class="muted span2">Es el mismo reparto para todas las matrículas de este modelo. Si quitas un cofre, lo que llevaba queda «sin cofre»; no se borra nada.</p>`);
+}
+
+/* ---------- Incidencias: lo que le pasa a un vehículo, hasta que se arregla ---------- */
+// Registros «issues»: { id, veh, unit, text, item (el punto del checklist que la abrió), st, resp, nota, photo, by, ts, cierre }
+const INC_ESTADOS = { abierta: ['Abierta', 'bad'], reparacion: ['En reparación', 'warn'], resuelta: ['Resuelta', 'ok'] }, INC_ORDEN = Object.keys(INC_ESTADOS);
+const incidencias = (vid, unit = '') => list('issues').filter(i => i.veh === vid && (i.unit || '') === unit).sort((a, b) => INC_ORDEN.indexOf(a.st) - INC_ORDEN.indexOf(b.st) || (b.ts || 0) - (a.ts || 0));
+const incAbiertas = (vid, unit = '') => incidencias(vid, unit).filter(i => i.st !== 'resuelta');
+// Lo que tiene pendiente una matrícula: sus incidencias sin resolver (o, en checklists de antes de haber incidencias, sus fallos)
+const unitFallos = (v, u) => { const ab = incAbiertas(v.id, u.id), c = lastVcheck(u.id); return ab.length ? ab.map(i => i.text) : c?.fails.length && !c.inc ? c.fails.map(f => f.split(' (')[0]) : []; };
+// Tras un checklist: cada fallo abre su incidencia (si no estaba abierta) y cada punto que vuelve a estar bien cierra la suya
+function incDeChecklist(vid, unit, fails, nota) {
+  const ab = incAbiertas(vid, unit), quien = prefs.activeOperator;
+  fails.filter(f => !ab.some(i => i.item === f)).forEach(f => stamp('issues', { id: uid('IN'), veh: vid, unit, item: f, text: f.split(' (')[0], st: 'abierta', resp: '', nota, by: quien, ts: Date.now(), origen: 'checklist' }));
+  ab.filter(i => i.item && !fails.includes(i.item)).forEach(i => stamp('issues', { ...i, st: 'resuelta', cierre: { by: quien, ts: Date.now(), nota: 'En el checklist ya estaba bien' } }));
+}
+function incRow(i) {
+  const [txt, cls] = INC_ESTADOS[i.st] || INC_ESTADOS.abierta;
+  return `<div class="item need inc ${i.st === 'resuelta' ? 'need-ok' : ''}"><button class="link-row grow" onclick="incForm(${jsq(i.veh)}, ${jsq(i.unit || '')}, ${jsq(i.id)})">${i.photo ? `<div class="who-row"><img class="thumb mat-foto" data-img="inc:${esc(i.id)}" alt="">` : ''}<div><b>${esc(i.text)}</b>
+    <small>${esc([i.resp && get('operators', i.resp) ? 'La lleva ' + opName(i.resp) : '', i.nota, `${i.by || ''} · ${fmtWhen(i.ts)}`, i.cierre ? `Resuelta por ${i.cierre.by || ''}, ${fmtWhen(i.cierre.ts)}` : ''].filter(Boolean).join(' · '))}</small></div>${i.photo ? '</div>' : ''}</button>
+    <button class="tag ${cls} need-estado" aria-label="${esc(i.text)}: ${txt}. Tocar para pasar al siguiente estado" onclick="incAvanza(${jsq(i.id)})">${txt}</button></div>`;
+}
+function incBloque(vid, unit = '') {
+  const todas = incidencias(vid, unit), ab = todas.filter(i => i.st !== 'resuelta'), hechas = todas.filter(i => i.st === 'resuelta');
+  return `<div class="veh-inc"><div class="between wrap-row sec-head"><h3>Incidencias${ab.length ? ` (${ab.length})` : ''}</h3>
+      ${me() ? `<button class="btn btn-g btn-sm" onclick="incForm('${vid}', '${unit}')">${ic('plus')} Incidencia</button>` : ''}</div>
+    ${ab.length ? `<div class="list">${ab.map(incRow).join('')}</div>` : '<p class="muted">Sin incidencias abiertas. Los fallos de un checklist se apuntan aquí solos; también puedes añadir una a mano (un golpe, una avería…).</p>'}
+    ${hechas.length ? `<details class="need-hechas"><summary class="link">Resueltas (${hechas.length})</summary><div class="list" style="margin-top:8px">${hechas.slice(0, 20).map(incRow).join('')}</div></details>` : ''}</div>`;
+}
+const incVuelve = (vid, unit) => setTimeout(() => unit ? unidadView(vid, unit) : vehicleView(vid), 0);
+function incForm(vid, unit = '', id = '') {
+  if (!me()) return;
+  const i = id ? get('issues', id) : { veh: vid, unit, st: 'abierta' }; if (!i) return;
+  openForm(id ? 'Incidencia' : 'Nueva incidencia', [
+    { k: 'text', label: 'Qué le pasa', value: i.text || '', required: true, wide: true, placeholder: 'Ej.: Golpe en la puerta del cofre derecho' },
+    { k: 'st', label: 'Estado', value: i.st || 'abierta', options: Object.entries(INC_ESTADOS).map(([k, [l]]) => [k, l]) },
+    { k: 'resp', label: 'Quién se encarga', value: i.resp || '', options: [['', 'Nadie todavía'], ...operators().sort(byName).map(o => [o.id, conEmpleo(o)])] },
+    { k: 'nota', label: 'Notas (qué se ha hecho, a qué taller ha ido…)', type: 'textarea', rows: 2, value: i.nota || '', wide: true },
+    { k: 'photo', label: i.photo ? 'Cambiar la foto' : 'Foto', type: 'photo', value: '', wide: true }
+  ], async val => {
+    const iid = i.id || uid('IN'), cerrar = val.st === 'resuelta' && i.st !== 'resuelta';
+    if (val.photo) await Img.put('inc:' + iid, val.photo);
+    put('issues', { ...i, id: iid, veh: vid, unit, text: val.text.trim(), st: val.st, resp: val.resp || '', nota: val.nota || '', photo: val.photo ? true : i.photo || false, by: i.by || prefs.activeOperator, ts: i.ts || Date.now(),
+      cierre: val.st === 'resuelta' ? (cerrar ? { by: prefs.activeOperator, ts: Date.now() } : i.cierre) : null },
+      `Incidencia de ${duenoNombre('veh:' + vid + (unit ? '#' + unit : ''))}: ${val.text} (${INC_ESTADOS[val.st][0].toLowerCase()})`);
+    incVuelve(vid, unit);
+  }, id ? `${i.photo ? `<img class="photo span2" data-img="inc:${id}" alt="Foto de la incidencia">` : ''}
+    <button type="button" class="btn btn-bad span2" onclick="if (confirm('¿Borrar esta incidencia?')) { remove('issues', '${id}', 'Incidencia borrada'); closeModal(); incVuelve('${vid}', '${unit}'); }">${ic('trash')} Borrar</button>` : '');
+}
+// Un toque en la etiqueta la pasa al siguiente estado (abierta → en reparación → resuelta)
+function incAvanza(id) {
+  const i = get('issues', id); if (!i || !me()) return; const n = INC_ORDEN.indexOf(i.st); if (n < 0 || n >= INC_ORDEN.length - 1) return; const st = INC_ORDEN[n + 1];
+  put('issues', { ...i, st, cierre: st === 'resuelta' ? { by: prefs.activeOperator, ts: Date.now() } : null }, `Incidencia «${i.text}» pasa a «${INC_ESTADOS[st][0].toLowerCase()}»`);
+  incVuelve(i.veh, i.unit || '');
+}
+
+/* ---------- Mantenimiento de cada matrícula: cada tantos kilómetros o cada tantos meses ---------- */
+// Se guarda en la matrícula: mant = [{ id, name, km (cada cuántos), meses (cada cuántos), ult (fecha de la última vez), ultKm }]
+const MANT_SERIE = [['Aceite y filtros', 15000, 12], ['Neumáticos', 0, 6], ['Revisión general', 0, 12], ['Batería', 0, 24]];
+const unitKm = u => Math.max(0, ...list('vchecks').filter(c => c.unit === u.id && +c.km).map(c => +c.km));   // los últimos kilómetros apuntados en un checklist
+const masMeses = (iso, n) => { const d = new Date(iso + 'T12:00'); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
+// Lo que falta: { km, dias } (null lo que no aplica o no se puede saber), y si toca ya («bad») o pronto («warn»)
+function mantFalta(u, m) {
+  const act = unitKm(u), km = +m.km && act && m.ultKm !== '' && m.ultKm != null ? +m.ultKm + +m.km - act : null, dias = +m.meses && m.ult ? daysTo(masMeses(m.ult, +m.meses)) : null;
+  return { km, dias, cls: (km != null && km <= 0) || (dias != null && dias <= 0) ? 'bad' : (km != null && km <= 1000) || (dias != null && dias <= 30) ? 'warn' : '', sin: km == null && dias == null };
+}
+const mantTxt = f => f.sin ? 'Apunta la última vez' : f.cls === 'bad' ? 'Toca' : [f.km != null ? `faltan ${f.km.toLocaleString('es-ES')} km` : '', f.dias != null ? `en ${f.dias} ${f.dias === 1 ? 'día' : 'días'}` : ''].filter(Boolean).join(' · ');
+const mantCada = m => [+m.km ? `cada ${(+m.km).toLocaleString('es-ES')} km` : '', +m.meses ? `cada ${m.meses} ${+m.meses === 1 ? 'mes' : 'meses'}` : ''].filter(Boolean).join(' o ');
+const mantPeor = u => (u.mant || []).map(m => mantFalta(u, m).cls).reduce((a, c) => c === 'bad' || a === 'bad' ? 'bad' : c || a, '');
+function mantBloque(vid, u) {
+  const ms = u.mant || [], km = unitKm(u);
+  return `<div class="veh-mant"><div class="between wrap-row sec-head"><h3>Mantenimiento</h3>${me() ? `<button class="btn btn-g btn-sm" onclick="mantForm('${vid}', '${u.id}')">${ic('plus')} Mantenimiento</button>` : ''}</div>
+    ${ms.length ? `<div class="log-rows">${ms.map(m => { const f = mantFalta(u, m); return `<button class="log-row txt ${f.cls}" onclick="mantForm('${vid}', '${u.id}', '${m.id}')"><span>${esc(m.name)}<small> ${esc([mantCada(m), m.ult ? 'la última, ' + fmtDate(m.ult) + (m.ultKm ? ` con ${(+m.ultKm).toLocaleString('es-ES')} km` : '') : ''].filter(Boolean).join(' · '))}</small></span><b>${esc(mantTxt(f))}</b></button>`; }).join('')}</div>
+      <p class="muted" style="margin-top:8px">${km ? `Kilómetros actuales: ${km.toLocaleString('es-ES')} (del último checklist).` : 'Los kilómetros se toman del checklist: apúntalos al hacerlo.'}</p>`
+      : `<p class="muted">Apunta lo que hay que hacerle cada cierto tiempo o cada tantos kilómetros (aceite, neumáticos, revisión…), y la app avisa cuando toque.</p>
+        ${me() ? `<button class="btn btn-g" style="margin-top:8px" onclick="mantSerie('${vid}', '${u.id}')">${ic('list')} Empezar con lo habitual</button>` : ''}`}</div>`;
+}
+const mantGuarda = (vid, unit, mant, msg) => { const v = get('vehicles', vid); put('vehicles', { ...v, units: v.units.map(x => x.id === unit ? { ...x, mant } : x) }, msg); setTimeout(() => unidadView(vid, unit), 0); };
+function mantSerie(vid, unit) {
+  const u = get('vehicles', vid).units.find(x => x.id === unit);
+  mantGuarda(vid, unit, MANT_SERIE.map(([name, km, meses]) => ({ id: uid('MT'), name, km, meses, ult: '', ultKm: '' })), `Mantenimiento de ${u.plate}: lista habitual añadida`);
+}
+function mantForm(vid, unit, id = '') {
+  if (!me()) return;
+  const v = get('vehicles', vid), u = v.units.find(x => x.id === unit), m = (u.mant || []).find(x => x.id === id) || { km: '', meses: 12 }, km = unitKm(u);
+  const guarda = (rec, msg) => mantGuarda(vid, unit, [...(u.mant || []).filter(x => x.id !== rec.id), rec].sort(byName), msg);
+  openForm(id ? m.name : `Mantenimiento · ${u.plate}`, [
+    { k: 'name', label: 'Qué hay que hacer', value: m.name || '', required: true, wide: true, placeholder: 'Ej.: Aceite y filtros' },
+    { k: 'km', label: 'Cada cuántos kilómetros (vacío si no va por km)', type: 'number', value: m.km || '' },
+    { k: 'meses', label: 'Cada cuántos meses (vacío si no va por tiempo)', type: 'number', value: m.meses || '' },
+    { k: 'ult', label: 'Última vez que se hizo', type: 'date', value: m.ult || '' },
+    { k: 'ultKm', label: 'Kilómetros que tenía entonces', type: 'number', value: m.ultKm ?? '', placeholder: km ? `Ahora tiene ${km}` : '' }
+  ], val => {
+    if (!+val.km && !+val.meses) { toast('Pon cada cuántos kilómetros o cada cuántos meses', 'bad'); return mantForm(vid, unit, id); }
+    guarda({ id: m.id || uid('MT'), name: val.name.trim(), km: Math.round(+val.km) || 0, meses: Math.round(+val.meses) || 0, ult: val.ult || '', ultKm: val.ultKm === '' ? '' : Math.round(+val.ultKm) || 0 }, `Mantenimiento de ${u.plate}: ${val.name}`);
+  }, id ? `<button type="button" class="btn btn-g span2" onclick="closeModal(); mantHecho('${vid}', '${unit}', '${id}')">${ic('checkc')} Hecho hoy${km ? ` (con ${km.toLocaleString('es-ES')} km)` : ''}</button>
+    <button type="button" class="btn btn-bad span2" onclick="if (confirm('¿Quitar este mantenimiento?')) { closeModal(); mantGuarda('${vid}', '${unit}', get('vehicles', '${vid}').units.find(x => x.id === '${unit}').mant.filter(x => x.id !== '${id}'), 'Mantenimiento quitado'); }">${ic('trash')} Quitar</button>` : '');
+}
+function mantHecho(vid, unit, id) {
+  const u = get('vehicles', vid).units.find(x => x.id === unit), km = unitKm(u);
+  mantGuarda(vid, unit, u.mant.map(m => m.id === id ? { ...m, ult: todayISO(), ultKm: km || m.ultKm } : m), `Mantenimiento de ${u.plate}: ${u.mant.find(m => m.id === id).name}, hecho`);
+  toast('Apuntado: hecho hoy');
+}
+
 // Etiquetas de estado de una matrícula: ITV, fallos del último checklist, material que falta o está roto y si toca checklist
 function unitTags(v, u) {
-  const c = lastVcheck(u.id), mal = matDe({ veh: v.id, unit: u.id }).filter(m => matVivo(m) && !matOk(m)).length, f = revFalta(`veh:${v.id}#${u.id}`), n = u.itv ? daysTo(u.itv) : null;
+  const mal = matDe({ veh: v.id, unit: u.id }).filter(m => matVivo(m) && !matOk(m)).length, f = revFalta(`veh:${v.id}#${u.id}`), n = u.itv ? daysTo(u.itv) : null;
   return [n != null && n < 0 ? '<span class="tag bad">ITV caducada</span>' : n != null && n <= 30 ? '<span class="tag warn">ITV pronto</span>' : '',
-    c?.fails.length ? `<span class="tag bad">${c.fails.length === 1 ? 'Fallo' : c.fails.length + ' fallos'}</span>` : '',
+    (k => k ? `<span class="tag bad">${k === 1 ? '1 incidencia' : k + ' incidencias'}</span>` : '')(unitFallos(v, u).length),
+    (m => m ? `<span class="tag ${m}">Mantenimiento</span>` : '')(mantPeor(u)),
     mal ? `<span class="tag bad">${mal} ${mal === 1 ? 'falta o está roto' : 'faltan o están rotos'}</span>` : '',
     f != null && f <= 0 ? '<span class="tag warn">Toca checklist</span>' : ''].join('');
 }
@@ -53,10 +198,13 @@ function unidadView(vid, unit) {
       ${dato('Titular', u.titular)}${dato('Suplente', u.suplente)}${dato('Destino', u.use)}
       <button class="log-row txt ${u.itv && daysTo(u.itv) < 0 ? 'bad' : ''}" onclick="${u.itv && daysTo(u.itv) <= 0 ? `itvForm('${vid}', '${u.id}')` : `itvHistory('${vid}', '${u.id}')`}"><span>ITV${l ? `<small> la última, ${fmtDate(l.date)}: ${esc((ITV_RES[l.res]?.[0] || l.res).split(' (')[0].toLowerCase())}${l.defects ? ' · ' + esc(l.defects) : ''}</small>` : ''}</span><b>${u.itv ? (daysTo(u.itv) <= 0 ? '¿La ha pasado?' : fmtDate(u.itv)) : 'Sin fecha'}</b></button>
     </div>
-    <div class="veh-mat">${matBloque(owner, 'Apunta lo que lleva esta matrícula: mangotes, mangueras, puntas de lanza, herramientas, calzos, cadenas…')}</div>
+    ${incBloque(vid, u.id)}
+    <div class="veh-mat">${cofresPlano(owner)}${matBloque(owner, 'Apunta lo que lleva esta matrícula: mangotes, mangueras, puntas de lanza, herramientas, calzos, cadenas…')}</div>
+    ${mantBloque(vid, u)}
     ${(o => o ? `<h4 class="sec-title" style="margin:16px 0 8px">También va en este vehículo</h4><div class="list veh-otros">${o}</div>` : '')(vehOtros(vid))}
     ${puedeFlota() ? `<div class="grid g2" style="grid-template-columns:1fr 1fr; margin-top:12px"><button class="btn btn-g" onclick="unitForm('${vid}', '${u.id}', true)">${ic('pencil')} Editar matrícula</button>
-      <button class="btn btn-g" onclick="vehicleForm('${vid}')">${ic('truck')} Editar modelo</button></div>` : ''}`);
+      <button class="btn btn-g" onclick="vehicleForm('${vid}')">${ic('truck')} Editar modelo</button>
+      ${cofresDe(v).length ? '' : `<button class="btn btn-g span2" onclick="cofresForm('${vid}', '${owner}')">${ic('grid')} Poner cofres a este modelo</button>`}</div>` : ''}`);
 }
 // Ficha de un modelo: sus matrículas (cada una abre la suya), el material de todas y, quien quiera, lo edita. Con una
 // sola matrícula se abre directamente la ficha de esa matrícula. Un módulo o contenedor tiene solo su material.
@@ -71,9 +219,11 @@ function vehicleView(id) {
     ${v.notes || v.seats ? `<p class="muted" style="margin-top:8px">${esc([v.seats ? v.seats + ' plazas' : '', v.notes].filter(Boolean).join(' · '))}</p>` : ''}
     ${mod ? `<div class="log-rows uni-datos"><div class="log-row txt"><span>Dónde está</span><b>${esc(en ? `Montado en ${vehName(en.vid)} ${en.plate}` : v.sitio || 'En el parque')}</b></div></div>`
       : units.length ? `<h4 class="sec-title" style="margin-top:14px">Matrículas (${units.length})</h4><div class="list">${units.map(fila).join('')}</div>` : ''}
-    <div class="veh-mat">${matBloque('veh:' + id, mod ? 'Apunta lo que lleva este módulo o contenedor.' : 'Apunta lo que lleva: mangotes, mangueras, puntas de lanza, herramientas, calzos, cadenas…')}</div>
+    ${!units.length && !mod ? incBloque(id, '') : ''}
+    <div class="veh-mat">${cofresPlano('veh:' + id)}${matBloque('veh:' + id, mod ? 'Apunta lo que lleva este módulo o contenedor.' : 'Apunta lo que lleva: mangotes, mangueras, puntas de lanza, herramientas, calzos, cadenas…')}</div>
     ${(o => o ? `<h4 class="sec-title" style="margin:16px 0 8px">También va en este ${mod ? 'módulo' : 'vehículo'}</h4><div class="list veh-otros">${o}</div>` : '')(vehOtros(id))}
-    ${puedeFlota() ? `<button class="btn btn-g full" style="margin-top:12px" onclick="${mod ? `moduloForm('${id}')` : `vehicleForm('${id}')`}">${ic('pencil')} ${mod ? 'Editar' : 'Editar modelo y matrículas'}</button>` : ''}`);
+    ${puedeFlota() ? `<button class="btn btn-g full" style="margin-top:12px" onclick="${mod ? `moduloForm('${id}')` : `vehicleForm('${id}')`}">${ic('pencil')} ${mod ? 'Editar' : 'Editar modelo y matrículas'}</button>
+      ${cofresDe(v).length ? '' : `<button class="btn btn-g full" style="margin-top:8px" onclick="cofresForm('${id}')">${ic('grid')} Poner cofres</button>`}` : ''}`);
 }
 
 /* ---------- La pantalla de Vehículos ---------- */
@@ -98,7 +248,7 @@ function viewVehiculos() {
       <div class="between wrap-row sec-head"><div><h2>Vehículos</h2><p class="muted">Cada matrícula, con su pelotón, su ITV, su checklist y el material que lleva.</p></div>
         ${puedeFlota() ? `<button class="btn btn-a" onclick="vehicleForm()">${ic('plus')} Modelo</button>` : ''}</div>
       ${flota.length ? `<div class="sier-res log-res veh-res">${kpi('Disponibles', `${libres.length}<span class="ap-de">/${flota.length}</span>`, logCls(libres.length, flota.length) === 'bad' ? 'bad' : '')}
-        ${kpi('Con fallos', flota.filter(x => x.fallo).length, flota.some(x => x.fallo) ? 'bad' : '')}${kpi('ITV caducada', flota.filter(x => x.itv).length, flota.some(x => x.itv) ? 'bad' : '')}${kpi('Toca checklist', toca)}</div>` : ''}
+        ${kpi('Con incidencias', flota.filter(x => x.fallo).length, flota.some(x => x.fallo) ? 'bad' : '')}${kpi('ITV caducada', flota.filter(x => x.itv).length, flota.some(x => x.itv) ? 'bad' : '')}${kpi('Toca checklist', toca)}</div>` : ''}
       <div class="seg-row veh-vista" role="group" aria-label="Ver">${[['pel', 'Por pelotón'], ['modelo', 'Por modelo']].map(([k, t]) => `<button class="${k === vista ? 'on' : ''}" aria-pressed="${k === vista}" onclick="setPref({ vehVista: '${k}' })">${t}</button>`).join('')}</div>
       ${vista === 'pel' && grupos.length > 1 ? `<div class="row chips veh-grupos" role="group" aria-label="Asignados a">${[['todos', 'Todos', flota.length], ...grupos.map(([g, xs]) => [g, g || 'Sin asignar', xs.length])].map(([g, t, n]) =>
         `<button class="chip ${g === gSel ? 'on' : ''}" aria-pressed="${g === gSel}" onclick="setPref({ vehGrupo: '${g}' })">${esc(t)} <span class="muted">${n}</span></button>`).join('')}</div>` : ''}

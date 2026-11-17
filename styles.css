@@ -2430,3 +2430,46 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .esp-head { font-size: 12.5px; }
 .plano-c small { font-size: 12px; } .plano-c .muted { font-size: 12px; }
 .est-t small { font-size: 13px; }
+
+/* ==================== BARRA DE ABAJO (móvil y tablet en vertical) ==================== */
+.tabbar { display: none; }
+@media (max-width: 1023px) {
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px;
+    padding: 6px 6px calc(6px + var(--sa-b)); background: var(--frame); border-top: 1px solid rgba(255, 255, 255, .08); }
+  .tabbar button { position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 52px; min-width: 0; padding: 4px 2px; border-radius: 12px;
+    color: var(--frame-muted); font: 500 12px/1.1 var(--sans); transition: color var(--t-hover) ease, background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+  .tabbar button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabbar button svg { width: 24px; height: 24px; }
+  .tabbar button.on { color: #ffffff; background: var(--frame-2); }
+  .tabbar button.on svg { color: var(--yellow); }
+  .tabbar button:active { transform: scale(.96); }
+  .tabbar button:focus-visible { outline: 3px solid var(--yellow); outline-offset: -3px; }
+  .tb-n { position: absolute; top: 3px; left: 50%; margin-left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--yellow); color: #14171a; font: 600 11.5px/18px var(--num); font-style: normal; text-align: center; }
+  body.login-on .tabbar, body.cv-dragging .tabbar { display: none; }
+  .fab { bottom: calc(var(--nav-h) + 14px + var(--sa-b)); }
+  .toast { z-index: 60; }
+}
+:root.big .tabbar button { font-size: 13.5px; min-height: 60px; }
+
+/* ==================== VEHÍCULOS: cofres, incidencias y mantenimiento ==================== */
+/* Cofres: el vehículo visto desde arriba, con la cabina delante, un lado a cada costado, el techo en medio y la trasera */
+.cofres { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 6px; padding: 8px; margin-bottom: 8px; border: 2px solid var(--line-2); border-radius: 18px 18px 12px 12px; background: var(--sunk); }
+.cof { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 46px; min-width: 0; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink);
+  text-align: left; transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+.cof span { font-size: 13.5px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.cof b { font: 500 16px var(--num); color: var(--muted); flex: none; }
+.cof.bad { border-color: var(--bad); } .cof.bad b { color: var(--bad); }
+.cof:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) { .cof:hover { border-color: var(--ink); } }
+.cof-cab, .cof-tras, .cof-morro { grid-column: 1 / -1; }
+.cof-cab { border-radius: 12px 12px 8px 8px; }
+.cof-morro { text-align: center; font-size: 12px; color: var(--muted); }
+.cof-lado { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.cof-techo { flex-direction: column; justify-content: center; text-align: center; border-style: dashed; }
+.cof-nada { border: 0; }
+.cof-pie { font-size: 13px; margin: 0 0 14px; }
+.veh-inc, .veh-mant { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.veh-inc .sec-head, .veh-mant .sec-head { border-bottom: 0; padding-bottom: 0; margin-bottom: 10px; }
+.veh-mant .log-row { width: 100%; text-align: left; }
+.est-pre { grid-column: 1 / -1; display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.veh-mant .log-row > b { max-width: 58%; white-space: normal; text-align: right; overflow: visible; text-overflow: clip; }

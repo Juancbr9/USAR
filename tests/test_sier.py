@@ -32,10 +32,17 @@ with sync_playwright() as p:
 
     # Marca: la app es SIER 242
     assert a.title() == 'SIER 242' and 'SIER' in a.inner_text('.topbar .wordmark')
+    # Barra de abajo (móvil): lo de todos los días a un toque y «Más», que abre el menú completo
+    assert [' '.join(t.split()) for t in a.locator('#tabbar button span').all_inner_texts()] == ['Inicio', 'Personal', 'Vehículos', 'Almacén', 'Más'] and a.locator('#tabbar button.on span').inner_text() == 'Inicio'
+    a.click('#tabbar button:has-text("Almacén")'); a.wait_for_timeout(150); assert a.evaluate("prefs.tab") == 'almacen' and a.locator('#tabbar button.on span').inner_text() == 'Almacén'
+    a.evaluate("go('recursos')"); a.wait_for_timeout(150); assert a.locator('#tabbar button.on span').inner_text() == 'Más', 'fuera de los cuatro accesos, se marca «Más»'
+    a.click('#tabbar button:has-text("Más")'); a.wait_for_selector('#drawer:not(.hidden) .dr-item'); a.evaluate("toggleDrawer(false); go('avisos')"); a.wait_for_timeout(350)
+    assert a.evaluate("(() => { const b = document.getElementById('tabbar').getBoundingClientRect(); return b.bottom <= innerHeight + 1 && b.top > innerHeight - 90; })()"), 'la barra va pegada abajo'
     # Menú: Inicio, Logística, Personal, Vehículos, Calendario, USAR (con lo suyo dentro), los apartados y Ajustes
     a.click('#menuBtn'); a.wait_for_timeout(150)
     tops = [x.strip().split('\n')[0] for x in a.locator('#drawer .dr-item:not(.sub) b, #drawer .dr-group-head b').all_inner_texts()]
-    assert tops == ['Inicio', 'Logística', 'Personal', 'Vehículos', 'Almacén', 'Parque', 'Calendario', 'USAR', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras', 'Ajustes'], tops
+    assert a.locator('#drawer .dr-label').all_inner_texts() == ['Sección', 'Material', 'Especialidades y equipos'], 'el menú va en tres bloques con su título'
+    assert tops == ['Inicio', 'Logística', 'Personal', 'Calendario', 'Almacén', 'Parque', 'Vehículos', 'USAR', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras', 'Ajustes'], tops
     a.click('#drawer .dr-group-head:has-text("USAR")'); a.wait_for_timeout(100)
     dentro = a.locator('#drawer .dr-group[data-area=usar] .dr-item.sub b').all_inner_texts()
     assert dentro == ['Contenedor', 'Fuera', 'Revisión', 'Revista', 'EPI', 'Guía de campo', 'Apuntalamientos'], dentro

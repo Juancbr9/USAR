@@ -204,6 +204,8 @@ function expiries() {
   list('gear').filter(g => g.service).forEach(g => out.push({ date: g.service, what: g.name, kind: 'Mantenimiento', go: `gearDetail('${g.id}')` }));
   matTodo().filter(m => m.review).forEach(m => out.push({ date: m.review, what: `${m.name} · ${matDueno(m)}`, kind: 'Revisión', go: matIr(m) }));
   matTodo().filter(m => m.caduca).forEach(m => out.push({ date: m.caduca, what: `${m.name} · ${matDueno(m)}`, kind: 'Caducidad', go: matIr(m) }));
+  // Mantenimientos de los vehículos que van por tiempo (los que van por kilómetros avisan en la ficha de la matrícula)
+  list('vehicles').forEach(v => (v.units || []).forEach(u => (u.mant || []).filter(m => +m.meses && m.ult).forEach(m => out.push({ date: masMeses(m.ult, +m.meses), what: `${m.name} · ${v.name} ${u.plate}`, kind: 'Mantenimiento', go: `go('vehiculos'); unidadView('${v.id}', '${u.id}')` }))));
   list('vehicles').forEach(v => (v.units || []).filter(u => u.itv).forEach(u => out.push({ date: u.itv, what: `${v.name} ${u.plate}${u.cita ? ' · cita ' + u.cita : ''}`, kind: 'ITV', go: `vehicleForm('${v.id}'); unitForm('${v.id}', '${u.id}')` })));
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }

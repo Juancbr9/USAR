@@ -118,9 +118,10 @@ with sync_playwright() as p:
     a.click('#menuBtn'); a.wait_for_timeout(250)
     a.evaluate("prefs.menuOpen = ['usar']; renderDrawer()"); tall(1270); a.wait_for_timeout(200)
     ann(a, 'menu', [('#drawer .dr-item[data-area=home]', 'r', {'d': 20}), ('#drawer .dr-item:has-text("Logística")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Personal")', 'r', {'d': 60}),
-                    ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Parque")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}),
+                    ('#drawer .dr-item:has-text("Almacén")', 'r', {'d': 60}), ('#drawer .dr-item:has-text("Vehículos")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("USAR")', 'r', {'d': 60}),
                     ('#drawer .dr-item:has-text("Revisión") .dr-dot', 'r', {'d': 30}), ('#drawer .dr-item:has-text("Agua")', 'r', {'d': 60}), ('#drawer .dr-group-head:has-text("Ajustes")', 'r', {'d': 60})]); tall(760)
     a.click('#drawer button:has-text("Inicio")'); a.wait_for_timeout(200)
+    a.evaluate("scrollTo(0, 0)"); ann(a, 'barra', [('#tabbar button:has-text("Personal")', 't', {'d': 40}), ('#tabbar button:has-text("Más")', 't', {'d': 40})])
 
     # ---------- Inicio ----------
     a.evaluate("scrollTo(0, 0)"); tall(1150); a.evaluate("scrollTo(0, 0)")
@@ -198,6 +199,10 @@ with sync_playwright() as p:
     a.evaluate("(() => { const u = get('vehicles', RENAULT).units[0].id, o = 'veh:' + RENAULT + '#' + u; putMany('matesp', ['Mangueras de 45 mm', 'Puntas de lanza', 'Calzos', 'Extintor'].map((name, i) => ({ id: 'ME-CHK' + i, veh: RENAULT, unit: u, name, qty: 1, status: 'OPERATIVO' }))); checklistForm(o); })()"); a.wait_for_timeout(400)
     a.evaluate("document.querySelector('#modal .est-list').scrollIntoView({ block: 'start' }); document.querySelector('.sheet').scrollTop -= 90"); a.click('#modal .est-row:has-text("Puntas de lanza") .est-falta'); a.fill('#modal .est-row:has-text("Puntas de lanza") .est-nota', 'Falta una'); a.wait_for_timeout(200)
     ann(a, 'checklist', [('#modal .est-row:has-text("Puntas de lanza") .est-ops', 'l', {'d': 18}), ('#modal .est-row:has-text("Puntas de lanza") .est-nota', 'i')])
+    # Los cofres de esa matrícula, con el material repartido
+    a.evaluate("(() => { closeModal(); const u = get('vehicles', RENAULT).units[0].id; ['I1', 'I1', 'TRAS', ''].forEach((cofre, i) => stamp('matesp', { ...get('matesp', 'ME-CHK' + i), cofre })); commit(); unidadView(RENAULT, u); })()"); a.wait_for_timeout(400)
+    a.evaluate("document.querySelector('#modal .cofres').scrollIntoView({ block: 'center' })"); a.wait_for_timeout(200)
+    ann(a, 'matricula', [('#modal .cofres .cof:has-text("Izq. 1")', 't', {'d': 34, 'fx': .78}), ('#modal .cof-pie', 'b', {'d': 26})])
     a.evaluate("closeModal(); [0, 1, 2, 3].forEach(i => stamp('matesp', { id: 'ME-CHK' + i, _del: true })); commit()"); a.wait_for_timeout(250)
     a.evaluate("go('avisos')"); a.wait_for_timeout(200); a.click('[aria-label=Buscar]'); a.fill('#search', 'cialumenes'); a.dispatch_event('#search', 'input'); a.wait_for_timeout(250); a.evaluate("scrollTo(0, 0)")
     ann(a, 'buscador', [('#search', 'i'), ('#results .find-item >> nth=0 >> .find-where', 'r', {'d': 10}), ('#results .find-item >> nth=0 >> small', 'r', {'d': 10})])

@@ -18,7 +18,11 @@ const AREAS = {
   help: { name: 'Ajustes', icon: 'sliders', desc: 'Ajustes, listas y manual de uso', hub: 'mas' }
 };
 // Menú: en este orden; las áreas se despliegan con sus secciones y el resto son secciones sueltas
-const MENU = ['avisos', 'recursos', 'personal', 'vehiculos', 'almacen', ...Object.keys(APARTADOS).filter(k => APARTADOS[k].comun), 'calendario', '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS).filter(k => !APARTADOS[k].comun), 'help'];
+// Tres bloques con su título: la sección (gente y agenda), el material (dónde está y los vehículos) y las especialidades
+const MENU = ['#Sección', 'avisos', 'recursos', 'personal', 'calendario', '#Material', 'almacen', ...Object.keys(APARTADOS).filter(k => APARTADOS[k].comun), 'vehiculos',
+  '#Especialidades y equipos', 'usar', ...Object.keys(APARTADOS).filter(k => !APARTADOS[k].comun), 'help'];
+// Barra de abajo en el móvil: lo de todos los días a un toque; «Más» abre el menú completo
+const BARRA = [['avisos', 'home', 'Inicio'], ['personal', 'users', 'Personal'], ['vehiculos', 'truck', 'Vehículos'], ['almacen', 'layers', 'Almacén']];
 // Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
 // las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
 const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };
@@ -94,7 +98,7 @@ const areaHeader = tab => `<h1 class="sr-only">${esc(sectionOf(tab)?.[2] || UNID
 /* ---------- Vehículos (antes dentro de Operaciones) ---------- */
 // Aviso en la tarjeta del modelo si alguna de sus matrículas tiene la ITV caducada o en los próximos 30 días
 // Aviso en la tarjeta si la última revista de salida de alguna de sus matrículas tuvo fallos
-const vehFails = v => (v.units || []).some(u => lastVcheck(u.id)?.fails.length) ? '<span class="tag bad">Fallo en revista</span>' : '';
+const vehFails = v => (v.units || []).some(u => unitFallos(v, u).length) ? '<span class="tag bad">Con incidencias</span>' : '';
 const itvSoon = v => { const n = Math.min(...(v.units || []).filter(u => u.itv).map(u => daysTo(u.itv))); return n < 0 ? '<span class="tag bad">ITV caducada</span>' : n <= 30 ? '<span class="tag warn">ITV pronto</span>' : ''; };
 // Marca el área actual en la página (colores de la cabecera, barra y botones)
 function applyArea() {

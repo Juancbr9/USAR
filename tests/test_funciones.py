@@ -69,11 +69,13 @@ with sync_playwright() as p:
     vc = a.evaluate("list('vchecks')[0]")
     assert vc['plate'] == plate and vc['fails'] == ['Luces y rotativos'] and vc['km'] == 45210 and vc['fuel'] == '1/2', vc
     a.wait_for_selector('#modal .uni-datos')
-    assert 'Mal: Luces y rotativos' in a.inner_text('#modal .chk-ult') and 'GRANADOS' in a.inner_text('#modal .chk-ult') and a.locator('#modal .uni-tags .tag.bad:has-text("Fallo")').count() == 1, 'la ficha enseña el último checklist'
+    assert 'Mal: Luces y rotativos' in a.inner_text('#modal .chk-ult') and 'GRANADOS' in a.inner_text('#modal .chk-ult') and a.locator('#modal .uni-tags .tag.bad:has-text("1 incidencia")').count() == 1, 'la ficha enseña el último checklist'
+    # El fallo abre una incidencia de esa matrícula (con quién lo vio)
+    inc = a.evaluate("list('issues')"); assert len(inc) == 1 and inc[0]['text'] == 'Luces y rotativos' and inc[0]['st'] == 'abierta' and inc[0]['by'] == 'GRANADOS' and 'Luces y rotativos' in a.inner_text('#modal .veh-inc'), inc
     a.click('#modal .chk-ult .link'); a.wait_for_timeout(150)
     assert 'Rotativo trasero roto' in a.inner_text('#modal') and '45.210 km' in a.inner_text('#modal'), 'historial de la matrícula'
     a.keyboard.press('Escape'); a.wait_for_timeout(150)
-    assert a.locator('.veh-item:has-text("Amarok") .tag:has-text("Fallo en revista")').count() == 1
+    assert a.locator('.veh-item:has-text("Amarok") .tag:has-text("Con incidencias")').count() == 1
     a.evaluate("setPref({ tab: 'avisos' })"); a.wait_for_timeout(200)
     assert a.locator(f'.panel:has-text("Vehículos con fallos") .item:has-text("{plate}")').count() == 1, 'el fallo sale en Inicio'
     # Una revista nueva sin fallos quita el aviso

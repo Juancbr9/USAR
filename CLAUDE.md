@@ -33,9 +33,12 @@
   (hueco de pasillo), `door` (contenedor o armario) o `enveh` (un vehículo que no es el suyo); usar siempre `matLugar`,
   `matPoner` y `huecoTxt`. Cualquier cosa se mueve a cualquier sitio con `moverA(kind, id)` («Mover») o arrastrándola
   (`moverCon`, con «Deshacer»); mover no cambia de quién es.
+- Navegación: el menú (`MENU` en `js/areas.js`) va en tres bloques con título (Sección, Material, Especialidades y
+  equipos); en el móvil hay además una barra abajo (`#tabbar`, `BARRA`: Inicio, Personal, Vehículos, Almacén y «Más»,
+  que abre el menú). En tablet apaisada y PC no hay barra.
 - Entrada (`js/sesion.js`): usuario y contraseña, sin lista de nombres (lo pidió el usuario; no volver a enseñarla). El
   usuario es el nombre en la app; cuando se aplique en la base de datos el cambio de `supabase.sql` (columna `usuario`
-  de `private.usar_pins`), también las últimas cifras del móvil: entonces poner `LOGIN_CIFRAS = true` en `js/config.js`.
+  de `private.usar_pins`), también las últimas cifras del móvil: la app lo nota sola (`loginProbe`, `loginCifras`).
   Una contraseña de partida (`cambiar`) obliga a elegir una propia al entrar (`pinPropio`).
 - Tipografía: IBM Plex va dentro de la app (`fonts/*.woff2`, `@font-face` al principio de `styles.css`, en `FILES` de
   `sw.js`); no volver a cargarla de internet. Ningún texto puede salirse de su recuadro ni cortarse: lo comprueba
@@ -45,6 +48,11 @@
   `'veh:<id>#<unidad>'`; `duenoDe` da `{ veh, unit }`) y su checklist. La autobomba Renault lleva por matrícula su
   configuración (`unitMod`, de serie `lcif`); los contenedores pequeños ya no son configuraciones: son «módulos»
   (registros `vehicles` con `tipo: 'modulo'`, sin matrículas; `esModulo`), aparte, con su material.
+- Cada matrícula lleva además: cofres (`cofresDe(modelo)`, de serie en las autobombas; el material dice el suyo en `cofre`
+  y la lista y el checklist salen en ese orden; `cofresPlano`, `cofresForm`), precinto del material (`precinto`), copia de
+  material entre matrículas (`matCopiar`), incidencias (registros `issues`: abierta, en reparación o resuelta, con
+  responsable y foto; los fallos del checklist las abren y cierran solos, `incDeChecklist`; lo pendiente de una matrícula
+  es `unitFallos`) y mantenimiento por kilómetros o meses (`mant` de la matrícula; `mantFalta`; sale en vencimientos).
 - Revista o checklist (`checklistForm` en `js/views/material.js`): de cada cosa, «Bien», «Falta» (estado `FALTA`) o «Roto»
   (`AVERIADO`), con nota; en una matrícula lleva además lo del vehículo, kilómetros y combustible (registros `vchecks`,
   con `mat`). Queda quién lo hizo y qué estaba mal (`matRevistas`, `checklistHistorial`); lo que falta pasa a Necesidades.

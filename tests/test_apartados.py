@@ -32,7 +32,7 @@ with sync_playwright() as p:
 
     # Menú: bajo el rótulo «Especialidades y equipos», USAR y los cinco apartados
     a.click('#menuBtn'); a.wait_for_timeout(150)
-    assert a.locator('#drawer .dr-label').inner_text() == 'Especialidades y equipos'
+    assert a.locator('#drawer .dr-label').all_inner_texts()[-1] == 'Especialidades y equipos'
     for n in ['Parque', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras']: assert a.locator(f'#drawer .dr-item:not(.sub):has-text("{n}")').count() == 1, n
     a.click('#drawer .dr-item:has-text("Agua")'); a.wait_for_timeout(200); assert a.evaluate("prefs.tab") == 'agua'
 
@@ -230,7 +230,7 @@ with sync_playwright() as p:
     a.screenshot(path=f'{OUT}/apartado-noche.png', full_page=True)
     b = br.new_context(viewport={'width': 1280, 'height': 800}).new_page(); b.on('pageerror', lambda e: problems.append(f'ERROR PC {e}'))
     b.goto(APP); b.wait_for_selector('#view > *'); b.evaluate("go('cuerdas')"); b.wait_for_timeout(200)
-    assert b.locator('#nav .dr-item.on b').inner_text() == 'Cuerdas' and b.locator('#nav .dr-label').is_visible() and b.evaluate("document.documentElement.scrollWidth") <= 1280
+    assert b.locator('#nav .dr-item.on b').inner_text() == 'Cuerdas' and b.locator('#nav .dr-label').last.is_visible() and b.evaluate("document.documentElement.scrollWidth") <= 1280
     br.close()
 
 print('PROBLEMAS:', problems or 'ninguno')

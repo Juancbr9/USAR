@@ -108,10 +108,20 @@ function toggleMantPasa(name) {
 // pide la contraseña (o la huella); si no, el usuario y la contraseña. Ya no se enseña la lista de nombres del equipo:
 // cada uno escribe su usuario (su nombre en la app o, cuando el servidor lo admite, las últimas cifras de su móvil).
 const conCuenta = () => !SUPA.url || !!Sync.user;
+// ¿Admite ya el servidor como usuario las últimas cifras del móvil? Se sabe sin entrar: desde ese cambio, la lista de
+// nombres ya no se da (viene vacía o se niega). Se recuerda en el móvil para decirlo también sin cobertura.
+const loginCifras = () => !!prefs.loginCifras;
+let LOGIN_PROBADO = false;
+function loginProbe() {
+  if (LOGIN_PROBADO || !SUPA.url || !navigator.onLine) return; LOGIN_PROBADO = true;
+  Sync.names().then(ns => !(ns || []).length, e => !/fetch|network|conexi/i.test(String(e?.message || e)))
+    .then(si => { if (si !== loginCifras()) { prefs.loginCifras = si; writeJSON(KEY.prefs, prefs); if (!loggedIn() && !document.querySelector('.login [name=user]')?.value) renderLogin(); } }).catch(() => {});
+}
 const pinInput = (label = 'PIN') => `<label class="lbl">${label}<input class="input pin-in" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" autocomplete="current-password" required></label>`;
 function renderLogin() {
   document.body.classList.add('login-on');
   const o = conCuenta() && me(), mail = !o && prefs.loginMail, up = mail && prefs.loginUp;
+  if (!o && !mail) loginProbe();
   $('view').innerHTML = `
     <div class="login">
       <div class="login-brand"><img class="login-logo" src="img/logo.webp" width="240" height="240" alt="UIEM Canarias · USAR Sección 242"></div>
@@ -138,10 +148,10 @@ function renderLogin() {
       </form>` : `
       <form class="panel login-card" onsubmit="event.preventDefault(); doPin(this)">
         <h2>Entrar</h2>
-        <label class="lbl">Usuario<input class="input login-user" name="user" value="${esc(prefs.loginUser || '')}" autocomplete="username" autocapitalize="characters" autocorrect="off" spellcheck="false" required placeholder="${LOGIN_CIFRAS ? 'Las 4 últimas cifras de tu móvil' : 'Tu nombre en la app'}"></label>
+        <label class="lbl">Usuario<input class="input login-user" name="user" value="${esc(prefs.loginUser || '')}" autocomplete="username" autocapitalize="characters" autocorrect="off" spellcheck="false" required placeholder="${loginCifras() ? 'Las 4 últimas cifras de tu móvil' : 'Tu nombre en la app'}"></label>
         ${pinInput('Contraseña')}
         <button class="btn btn-a full">${ic('in')} Entrar</button>
-        <p class="muted login-ayuda">${LOGIN_CIFRAS ? 'Tu usuario son las 4 últimas cifras de tu móvil (también vale tu nombre, como sale en la app).' : 'Tu usuario es tu nombre, tal como sale en la app (por ejemplo, GARCIA).'} La contraseña son cifras. Si no los sabes, pídeselos a tu jefe de pelotón.</p>
+        <p class="muted login-ayuda">${loginCifras() ? 'Tu usuario son las 4 últimas cifras de tu móvil (también vale tu nombre, como sale en la app).' : 'Tu usuario es tu nombre, tal como sale en la app (por ejemplo, GARCIA).'} La contraseña son cifras. Si no los sabes, pídeselos a tu jefe de pelotón.</p>
         <p id="loginMsg" class="bad-text" role="alert">${esc(LOGIN_NOTE)}</p>
         <button type="button" class="link login-admin" onclick="LOGIN_NOTE = ''; setPref({ loginMail: true })">Entrar con correo (administración)</button>
       </form>`}${iosInstall()}
