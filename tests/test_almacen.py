@@ -28,6 +28,12 @@ with sync_playwright() as p:
     chips = [' '.join(t.split()) for t in a.locator('#view .pas-chips .chip').all_inner_texts()]
     assert chips == ['1 Parque', '2 Parque', '3 USAR', '4 Agua', '5 Cuerdas', '6 Motosierras'], chips
     assert a.inner_text('#view .alm-rack h3') == 'Pasillo 1 · izquierda' and a.locator('#view .px .px-cell').count() == 4 * 3
+    # Es un plano: cada pasillo con su estantería a izquierda y derecha, llena hasta donde esté ocupada (2 huecos de 12 → 17 %)
+    assert a.locator('#view .plano .plano-p').count() == 6 and a.locator('#view .plano .plano-e').count() == 12
+    a.evaluate("(() => { const m = apMat('parque'); matPoner(m[0].id, pasDoor(1, 'D', 1, 0)); matPoner(m[1].id, pasDoor(1, 'D', 2, 1)); matPoner(m[2].id, pasDoor(1, 'D', 2, 1)); })()"); a.wait_for_timeout(150)
+    assert a.evaluate("[...document.querySelectorAll('#view .plano-p')[0].querySelectorAll('.plano-e i')].map(i => i.style.height)") == ['0%', '17%'] and a.evaluate("pasOcupa(pasIndice(), 1, 'D')") == 2 / 12
+    assert ' '.join(a.inner_text('#view .plano-p >> nth=0').split()) == '1 Parque 3'
+    a.evaluate("apMat('parque').forEach(m => matPoner(m.id, 0))"); a.wait_for_timeout(150)
     a.click('#view .pas-chips .chip:has-text("USAR")'); a.wait_for_timeout(150)
     assert a.locator('#view .px .px-cell').count() == 5 * 2, 'el pasillo de USAR: 5 módulos, suelo y una balda'
     # La página de USAR ya no tiene pasillo: solo un enlace que trae aquí

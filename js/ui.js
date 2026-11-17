@@ -271,14 +271,23 @@ function viewAvisos() {
 }
 
 // Inicio: una tarjeta por especialidad o equipo, con su icono, los presentes y el material operativo
+// Inicio: cómo está cada especialidad, en una tabla. Una fila por especialidad y cuatro datos alineados: gente presente,
+// material operativo, la revista (cuándo fue la última, o si toca) y cuántas necesidades tiene abiertas. Solo lleva
+// color lo que hay que atender.
 function espTiles() {
-  const fig = (n, t, label, bad) => `<span class="esp-n ${bad ? 'bad' : ''}"><b>${n}<i>/${t}</i></b><small>${label}</small></span>`;
-  // gente: los del apartado; null si es común (el Parque), que enseña cuánto de lo suyo tiene alguien
-  const tile = (onclick, art, name, sub, gente, mat) => `<button class="esp-tile" onclick="${onclick}">${art}<span class="esp-t"><b>${esc(name)}</b><small>${esc(sub)}</small></span>
-    ${gente ? fig(gente.filter(o => !esAusente(o)).length, gente.length, 'presentes', false) : fig(mat.filter(m => m.holder && get('operators', m.holder)).length, mat.length, 'cogido', false)}${fig(mat.filter(matOk).length, mat.length, 'material', mat.some(m => !matOk(m)))}</button>`;
-  return `<div class="esp-tiles">
-    ${tile("go('contenedor')", '<img class="esp-art" src="img/logo.webp" alt="">', 'USAR', 'Rescate urbano', usarOps(), list('gear'))}
-    ${Object.entries(APARTADOS).map(([k, ap]) => tile(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon, 'i-lg')}</span>`, ap.name, ap.largo, ap.comun ? null : apMiembros(k), apVivo(k))).join('')}
+  const corta = ts => new Date(ts).toLocaleDateString('es-ES', { day: 'numeric', month: 'numeric' });
+  const cel = (label, txt, cls = '') => `<span class="esp-c ${cls}"><span class="sr-only">${label} </span>${txt}</span>`;
+  const frac = (label, n, t, bad) => t ? cel(label, `${n}<i>/${t}</i>`, bad ? 'bad' : '') : cel(label, '—', 'nada');
+  // gente: los del apartado (null en el Parque, que es de todos); rev: [texto, clase]; nec: necesidades abiertas
+  const fila = (onclick, art, name, sub, gente, mat, rev, nec) => `<button class="esp-tile" onclick="${onclick}">${art}<span class="esp-t"><b>${esc(name)}</b><small>${esc(sub)}</small></span>
+    ${gente ? frac('Gente', gente.filter(o => !esAusente(o)).length, gente.length, gente.length && gente.filter(o => !esAusente(o)).length / gente.length < .75) : cel('Gente', '—', 'nada')}
+    ${frac('Material', mat.filter(matOk).length, mat.length, mat.some(m => !matOk(m)))}${cel('Revista', rev[0], rev[1])}${cel('Faltan', nec, nec ? 'warn' : 'nada')}</button>`;
+  const tU = r => +(r.date || r.ts) || 0, uU = list('inspections').sort((x, y) => tU(y) - tU(x))[0];
+  const revAp = k => { const f = revFalta('ap:' + k), u = apRevistas(k)[0]; return f != null && f <= 0 ? ['toca', 'warn txt'] : u ? [corta(u.ts), ''] : ['—', 'nada']; };
+  return `<div class="esp-tiles" role="group" aria-label="Estado de cada especialidad">
+    <div class="esp-head" aria-hidden="true"><span></span><span class="esp-h-n">Especialidad</span><span>Gente</span><span>Material</span><span>Revista</span><span>Faltan</span></div>
+    ${fila("go('contenedor')", '<img class="esp-art" src="img/logo.webp" alt="">', 'USAR', 'Rescate urbano', usarOps(), list('gear').map(g => ({ status: g.status })), prefs.draft ? ['abierta', 'warn txt'] : uU && tU(uU) ? [corta(tU(uU)), ''] : ['—', 'nada'], needsAbiertas('usar').length)}
+    ${Object.entries(APARTADOS).map(([k, ap]) => fila(`go('${k}')`, ESP_ART.includes(k) ? `<img class="esp-art" src="img/esp/${k}.webp" alt="">` : `<span class="esp-art">${ic(ap.icon)}</span>`, ap.name, ap.largo, ap.comun ? null : apMiembros(k), apVivo(k), revAp(k), needsAbiertas(k).length)).join('')}
   </div>`;
 }
 

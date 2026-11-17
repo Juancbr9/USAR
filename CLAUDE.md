@@ -45,6 +45,10 @@
 - Movimiento y acabados: bloque «ACABADOS» al final de `styles.css` (respuesta al toque, indicadores que se deslizan,
   barras que crecen, destello del hueco de destino, asa de las ventanas). Las animaciones solo corren con `html.motion`
   (`motion()` en `js/ui.js`: nunca con movimiento reducido ni en las pruebas). Sin degradados, cristal ni sombras en reposo.
+- Ver cómo está todo de un vistazo (bloque «ORGANIZACIÓN» al final de `styles.css`): Inicio lleva una tabla con una fila
+  por especialidad y cuatro datos alineados (gente, material, revista y lo que falta; `espTiles` en `js/ui.js`), con color
+  solo en lo que hay que atender; Logística, un resumen de cuatro cifras que lleva a sus tres bloques (Personal, Vehículos
+  y almacén, Material); y el Almacén, un plano de los pasillos con lo llena que está cada estantería (`pasSelector`).
 - Necesidades (`js/views/necesidades.js`, registros `needs`): lo que falta o hay que pedir, por apartado, USAR, vehículos
   o general; pestaña en cada apartado y panel en Logística.
 - Situación del personal: cada persona está «En base» o ausente con motivo, lugar y fechas (`aus`); se ve en Personal →

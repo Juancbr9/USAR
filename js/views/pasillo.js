@@ -85,10 +85,16 @@ function pasDibujo(pas, lado, ix) {
   </div></div>`;
 }
 // Botones de pasillo y de lado. Al arrastrar algo por encima de uno (data-hop), se cambia a él para soltarlo allí.
+// Cuánto de un lado está ocupado: huecos con algo, del total de huecos de ese lado (0 a 1)
+const pasOcupa = (ix, pas, lado) => { const g = pasGeo(pas, lado); return Object.keys(ix).filter(d => { const u = pasDe(d); return u.pas === pas && u.lado === lado && pasVale(d); }).length / (g.mods * (g.baldas + 1)); };
 function pasSelector(nums, pas, lado, ix, k) {
   const hop = o => esc(JSON.stringify(o)), pref = n => k ? { pasN: { ...prefs.pasN, [k]: n } } : { almPas: n };
-  return `${nums.length > 1 ? `<div class="row chips pas-chips" role="group" aria-label="Pasillo">${nums.map(n => { const ds = pasDuenos(n).map(pasDuenoTxt).join(' y '), c = pasCuenta(ix, n);
-      return `<button class="chip ${n === pas ? 'on' : ''}" aria-pressed="${n === pas}" data-hop="${hop(pref(n))}" onclick="setPref(${hop(pref(n))})">${k ? 'Pasillo ' : ''}<b>${n}</b>${k ? '' : ds ? ' ' + esc(ds) : ' Libre'}${c ? ` <span class="muted">${c}</span>` : ''}</button>`; }).join('')}</div>` : ''}
+  // En el Almacén, los pasillos se ven como en un plano: cada uno con su estantería a izquierda y derecha, tan llenas
+  // como estén. En un apartado, solo sus pasillos, en botones sencillos.
+  const plano = n => { const ds = pasDuenos(n).map(pasDuenoTxt).join(' y '), c = pasCuenta(ix, n), e = l => `<span class="plano-e" aria-hidden="true"><i style="height:${Math.round(pasOcupa(ix, n, l) * 100)}%"></i></span>`;
+    return `<button class="chip plano-p ${n === pas ? 'on' : ''}" aria-pressed="${n === pas}" data-hop="${hop(pref(n))}" onclick="setPref(${hop(pref(n))})">${e('I')}<span class="plano-c"><b>${n}</b><small>${esc(ds || 'Libre')}</small>${c ? `<span class="muted">${c}</span>` : ''}</span>${e('D')}</button>`; };
+  const boton = n => { const c = pasCuenta(ix, n); return `<button class="chip ${n === pas ? 'on' : ''}" aria-pressed="${n === pas}" data-hop="${hop(pref(n))}" onclick="setPref(${hop(pref(n))})">Pasillo <b>${n}</b>${c ? ` <span class="muted">${c}</span>` : ''}</button>`; };
+  return `${nums.length > 1 ? `<div class="${k ? 'row chips' : 'plano'} pas-chips" role="group" aria-label="Pasillo">${nums.map(k ? boton : plano).join('')}</div>` : ''}
     <div class="seg-row" role="group" aria-label="Lado del pasillo">${Object.entries(LADOS).map(([l, t]) => { const c = pasCuenta(ix, pas, l);
       return `<button class="${l === lado ? 'on' : ''}" aria-pressed="${l === lado}" data-hop="${hop({ pasLado: l })}" onclick="setPref({ pasLado: '${l}' })">${t}<small>${c} ${c === 1 ? 'cosa' : 'cosas'}</small></button>`; }).join('')}</div>`;
 }
@@ -104,7 +110,7 @@ function viewAlmacen() {
     ...Object.keys(APARTADOS).filter(k => !apPasillos(k).length).map(k => [APARTADOS[k].icon, APARTADOS[k].name, 'Sin pasillo: su material, en su apartado', `setPref({ tab: '${k}', aptab: 'material' }); scrollTo(0, 0)`])];
   return `
     <div class="panel alm-top">
-      <div class="between wrap-row sec-head"><div><h2>Almacén</h2><p class="muted">Todos los pasillos, con lo que hay en cada hueco, sea de quien sea.</p></div>
+      <div class="between wrap-row sec-head"><div><h2>Almacén</h2><p class="muted">Todos los pasillos y lo que hay en cada hueco, sea de quien sea. Las barras del plano dicen lo llena que está cada estantería.</p></div>
         <button class="btn btn-g btn-sm" onclick="almacenForm()">${ic('sliders')} De quién es cada pasillo</button></div>
       ${pasSelector(nums, pas, lado, ix)}
     </div>

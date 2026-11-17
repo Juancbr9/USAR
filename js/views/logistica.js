@@ -47,6 +47,11 @@ function viewLogistica() {
   const flota = flotaEstado(), libres = flota.filter(x => x.libre), plazas = libres.reduce((s, x) => s + (+x.v.seats || 0), 0);
   const a = alerts(), gear = list('gear'), okGear = gear.filter(g => g.status === 'OPERATIVO').length;
   const exp = expiries(), venc = exp.filter(x => daysTo(x.date) <= 30).length, cargos = cargosPorPersona();
+  // Resumen: material operativo de toda la sección (USAR, apartados y vehículos) y lo que hay pendiente de atender
+  const matTot = matTodo(), matOkN = okGear + matTot.filter(matOk).length, matN = gear.length + matTot.length;
+  const pend = revs.length + nec.length + a.low.length + flota.filter(x => !x.libre).length;
+  const kpi = (id, label, valor, cls = '') => `<button class="sier-kpi ${cls}" onclick="document.getElementById('log-${id}')?.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'start' })"><small>${label}</small><b>${valor}</b></button>`;
+  const sec = (id, titulo, sub, paneles) => `<section class="log-sec" id="log-${id}" aria-label="${titulo}"><div class="log-sec-t"><h2>${titulo}</h2><p class="muted">${sub}</p></div><div class="log-grid">${paneles}</div></section>`;
   const diaTxt = esHoy ? 'hoy' : 'el ' + new Date(dia + 'T00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return `
@@ -54,10 +59,16 @@ function viewLogistica() {
       <div class="log-head"><div><h2>Logística</h2><p class="muted">Lo disponible ${esc(diaTxt)} en la ${UNIDAD}.</p></div>
         <div class="row"><label class="lbl">Ver el día<input class="input" type="date" min="${hoy}" value="${dia}" onchange="setPref({ logDia: this.value > todayISO() ? this.value : '' })"></label>
           ${esHoy ? '' : `<button class="btn btn-g" style="align-self:flex-end" onclick="setPref({ logDia: '' })">Hoy</button>`}</div></div>
+      <div class="sier-res log-res" role="group" aria-label="Resumen">
+        ${kpi('personal', 'Personal', `${pres.length}<span class="ap-de">/${ops.length}</span>`, logCls(pres.length, ops.length) === 'bad' ? 'bad' : '')}
+        ${kpi('material', 'Material', `${matOkN}<span class="ap-de">/${matN}</span>`, matOkN < matN ? 'bad' : '')}
+        ${kpi('flota', 'Vehículos', `${libres.length}<span class="ap-de">/${flota.length}</span>`, logCls(libres.length, flota.length) === 'bad' ? 'bad' : '')}
+        ${kpi('material', 'Pendiente', pend, '')}
+      </div>
     </div>
-    <div class="log-grid">
+    ${sec('personal', 'Personal', `Quién hay ${esc(diaTxt)} y qué capacidades suman.`, `
       <div class="panel">
-        <div class="between"><h3>Personal</h3><button class="link" onclick="${irPers('peloton')}">Ver todos</button></div>
+        <div class="between"><h3>Presentes</h3><button class="link" onclick="${irPers('peloton')}">Ver todos</button></div>
         <div class="log-fig ${logCls(pres.length, ops.length)}"><b>${pres.length}</b><span>de ${ops.length} presentes ${esc(diaTxt)}</span></div>
         ${PELOTONES.filter(k => ops.some(o => o.peloton === k)).map(k => logMeter(k, ...cuenta(o => o.peloton === k), irPers('peloton'))).join('')}
         ${ops.some(o => !o.peloton) && ops.some(o => o.peloton) ? logMeter('Sin pelotón', ...cuenta(o => !o.peloton), irPers('peloton')) : ''}
@@ -76,7 +87,8 @@ function viewLogistica() {
         <div class="log-rows">${[...new Map(bajo.map(b => [b.grupo, b])).values()].map(b => logRow(`${b.grupo} baja del mínimo`, `el ${fmtDate(b.dia)}`, 'bad', "setPref({ tab: 'personal', person: null, pview: 'cuadrante' }); scrollTo(0, 0)", ` ${b.n} de ${b.min}${bajo.filter(x => x.grupo === b.grupo).length > 1 ? ` · ${bajo.filter(x => x.grupo === b.grupo).length} días en 30` : ''}`)).join('')}
           ${vuelven.map(o => logRow(conEmpleo(o), 'vuelve el ' + fmtDate(new Date(new Date(ausDe(o, dia).hasta + 'T12:00').getTime() + 864e5).toISOString().slice(0, 10)), '', `openPerson('${o.id}')`, ' ' + (ausDe(o, dia).motivo || ''))).join('')}
           ${previstas.map(([o, a]) => logRow(conEmpleo(o), 'desde el ' + fmtDate(a.desde), 'warn', `planDe('${o.id}')`, ' ' + (a.motivo || 'Ausencia') + (a.hasta ? ' hasta el ' + fmtDate(a.hasta) : ''))).join('')}</div>
-      </div>` : ''}
+      </div>` : ''}`)}
+    ${sec('flota', 'Vehículos y almacén', 'Las matrículas disponibles y qué hay en cada pasillo.', `
       <div class="panel">
         <div class="between"><h3>Vehículos</h3><button class="link" onclick="go('vehiculos')">Flota</button></div>
         ${flota.length ? `<div class="log-fig ${logCls(libres.length, flota.length)}"><b>${libres.length}</b><span>de ${flota.length} matrículas disponibles${plazas ? ` · ${plazas} plazas` : ''}</span></div>
@@ -86,8 +98,10 @@ function viewLogistica() {
           ${logRow('ITV en los próximos 30 días', flota.filter(x => x.u.itv && daysTo(x.u.itv) >= 0 && daysTo(x.u.itv) <= 30).length, '', "go('vehiculos')")}
         </div>` : `<p class="muted">Aún no hay matrículas apuntadas en los vehículos.</p>`}
       </div>
+      ${almacenPanel()}`)}
+    ${sec('material', 'Material', 'Cómo está el de USAR y el de cada especialidad y vehículo, y lo que falta.', `
       <div class="panel">
-        <div class="between"><h3>Material de USAR</h3><button class="link" onclick="go('contenedor')">Almacén</button></div>
+        <div class="between"><h3>Material de USAR</h3><button class="link" onclick="go('contenedor')">Contenedor</button></div>
         <div class="log-fig ${logCls(okGear, gear.length)}"><b>${okGear}</b><span>de ${gear.length} equipos operativos</span></div>
         <div class="log-rows">
           ${logRow('Prestado a personas', a.out.length, '', "go('fuera')")}
@@ -106,12 +120,10 @@ function viewLogistica() {
         <div class="log-rows">${revs.map(([o]) => logRow(duenoNombre(o), 'toca', 'warn', matIr(duenoDe(o)), ' ' + (REV_CADA.find(r => r[0] === revCada(o))?.[1].toLowerCase() || ''))).join('')}</div>
       </div>` : ''}
       <div class="panel">${needsBloque('')}</div>
-      ${almacenPanel()}
       ${cargos.length ? `<div class="panel">
         <div class="between"><h3>Quién tiene material</h3><button class="link" onclick="go('fuera')">Fuera</button></div>
         <div class="log-rows">${cargos.map(([who, gs]) => logRow(who, gs.length + (gs.length === 1 ? ' equipo' : ' equipos'), '', operators().find(o => o.name === who) ? `setPref({ tab: 'personal', person: '${operators().find(o => o.name === who)?.id}', ptab: 'mat' }); scrollTo(0, 0)` : "go('fuera')", ' ' + gs.slice(0, 2).map(g => g.name).join(', ') + (gs.length > 2 ? '…' : ''))).join('')}</div>
-      </div>` : ''}
-    </div>`;
+      </div>` : ''}`)}`;
 }
 
 /* ---------- Pasar lista ---------- */
