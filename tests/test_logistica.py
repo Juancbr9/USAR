@@ -36,10 +36,18 @@ with sync_playwright() as p:
     # Inicio: saludo con el nombre, operatividad con sus tres barras, fuerza de hoy y accesos
     a.evaluate("go('avisos')"); a.wait_for_timeout(200)
     assert 'Granados' in a.inner_text('.hero .hello') and a.locator('.hero-bar').count() == 3 and a.locator('.hero-pct b').inner_text().endswith('%')
-    # Una tarjeta por especialidad o equipo: USAR con su emblema y sus 13; el resto con los suyos
+    # Tabla de estado: una fila por especialidad o equipo (USAR con su emblema y sus 13) y cuatro datos: gente, material, revista y lo que falta
     assert a.locator('.esp-tiles .esp-tile').count() == 7 and a.locator('.esp-tile >> nth=0').locator('img.esp-art').count() == 1
-    t = ' '.join(a.inner_text('.esp-tile >> nth=0').split()); assert t.startswith('USAR') and '13/13 presentes' in t and 'material' in t, t
-    t = ' '.join(a.inner_text('.esp-tile:has-text("Agua")').split()); assert '2/2 presentes' in t and '0/0 material' in t, t
+    assert [t.strip() for t in a.locator('.esp-head span').all_inner_texts() if t.strip()] == ['Especialidad', 'Gente', 'Material', 'Revista', 'Faltan']
+    t = ' '.join(a.inner_text('.esp-tile >> nth=0').split()); assert t.startswith('USAR') and 'Gente 13/13' in t and 'Material' in t and 'Faltan 0' in t, t
+    t = ' '.join(a.inner_text('.esp-tile:has-text("Agua")').split()); assert 'Gente 2/2' in t and 'Material —' in t and 'Revista —' in t, t
+    # Solo lleva color lo que hay que atender: material averiado, una revista que toca y una necesidad abierta
+    a.evaluate("apHabitual('agua'); (() => { const m = apMat('agua'); stamp('matesp', { ...m[0], status: 'AVERIADO' }); put('needs', { id: 'NE-T', ap: 'agua', text: 'Remos', qty: 2, state: 'falta', by: 'GRANADOS', ts: Date.now() }); revCadaSet('ap:agua', 30); })()"); a.wait_for_timeout(200)
+    t = ' '.join(a.inner_text('.esp-tile:has-text("Agua")').split()); n = a.evaluate("apMat('agua').length")
+    assert f'Material {n - 1}/{n}' in t and 'Revista toca' in t and 'Faltan 1' in t, t
+    assert a.locator('.esp-tile:has-text("Agua") .esp-c.bad').count() == 1 and a.locator('.esp-tile:has-text("Agua") .esp-c.warn').count() == 2 and a.locator('.esp-tile >> nth=0 >> .esp-c.bad, .esp-tile >> nth=0 >> .esp-c.warn').count() == 0
+    a.click('.esp-tile:has-text("Agua")'); a.wait_for_timeout(150); assert a.evaluate("prefs.tab") == 'agua'
+    a.evaluate("apMat('agua').forEach(m => stamp('matesp', { id: m.id, _del: true })); remove('needs', 'NE-T'); revCadaSet('ap:agua', 0); go('avisos')"); a.wait_for_timeout(200)
     f = a.inner_text('.panel:has(h3:text-is("Fuerza de hoy"))'); assert f'de {total} presentes' in f and 'PIEN 1' in f and '2/2' in f.replace('\n', ''), f
     assert a.locator('.dash-quick .dash-q').all_inner_texts() == ['Pasar lista', 'Parte', 'Logística', 'Revista']
     seen('inicio'); wide('inicio'); a.screenshot(path=f'{OUT}/logistica-inicio.png', full_page=True)
@@ -51,12 +59,20 @@ with sync_playwright() as p:
 
     # Logística hoy: todos presentes
     panel = lambda t: a.inner_text(f'#view .panel:has(h3:text-is("{t}"))').replace('\n', ' ')
-    assert f'{total} de {total} presentes hoy' in panel('Personal'), panel('Personal')
+    assert f'{total} de {total} presentes hoy' in panel('Presentes'), panel('Presentes')
     caps = panel('Capacidades')
     for x in ['USAR 13/13', 'Res. Terrestre 2/2', 'Res. Acuático 2/2', 'RPAS 1/1', 'SVA 2/2', 'Motosierristas + 1 de 1 suplentes 2/2']:
         assert x in ' '.join(caps.split()), (x, caps)
     assert 'matrículas disponibles' in panel('Vehículos') or 'Aún no hay matrículas' in panel('Vehículos')
     assert 'equipos operativos' in panel('Material de USAR') and 'Fungible bajo mínimo' in panel('Material de USAR')
+    # Arriba, el resumen con cuatro cifras; debajo, los paneles agrupados en tres bloques con su título
+    res = [' '.join(t.split()) for t in a.locator('#view .log-res .sier-kpi').all_inner_texts()]
+    assert [r.split(' ')[0] for r in res] == ['Personal', 'Material', 'Vehículos', 'Pendiente'] and res[0] == f'Personal {total}/{total}', res
+    assert a.locator('#view .log-sec-t h2').all_inner_texts() == ['Personal', 'Vehículos y almacén', 'Material']
+    assert a.locator('#log-personal .panel h3').all_inner_texts()[:2] == ['Presentes', 'Capacidades'] and 'Pasillos del almacén' in a.locator('#log-flota .panel h3').all_inner_texts()
+    a.click('#view .log-res .sier-kpi:has-text("Vehículos")'); a.wait_for_timeout(200)
+    assert a.evaluate("document.getElementById('log-flota').getBoundingClientRect().top") < 200, 'el resumen lleva a su bloque'
+    a.evaluate("scrollTo(0, 0)")
     seen('logística'); wide('logística')
 
     # Pasar lista: se toca a quien falta (con su motivo) y vuelve a tocarse para marcarlo presente
@@ -75,7 +91,7 @@ with sync_playwright() as p:
     a.click('#listaBody button:has-text("Hecho")'); a.wait_for_timeout(250)
 
     # Logística con dos ausentes: totales, pelotones, capacidades (falta un motosierrista titular) y la lista de ausentes
-    per = ' '.join(panel('Personal').split()); assert f'{total - 2} de {total} presentes hoy' in per and 'PIEN 1 1/2' in per and 'PIEN 2 1/2' in per and 'PLMSecc 2/2' in per, per
+    per = ' '.join(panel('Presentes').split()); assert f'{total - 2} de {total} presentes hoy' in per and 'PIEN 1 1/2' in per and 'PIEN 2 1/2' in per and 'PLMSecc 2/2' in per, per
     assert 'CBO 1º CUERDAS' in per and 'Baja médica' in per and 'SDO BUZO' in per and 'Curso' in per, per
     caps = ' '.join(panel('Capacidades').split())
     for x in ['Res. Terrestre 1/2', 'Res. Acuático 1/2', 'SVA 1/2', 'Motosierristas + 1 de 1 suplentes 0/2', 'USAR 13/13']: assert x in caps, (x, caps)
@@ -87,7 +103,7 @@ with sync_playwright() as p:
     cur = ' '.join(a.inner_text('.pers-panel:has(h3:text-is("Curso"))').split()); assert 'BUZO' in cur and 'Academia de Logística' in cur and 'sin fecha de vuelta' in cur, cur
     assert 'en Academia de Logística' in a.evaluate("sierParte()")
     a.evaluate("setPref({ pview: 'peloton' }); go('recursos')"); a.wait_for_timeout(200)
-    assert 'Academia de Logística' in panel('Personal')
+    assert 'Academia de Logística' in panel('Presentes')
     # El parte sale con los ausentes
     parte = a.evaluate("sierParte()"); assert 'CUERDAS' in parte and 'Baja médica' in parte and f'Presentes: *{total - 2}*' in parte, parte
 
@@ -100,7 +116,7 @@ with sync_playwright() as p:
     a.fill('#view input[type=date]', dia(4)); a.dispatch_event('#view input[type=date]', 'change'); a.wait_for_timeout(200)
     assert a.evaluate("prefs.logDia") == dia(4) and a.locator('#view button:has-text("Pasar lista")').count() == 0, 'la lista solo se pasa hoy'
     caps = ' '.join(panel('Capacidades').split()); assert 'RPAS 0/1' in caps and 'Res. Acuático 2/2' in caps and 'Res. Terrestre 1/2' in caps, caps
-    per = ' '.join(panel('Personal').split()); assert f'{total - 2} de {total} presentes' in per and 'CBO PILOTO' in per and 'BUZO' not in per, per
+    per = ' '.join(panel('Presentes').split()); assert f'{total - 2} de {total} presentes' in per and 'CBO PILOTO' in per and 'BUZO' not in per, per
     seen('logística otro día'); wide('logística otro día'); a.screenshot(path=f'{OUT}/logistica-dia.png', full_page=True)
     a.click('#view button:has-text("Hoy")'); a.wait_for_timeout(150); assert a.evaluate("prefs.logDia") == ''
     # En la ficha: la ausencia prevista se ve y se anula
