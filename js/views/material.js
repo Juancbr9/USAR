@@ -47,7 +47,11 @@ const matVuelve = owner => { const d = duenoDe(owner); if (d.veh) setTimeout(() 
 const matCon = id => matTodo().filter(m => m.holder === id).sort(byName);
 const matricula = m => m.veh && m.unit ? (get('vehicles', m.veh)?.units || []).find(u => u.id === m.unit)?.plate || '' : '';
 const matUrl = id => appUrl() + '#m=' + id;
-const matSitio = m => [matricula(m), huecoTxt(m), m.place].filter(Boolean).join(' · ');
+// El cofre de un material de vehículo (los cofres de cada modelo están en vehiculos.js) y su precinto, si va precintado
+const matCofre = m => m.veh && m.cofre ? cofreNombre(get('vehicles', m.veh), m.cofre) : '';
+const matSitio = m => [matricula(m), huecoTxt(m), matCofre(m), m.place].filter(Boolean).join(' · ');
+// Orden de revisión: por cofres (cabina, lado izquierdo, techo, lado derecho y trasera), lo sin cofre al final, y por nombre
+const porCofre = v => { const ids = cofresDe(v).map(c => c[0]), i = m => { const n = ids.indexOf(m.cofre || ''); return n < 0 ? 999 : n; }; return (a, b) => i(a) - i(b) || byName(a, b); };
 
 /* ---------- Revistas periódicas ---------- */
 const revCada = owner => +(get('meta', 'revcada')?.value || {})[owner] || 0;
@@ -63,14 +67,14 @@ function revCadaSet(owner, dias) {
 function matRow(owner, m) {
   const [txt, cls] = AP_ESTADOS[m.status] || AP_ESTADOS.OPERATIVO, n = m.review ? daysTo(m.review) : null, c = m.caduca ? daysTo(m.caduca) : null;
   return `<button class="item ${matVivo(m) ? '' : 'mat-baja'}" onclick="matForm('${owner}', '${m.id}')">${m.photo ? `<div class="who-row"><img class="thumb mat-foto" data-img="mat:${m.id}" alt="">` : ''}<div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
-    <small>${esc([m.holder && get('operators', m.holder) ? 'Lo tiene ' + opName(m.holder) : '', (duenoDe(owner).unit && m.unit ? [huecoTxt(m), m.place].filter(Boolean).join(' · ') : matSitio(m)) || (m.veh ? '' : 'Sin colocar'), m.serial ? 'n.º ' + m.serial : '', m.notes].filter(Boolean).join(' · ') || 'Toca para completarlo')}</small></div>${m.photo ? '</div>' : ''}
+    <small>${esc([m.holder && get('operators', m.holder) ? 'Lo tiene ' + opName(m.holder) : '', (duenoDe(owner).unit && m.unit ? [huecoTxt(m), matCofre(m), m.place].filter(Boolean).join(' · ') : matSitio(m)) || (m.veh ? '' : 'Sin colocar'), m.precinto ? 'Precinto ' + m.precinto : '', m.serial ? 'n.º ' + m.serial : '', m.notes].filter(Boolean).join(' · ') || 'Toca para completarlo')}</small></div>${m.photo ? '</div>' : ''}
     <span class="row tags" style="justify-content:flex-end">${c != null && c <= 60 ? `<span class="tag ${c < 0 ? 'bad' : 'warn'}">${c < 0 ? 'Caducado' : c === 0 ? 'Caduca hoy' : `Caduca en ${c} d`}</span>` : ''}
       ${n != null && n <= 30 ? `<span class="tag ${n < 0 ? 'bad' : 'warn'}">${n < 0 ? 'Revisión pasada' : n === 0 ? 'Revisión hoy' : `Revisión en ${n} d`}</span>` : ''}
       ${cls === 'ok' ? '' : `<span class="tag ${cls}">${txt}</span>`}</span></button>`;
 }
 // El bloque de material de un dueño: botones, lista, la revista (última y cada cuánto toca) y lo de imprimir
 function matBloque(owner, vacio) {
-  const d = duenoDe(owner), mat = matDe(d), puede = matPuede(owner), revs = matRevistas(owner), ult = revs[0], falta = revFalta(owner), bajas = mat.filter(m => !matVivo(m)).length;
+  const d = duenoDe(owner), vd = d.veh ? get('vehicles', d.veh) : null, mat = vd && cofresDe(vd).length ? matDe(d).sort(porCofre(vd)) : matDe(d), puede = matPuede(owner), revs = matRevistas(owner), ult = revs[0], falta = revFalta(owner), bajas = mat.filter(m => !matVivo(m)).length;
   // En los vehículos se llama «checklist» (lleva también lo del propio vehículo); en los apartados, «revista»
   const chk = !!d.veh, hacer = chk ? 'Checklist' : 'Pasar revista', linea = `<p class="muted chk-ult" style="margin-top:10px">${ult ? `${chk ? 'Último checklist' : 'Última revista'}: ${fmtWhen(ult.ts)}, ${esc(ult.by || '')}. ${ult.fails.length ? (chk ? 'Mal: ' : 'Fallos: ') + esc(ult.fails.join(', ')) + '.' : 'Todo bien.'}` : chk ? 'Aún no se ha hecho ningún checklist.' : 'Aún no se ha pasado revista.'}${falta > 0 ? ` ${chk ? 'El próximo' : 'La próxima'}, en ${falta} ${falta === 1 ? 'día' : 'días'}.` : ''}
       ${revs.length ? ` <button class="link" onclick="checklistHistorial('${owner}')">Ver ${revs.length === 1 ? 'el anterior' : 'los ' + revs.length + ' anteriores'}</button>` : ''}</p>`;
@@ -83,12 +87,12 @@ function matBloque(owner, vacio) {
     ${mat.length ? `<div class="list">${mat.map(m => matRow(owner, m)).join('')}</div>
       ${linea}
       ${puede ? `<label class="lbl mat-cada">${chk ? 'Avisar para hacer el checklist' : 'Avisar para pasar revista'}<select class="input" onchange="revCadaSet('${owner}', this.value)">${REV_CADA.map(([d, l]) => `<option value="${d}" ${d === revCada(owner) ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
-      <div class="row mat-mas"><button class="link" onclick="matInventario('${owner}')">${ic('printer', 'i-sm')} Imprimir inventario</button>
+      <div class="row mat-mas">${puede && d.veh ? `<button class="link" onclick="matCopiar('${owner}')">${ic('layers', 'i-sm')} Copiar de otra matrícula</button>` : ''}<button class="link" onclick="matInventario('${owner}')">${ic('printer', 'i-sm')} Imprimir inventario</button>
         <button class="link" onclick="matCsv('${owner}')">${ic('download', 'i-sm')} Excel</button>
         <button class="link" onclick="matEtiquetas('${owner}')">${ic('qr', 'i-sm')} Etiquetas QR</button>
         ${bajas ? `<button class="link" onclick="matBajas('${owner}')">${ic('trash', 'i-sm')} Lista de bajas (${bajas})</button>` : ''}</div>`
     : emptyState('box', 'Aún no hay material apuntado', vacio,
-        puede ? `<button class="btn btn-g" onclick="matHabitual('${owner}')">${ic('list')} Empezar con lo habitual</button>` : '')}`;
+        puede ? `<button class="btn btn-g" onclick="matHabitual('${owner}')">${ic('list')} Empezar con lo habitual</button>${d.veh ? `<button class="btn btn-g" onclick="matCopiar('${owner}')">${ic('layers')} Copiar de otra matrícula</button>` : ''}` : '')}`;
 }
 
 // pre: valores de partida de un material nuevo (p. ej. el hueco del pasillo desde el que se añade)
@@ -100,7 +104,7 @@ function matForm(owner, id, pre = {}) {
   // Lo de un vehículo va en su vehículo: para llevarlo a otro sitio (o lo de un apartado al contenedor o a un vehículo), «Mover».
   const nums = d.ap ? almacenNums() : [], l0 = matLugar({ ...d, ...m }), u0 = pasDe(l0.door), u = u0 || { pas: apPasillos(d.ap || '')[0] || nums[0], lado: 'I', mod: 0, niv: 0 };
   const tope = f => Math.max(...nums.flatMap(n => ['I', 'D'].map(l => pasGeo(n, l)[f])));
-  const otro = !u0 && (l0.door || l0.veh) ? lugarTxt(l0) : '';
+  const otro = !u0 && (l0.door || l0.veh) ? lugarTxt(l0) : '', cofres = d.veh ? cofresDe(get('vehicles', d.veh)) : [];
   const hist = id ? list('logs').filter(l => l.ref === 'matesp:' + id).sort((a, b) => b.ts - a.ts).slice(0, 8) : [];
   openForm(id ? m.name : `Material de ${duenoNombre(owner)}`, [
     { k: 'name', label: 'Qué es', value: m.name || '', required: true, wide: true, placeholder: 'Ej.: ' + duenoHabitual(owner)[0] },
@@ -111,7 +115,9 @@ function matForm(owner, id, pre = {}) {
       { k: 'lado', label: 'Lado del pasillo', value: u.lado, options: Object.entries(LADOS) },
       { k: 'mod', label: 'Módulo', value: u.mod, options: [[0, otro ? 'No está en un pasillo: ' + otro : 'Sin colocar'], ...Array.from({ length: tope('mods') }, (_, i) => [i + 1, 'Módulo ' + (i + 1)])] },
       { k: 'niv', label: 'Altura', value: u.niv, options: Array.from({ length: tope('baldas') + 1 }, (_, n) => [n, nivNombre(n)]) }] : []),
-    { k: 'place', label: d.veh ? 'Dónde va (cofre, cabina, techo…)' : 'Otro sitio o detalle', value: m.place || '', wide: true, placeholder: d.veh ? 'Ej.: Cofre lateral izquierdo' : 'Ej.: En la caja roja' },
+    ...(cofres.length ? [{ k: 'cofre', label: 'Cofre', value: m.cofre || '', options: [['', 'Sin cofre'], ...cofres] }] : []),
+    { k: 'precinto', label: 'Precinto (n.º), si va precintado', value: m.precinto || '' },
+    { k: 'place', label: d.veh ? (cofres.length ? 'Detalle de dónde va' : 'Dónde va (cofre, cabina, techo…)') : 'Otro sitio o detalle', value: m.place || '', wide: true, placeholder: d.veh ? 'Ej.: Cofre lateral izquierdo' : 'Ej.: En la caja roja' },
     { k: 'holder', label: 'Asignado a (si lo tiene alguien a su cargo)', value: m.holder || '', wide: true, options: [['', 'Nadie: está en su sitio'], ...operators().sort(byName).map(o => [o.id, conEmpleo(o)])] },
     { k: 'review', label: 'Próxima revisión', type: 'date', value: m.review || '' },
     { k: 'caduca', label: 'Caduca (fin de su vida útil)', type: 'date', value: m.caduca || '' },
@@ -126,7 +132,7 @@ function matForm(owner, id, pre = {}) {
     const igual = nu ? !!u0 && pasDoor(nu.pas, nu.lado, nu.mod, nu.niv) === l0.door : !u0;
     const sitio = !nums.length || igual ? {} : nu ? { ...nu, door: 0, enveh: '' } : { pas: 0, lado: 'I', mod: 0, niv: 0 };
     if (v.photo) await Img.put('mat:' + mid, v.photo);
-    put('matesp', { ...m, id: mid, ...duenoRec(owner), name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: units.length > 1 ? v.unit || '' : m.unit || '', ...sitio, place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}),
+    put('matesp', { ...m, id: mid, ...duenoRec(owner), name: v.name.trim(), qty: Math.max(1, Math.round(+v.qty || 1)), status: v.status, unit: units.length > 1 ? v.unit || '' : m.unit || '', ...sitio, ...(cofres.length ? { cofre: v.cofre || '' } : {}), precinto: v.precinto || '', place: v.place || '', holder: v.holder || '', ...(v.holder && v.holder !== m.holder ? { held: todayISO() } : {}),
       review: v.review || '', caduca: v.caduca || '', fab: v.fab || '', serial: v.serial || '', notes: v.notes || '', photo: v.photo ? true : m.photo || false },
       id ? `${duenoNombre(owner)}: ${v.name}${v.status !== (m.status || 'OPERATIVO') ? ' pasa a «' + AP_ESTADOS[v.status][0].toLowerCase() + '»' : v.holder !== (m.holder || '') ? (v.holder ? ' asignado a ' + opName(v.holder) : ' vuelve a su sitio') : ' actualizado'}` : `${duenoNombre(owner)}: añadido ${v.name}`); matVuelve(owner); },
   id ? `${m.photo ? `<img class="photo span2" data-img="mat:${id}" alt="Foto de ${esc(m.name)}">` : ''}
@@ -160,7 +166,7 @@ function matHabitual(owner) {
 function checklistForm(owner) {
   if (!matPuede(owner)) return;
   const d = duenoDe(owner), v = d.veh ? get('vehicles', d.veh) : null, u = d.unit ? (v?.units || []).find(x => x.id === d.unit) : null;
-  const veh = conVcheck(d), mat = matDe(d).filter(matVivo), prev = veh ? checksOf(d.veh, d.unit)[0] : null, chk = !!d.veh;
+  const veh = conVcheck(d), mat = matDe(d).filter(matVivo).sort(v && cofresDe(v).length ? porCofre(v) : byName), prev = veh ? checksOf(d.veh, d.unit)[0] : null, chk = !!d.veh;
   if (!veh && !mat.length) return toast('Aún no hay material apuntado para revisar', 'bad');
   const ini = m => m.status === 'FALTA' ? 'falta' : m.status === 'AVERIADO' ? 'roto' : 'ok';
   openForm(`${chk ? 'Checklist' : 'Revista'} · ${duenoNombre(owner)}`, [
@@ -168,7 +174,7 @@ function checklistForm(owner) {
       { k: 'km', label: 'Kilómetros', type: 'number', value: '', placeholder: prev?.km ? `La última vez: ${prev.km}` : 'Ej: 45210' },
       { k: 'fuel', label: 'Combustible', value: 'Lleno', options: FUEL.map(x => [x, x]) }] : []),
     ...(mat.length ? [{ k: 'mat', label: `${veh ? 'El material' : 'El material'}: todo sale como «Bien»; marca lo que falta o está roto`, type: 'estados', wide: true, estados: CHK_ESTADOS,
-      value: Object.fromEntries(mat.map(m => [m.id, ini(m)])), options: mat.map(m => [m.id, `${m.name}${(+m.qty || 1) > 1 ? ' × ' + m.qty : ''}`, d.unit && m.unit ? [huecoTxt(m), m.place].filter(Boolean).join(' · ') : matSitio(m)]) }] : []),
+      value: Object.fromEntries(mat.map(m => [m.id, ini(m)])), options: mat.map(m => [m.id, `${m.name}${(+m.qty || 1) > 1 ? ' × ' + m.qty : ''}`, d.unit && m.unit ? [huecoTxt(m), matCofre(m), m.place].filter(Boolean).join(' · ') : matSitio(m), m.precinto || null]) }] : []),
     { k: 'notes', label: 'Observaciones', type: 'textarea', rows: 2, value: '', wide: true, placeholder: veh ? 'Ej: El rotativo trasero no funciona' : 'Lo que convenga dejar apuntado' },
     ...(mat.length ? [{ k: 'nec', label: 'Y después', type: 'checks', one: true, wide: true, value: ['si'], options: [['si', 'Apuntar en Necesidades lo que falta o está roto']] }] : [])
   ], val => {
@@ -176,15 +182,36 @@ function checklistForm(owner) {
     if (km && prev?.km && km < +prev.km && !confirm(`Pones ${km} km y la vez anterior tenía ${prev.km}. ¿Guardar igualmente?`)) return;
     const mal = mat.map(m => ({ id: m.id, name: m.name, st: val.mat?.[m.id]?.st || 'ok', nota: val.mat?.[m.id]?.nota || '' })).filter(r => r.st !== 'ok');
     mat.forEach(m => { const r = mal.find(x => x.id === m.id), st = !r ? 'OPERATIVO' : r.st === 'falta' ? 'FALTA' : 'AVERIADO';
-      if (st !== (m.status || 'OPERATIVO')) stamp('matesp', { ...m, status: st, notes: r?.nota ? [m.notes, `${fmtDate(todayISO())}: ${r.nota}`].filter(Boolean).join(' · ') : m.notes || '' }); });
+      const pre = val.mat?.[m.id]?.pre, cambiaPre = pre != null && pre !== (m.precinto || '');   // precinto nuevo (se abrió y se volvió a precintar)
+      if (st !== (m.status || 'OPERATIVO') || cambiaPre) stamp('matesp', { ...m, status: st, ...(cambiaPre ? { precinto: pre } : {}), notes: r?.nota ? [m.notes, `${fmtDate(todayISO())}: ${r.nota}`].filter(Boolean).join(' · ') : m.notes || '' });
+      if (cambiaPre) addLog(`${duenoNombre(owner)}: ${m.name}, precinto ${pre || 'quitado'}${m.precinto ? ' (antes ' + m.precinto + ')' : ''}`, 'matesp:' + m.id); });
     // Lo que falta o está roto, a la lista de necesidades (si no estaba ya apuntado)
     if ((val.nec || []).includes('si')) mal.forEach(r => { const ap = d.veh ? 'veh' : d.ap, text = `${r.name}${r.st === 'roto' ? ' (roto)' : ''}`, nota = [duenoNombre(owner), r.nota].filter(Boolean).join(': ');
       if (!needsAbiertas(ap).some(n => n.text === text && n.nota === nota)) stamp('needs', { id: uid('NE'), ap, text, qty: 1, state: 'falta', nota, by: prefs.activeOperator, ts: Date.now() }); });
     const quien = prefs.activeOperator, n = fails.length + mal.length, resumen = n ? [fails.length ? fails.length + (fails.length === 1 ? ' fallo del vehículo' : ' fallos del vehículo') : '', mal.filter(r => r.st === 'falta').length ? mal.filter(r => r.st === 'falta').length + ' que faltan' : '', mal.filter(r => r.st === 'roto').length ? mal.filter(r => r.st === 'roto').length + ' rotas' : ''].filter(Boolean).join(', ') : 'todo bien';
-    if (veh) put('vchecks', { id: uid('VC'), vid: d.veh, unit: d.unit || '', plate: u?.plate || '', date: Date.now(), by: quien, km, fuel: val.fuel, fails, notes: val.notes || '', mat: mal, total: mat.length }, `Checklist de ${duenoNombre(owner)}: ${resumen}`);
+    // Cada fallo del vehículo abre una incidencia (si no la había) y lo que vuelve a estar bien cierra la suya
+    if (veh) incDeChecklist(d.veh, d.unit || '', fails, val.notes || '');
+    if (veh) put('vchecks', { id: uid('VC'), vid: d.veh, unit: d.unit || '', plate: u?.plate || '', date: Date.now(), by: quien, km, fuel: val.fuel, fails, notes: val.notes || '', mat: mal, total: mat.length, inc: true }, `Checklist de ${duenoNombre(owner)}: ${resumen}`);
     else put('meta', { id: matRevId(owner), value: [{ ts: Date.now(), by: quien, total: mat.length, fails: mal.map(r => r.name), items: mal, nota: val.notes || '' }, ...(get('meta', matRevId(owner))?.value || [])].slice(0, 24) }, `${chk ? 'Checklist' : 'Revista'} de ${duenoNombre(owner)}: ${resumen}`);
     toast(n ? `Guardado: ${resumen}` : 'Guardado: todo bien', fails.length || mal.length ? 'bad' : 'ok'); matVuelve(owner);
   });
+}
+// Copiar el material de otra matrícula (o de otro vehículo o módulo): nombres, cantidades y cofres; lo que ya está no se repite
+function matCopiar(owner) {
+  if (!matPuede(owner)) return;
+  const d = duenoDe(owner), aqui = matDe(d), otros = duenos().filter(o => o.startsWith('veh:') && o !== owner && (duenoDe(o).unit || !(get('vehicles', duenoDe(o).veh)?.units || []).length) && matDe(duenoDe(o)).some(m => matVivo(m) && (!duenoDe(o).unit || m.unit === duenoDe(o).unit)))
+    .sort((a, b) => (duenoDe(b).veh === d.veh) - (duenoDe(a).veh === d.veh) || duenoNombre(a).localeCompare(duenoNombre(b), 'es', { numeric: true }));
+  if (!otros.length) return toast('Aún no hay otra matrícula con material apuntado', 'bad');
+  const suyo = o => { const x = duenoDe(o); return matDe(x).filter(m => matVivo(m) && (!x.unit || m.unit === x.unit)); };
+  openForm(`Copiar material a ${duenoNombre(owner)}`, [
+    { k: 'de', label: 'De qué matrícula', value: otros[0], wide: true, options: otros.map(o => [o, `${duenoNombre(o)} (${suyo(o).length})`]) }
+  ], v => {
+    const ya = new Set(aqui.map(m => fold(m.name) + '|' + (m.cofre || ''))), nuevos = suyo(v.de).filter(m => !ya.has(fold(m.name) + '|' + (m.cofre || '')));
+    if (!nuevos.length) { toast('Ya tenía todo lo de esa matrícula'); return matVuelve(owner); }
+    putMany('matesp', nuevos.map(m => ({ id: uid('ME'), ...duenoRec(owner), unit: d.unit || '', name: m.name, qty: m.qty || 1, status: 'OPERATIVO', cofre: m.cofre || '', place: m.place || '', review: '', serial: '', notes: '' })),
+      `${duenoNombre(owner)}: material copiado de ${duenoNombre(v.de)} (${nuevos.length})`);
+    toast(`${nuevos.length} ${nuevos.length === 1 ? 'cosa copiada' : 'cosas copiadas'}: ajusta cantidades y borra lo que no lleve`); matVuelve(owner);
+  }, `<p class="muted span2">Se copian los nombres, las cantidades y los cofres. Lo que ya tiene esta matrícula no se repite; los números de serie, los precintos y las fechas no se copian.</p>`);
 }
 const matRevista = checklistForm;   // nombre anterior
 // Los anteriores: quién lo hizo y cuándo, qué estaba mal, qué faltaba y qué estaba roto

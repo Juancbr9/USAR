@@ -5,9 +5,6 @@
 const TEAM = ['GRANADOS', 'CABRERA', 'IBAÑEZ', 'BRAYAN', 'AGUIAR', 'DORTA', 'CRISTOFER',
               'RODRI', 'AREVALO', 'NUÑEZ', 'LENIS', 'FERNANDEZ', 'MANOLO'];
 // Organización de la SIER 242 (sin datos personales: el personal está solo en la base de datos del equipo)
-// La base de datos ya admite como usuario las últimas cifras del móvil (ver «usuario» en supabase.sql). Mientras no se
-// aplique ese cambio, se entra con el nombre; al aplicarlo, poner true para que la pantalla de entrada lo diga.
-const LOGIN_CIFRAS = false;
 const UNIDAD = 'SIER 242';
 const PELOTONES = ['PLMSecc', 'PIEN 1', 'PIEN 2'];
 const ESPECIALIDADES = ['USAR', 'Res. Terrestre', 'Res. Acuático'];
@@ -90,7 +87,7 @@ const EMERGENCIES = {
 const DANGEROUS = ['', 'Baterías de litio', 'Combustible', 'Gases a presión', 'Otro'];
 const SOON_DAYS = 30;          // aviso de vencimiento con esta antelación
 const RESERVA = 'RESERVA';     // EPI sin asignar
-const KINDS = ['operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans', 'moves', 'vchecks', 'arcs', 'matesp', 'needs'];
+const KINDS = ['issues', 'operators', 'gear', 'epis', 'consumables', 'logs', 'inspections', 'meta', 'missions', 'vehicles', 'mlog', 'checkins', 'templates', 'worksites', 'victims', 'confined', 'outings', 'availability', 'readiness', 'medical', 'medlog', 'heritage', 'docs', 'options', 'events', 'boxes', 'loans', 'moves', 'vchecks', 'arcs', 'matesp', 'needs'];
 // Quien tiene acceso completo y activa o quita el mantenimiento
 const ADMIN = 'RODRI';
 const MANT_DEFECTO = true;   // sin nada guardado, la app arranca en mantenimiento

@@ -16,7 +16,7 @@ const logRow = (label, value, cls = '', onclick = '', sub = '') => {
 // Matrículas de la flota con su estado: con fallos en la última revista o con la ITV caducada
 function flotaEstado() {
   return vehicles().flatMap(v => (v.units || []).map(u => {
-    const fallo = !!lastVcheck(u.id)?.fails.length, itv = !!u.itv && daysTo(u.itv) < 0;
+    const fallo = unitFallos(v, u).length > 0, itv = !!u.itv && daysTo(u.itv) < 0;
     return { v, u, fallo, itv, libre: !fallo && !itv };
   }));
 }
@@ -93,7 +93,7 @@ function viewLogistica() {
         <div class="between"><h3>Vehículos</h3><button class="link" onclick="go('vehiculos')">Flota</button></div>
         ${flota.length ? `<div class="log-fig ${logCls(libres.length, flota.length)}"><b>${libres.length}</b><span>de ${flota.length} matrículas disponibles${plazas ? ` · ${plazas} plazas` : ''}</span></div>
         <div class="log-rows">
-          ${logRow('Con fallos en la última revista', flota.filter(x => x.fallo).length, flota.some(x => x.fallo) ? 'bad' : '', "go('vehiculos')")}
+          ${logRow('Con incidencias abiertas', flota.filter(x => x.fallo).length, flota.some(x => x.fallo) ? 'bad' : '', "go('vehiculos')")}
           ${logRow('ITV caducada', flota.filter(x => x.itv).length, flota.some(x => x.itv) ? 'bad' : '', "go('vehiculos')")}
           ${logRow('ITV en los próximos 30 días', flota.filter(x => x.u.itv && daysTo(x.u.itv) >= 0 && daysTo(x.u.itv) <= 30).length, '', "go('vehiculos')")}
         </div>` : `<p class="muted">Aún no hay matrículas apuntadas en los vehículos.</p>`}
