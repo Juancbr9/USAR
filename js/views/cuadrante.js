@@ -11,8 +11,12 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', '
 const cuadMes = () => /^\d{4}-\d{2}$/.test(prefs.cuadMes || '') ? prefs.cuadMes : todayISO().slice(0, 7);
 const mesMas = (ym, n) => { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
 const minimos = () => get('meta', 'minimos')?.value || {};
-// Grupos de los que se vigila el mínimo: toda la sección y cada especialidad
-const cuadGrupos = () => [['todos', 'Sección', () => true], ...ESPECIALIDADES.map(e => [e, e, o => opEsp(o) === e])];
+// Grupos de los que se vigila el mínimo: la SIER completa, cada pelotón y cada especialidad. Las claves de los pelotones
+// llevan «pel:» delante para no chocar con una especialidad; la cuarta pieza es cómo se nombra en el formulario.
+const cuadGrupos = () => [['todos', UNIDAD, () => true, `${UNIDAD} completa`],
+  ...PELOTONES.map(p => ['pel:' + p, p, o => o.peloton === p, 'Pelotón ' + p]),
+  ...ESPECIALIDADES.map(e => [e, e, o => opEsp(o) === e, 'Especialidad ' + e])];
+const minClave = k => 'm_' + fold(k).replace(/[^a-z0-9]/g, '');
 // Días de un año que una persona tiene apuntados de un motivo (para llevar la cuenta de las vacaciones)
 function diasDe(o, motivo, year = new Date().getFullYear()) {
   const ini = year + '-01-01', fin = year + '-12-31';
@@ -92,10 +96,11 @@ function planBorrar(id, pid) {
   put('operators', { ...o, plan: o.plan.filter(x => x.id !== pid) }, `${o.name}: quitada ${p.motivo.toLowerCase()} del ${fmtDate(p.desde)}`);
   closeModal(); setTimeout(() => planDe(id), 0);
 }
-// Cuánta gente tiene que quedar, como mínimo, en la sección y en cada especialidad (0 = sin mínimo)
+// Cuánta gente tiene que quedar, como mínimo, en la SIER completa, en cada pelotón y en cada especialidad (0 = sin mínimo).
+// Se pueden poner a la vez: se vigila cada uno por su cuenta.
 function minimosForm() {
   const min = minimos();
-  openForm('Mínimos de personal', cuadGrupos().map(([k, nombre, f]) => ({ k: 'm_' + fold(k).replace(/[^a-z0-9]/g, ''), label: `${nombre} (ahora ${operators().filter(f).length})`, type: 'number', value: min[k] || 0 })),
-    v => put('meta', { id: 'minimos', value: Object.fromEntries(cuadGrupos().map(([k]) => [k, Math.max(0, Math.round(+v['m_' + fold(k).replace(/[^a-z0-9]/g, '')] || 0))])) }, 'Mínimos de personal actualizados'),
-    `<p class="muted span2">Cuántos tienen que quedar presentes cada día. Con 0 no se vigila. Al apuntar una ausencia que deje a alguien por debajo, la app avisa (pero deja guardarla).</p>`);
+  openForm('Mínimos de personal', cuadGrupos().map(([k, , f, largo]) => ({ k: minClave(k), label: `${largo} (son ${operators().filter(f).length})`, type: 'number', value: min[k] || 0 })),
+    v => put('meta', { id: 'minimos', value: { ...min, ...Object.fromEntries(cuadGrupos().map(([k]) => [k, Math.max(0, Math.round(+v[minClave(k)] || 0))])) } }, 'Mínimos de personal actualizados'),
+    `<p class="muted span2">Cuántos tienen que quedar presentes cada día: para toda la ${UNIDAD}, por pelotón o por especialidad (o varios a la vez). Con 0 no se vigila. Al apuntar una ausencia que deje a alguno por debajo, la app avisa (pero deja guardarla).</p>`);
 }

@@ -62,6 +62,15 @@ with sync_playwright() as p:
     assert 'baja del mínimo' in a.inner_text('.toast') and a.evaluate("bajoMinimos(30).length") == 1 and a.evaluate("bajoMinimos(30)[0].n") == 1
     a.evaluate("closeModal()"); a.wait_for_timeout(250)
     if (hoy + datetime.timedelta(days=1)).month == hoy.month: assert a.locator('#view table.cq tfoot td.bajo').count() == 1
+    # También por pelotón o para la SIER completa (cada uno por su cuenta, sin perder los demás)
+    a.click('#view button:has-text("Mínimos")'); a.wait_for_selector('#modal [name=m_pelpien1]')
+    assert [a.locator(f'#modal [name={k}]').count() for k in ['m_todos', 'm_pelplmsecc', 'm_pelpien1', 'm_pelpien2', 'm_usar']] == [1, 1, 1, 1, 1]
+    assert 'Pelotón PIEN 1' in a.inner_text('#modal') and 'SIER 242 completa' in a.inner_text('#modal') and a.input_value('[name=m_resacuatico]') == '2'
+    a.fill('[name=m_pelpien1]', '99'); a.fill('[name=m_todos]', '1'); save()
+    assert a.evaluate("[minimos()['pel:PIEN 1'], minimos().todos, minimos()['Res. Acuático']]") == [99, 1, 2]
+    assert a.evaluate("bajoMinimos(1).some(b => b.grupo === 'PIEN 1' && b.min === 99)") and not a.evaluate("bajoMinimos(1).some(b => b.grupo === 'SIER 242')")
+    assert 'PIEN 1 mín. 99' in ' '.join(a.inner_text('#view table.cq tfoot').split())
+    a.evaluate("put('meta', { id: 'minimos', value: { ...minimos(), 'pel:PIEN 1': 0, todos: 0 } })"); a.wait_for_timeout(200)
     seen('cuadrante'); wide('cuadrante'); a.screenshot(path=f'{OUT}/mejoras-cuadrante.png', full_page=True)
     # Mes siguiente y vuelta
     mes = a.inner_text('#view .cq-mes'); a.click('#view button[aria-label="Mes siguiente"]'); a.wait_for_timeout(150); assert a.inner_text('#view .cq-mes') != mes

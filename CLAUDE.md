@@ -82,5 +82,6 @@
 - Situación del personal: cada persona está «En base» o ausente con motivo, lugar y fechas (`aus`); se ve en Personal →
   «Situación», se cambia en su ficha o con «Pasar lista», y una ausencia con `desde` futuro es solo prevista.
   Además, cada persona guarda en `plan` todas sus ausencias con fechas (vacaciones, permisos, cursos…); se ven y se
-  apuntan en Personal → «Vacaciones» (`js/views/cuadrante.js`), con mínimos por especialidad (`meta/minimos`). Para saber
+  apuntan en Personal → «Vacaciones» (`js/views/cuadrante.js`), con mínimos para la SIER completa, por pelotón o por especialidad (`meta/minimos`, grupos en `cuadGrupos`: claves `todos`,
+  `pel:<pelotón>` y el nombre de la especialidad). Para saber
   si alguien falta un día, usar siempre `ausDe`/`ausenteEl`/`ausHoy` (`js/data.js`), que miran `aus` y `plan`.
