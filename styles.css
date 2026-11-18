@@ -2476,7 +2476,8 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 
 /* ==================== PANEL TÁCTICO: disponibilidad y estado de un vistazo ==================== */
 /* Un solo código en toda la app: verde, en base u operativo; ámbar, previsto o pronto; rojo, fuera o con un problema.
-   Va en un punto (personas), en una franja a la izquierda de la fila (solo si hay que atender) y en la etiqueta con el texto. */
+   Va en un punto (personas), en un fondo teñido de la fila (solo si hay que atender) y en la etiqueta con el texto: el color
+   nunca va solo. Sin franjas de color a la izquierda (se leen como plantilla). */
 .disp-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--ok); border: 2px solid var(--surface); box-sizing: content-box; }
 .disp-warn .disp-dot, .res-st-warn .disp-dot { background: var(--warn); }
 .disp-bad .disp-dot, .res-st-bad .disp-dot { background: var(--bad); }
@@ -2484,9 +2485,8 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .disp-av { position: relative; display: inline-flex; flex: none; }
 .disp-av .disp-dot { position: absolute; right: -4px; bottom: -4px; }
 .pers-row, .mat-row { position: relative; }
-.pers-row.disp-bad::before, .pers-row.disp-warn::before, .mat-row.mat-st-bad::before, .mat-row.mat-st-warn::before {
-  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 0 4px 4px 0; background: var(--bad); }
-.pers-row.disp-warn::before, .mat-row.mat-st-warn::before { background: var(--warn); }
+.pers-row.disp-bad, .mat-row.mat-st-bad { background: color-mix(in srgb, var(--bad-soft) 55%, var(--surface)); }
+.pers-row.disp-warn, .mat-row.mat-st-warn { background: color-mix(in srgb, var(--warn-soft) 55%, var(--surface)); }
 .pers-aus .who-row { opacity: 1; }
 .pers-row b, .mat-row b { overflow-wrap: break-word; }
 .pers-row .who-row > div { flex: 1; }
@@ -2550,3 +2550,6 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 /* Con una ventana abierta, el aviso va arriba para no tapar sus botones (Guardar, Cancelar) */
 @media (max-width: 1023px) { body:has(#modal:not(.hidden)) .toast { top: calc(12px + var(--sa-t)); bottom: auto; transform: translateX(-50%) translateY(-16px); }
   body:has(#modal:not(.hidden)) .toast.show { transform: translateX(-50%) translateY(0); } }
+
+/* El texto escrito y lo seleccionado, en el color de la app (no el azul del navegador) */
+input, textarea { caret-color: var(--yellow); }

@@ -70,7 +70,7 @@
   (`motion()` en `js/ui.js`: nunca con movimiento reducido ni en las pruebas). Sin degradados, cristal ni sombras en reposo.
 - Disponibilidad y estado de un vistazo (bloque «PANEL TÁCTICO» al final de `styles.css`): un solo código de color, verde
   (en base, operativo), ámbar (previsto, pronto) y rojo (fuera, con un problema). Personas: `dispDe(o)` y `dispFoto` (punto en la
-  foto; franja y motivo en la fila; banda «En base»/«Fuera» con su botón en la ficha). Material: `matPeor(m)` (franja de la fila)
+  foto; fila teñida y motivo; banda «En base»/«Fuera» con su botón en la ficha). Material: `matPeor(m)` (fila teñida; sin franjas de color a la izquierda)
   y las tres cifras que filtran la lista (`MAT_FIL`, `prefs.matFil` por dueño). En el móvil los avisos salen abajo, salvo con una
   ventana abierta. En un apartado, la lista del material va antes que el dibujo del pasillo.
 - Ver cómo está todo de un vistazo (bloque «ORGANIZACIÓN» al final de `styles.css`): Inicio lleva una tabla con una fila
