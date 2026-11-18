@@ -241,6 +241,10 @@ const ausDe = (o, dia) => { if (!o) return null; const a = o.aus;
   if (a && (a.desde || '') <= dia && (!a.hasta || a.hasta >= dia)) return a;
   return (o.plan || []).find(p => p.desde <= dia && p.hasta >= dia) || null; };
 const ausenteEl = (o, dia) => !!ausDe(o, dia);
+// Fuera ese día pero disponible si hay intervención (marcado en sus vacaciones o permiso): cuenta para cubrir los mínimos
+const dispEl = (o, dia) => !!ausDe(o, dia)?.disp;
+// Cubre ese día: está en base o, aunque esté fuera, está disponible
+const cubreEl = (o, dia) => !ausenteEl(o, dia) || dispEl(o, dia);
 const ausHoy = o => ausDe(o, todayISO());
 const esAusente = o => !!ausHoy(o);
 const ausPrevista = o => !!o?.aus && (o.aus.desde || '') > todayISO();

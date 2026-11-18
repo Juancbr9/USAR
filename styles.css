@@ -2553,3 +2553,9 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 
 /* El texto escrito y lo seleccionado, en el color de la app (no el azul del navegador) */
 input, textarea { caret-color: var(--yellow); }
+
+/* Fuera pero disponible si hay intervención (vacaciones o permiso): ámbar en la persona y un recuadro en el cuadrante */
+.disp-chip.disp-warn { background: var(--warn-soft); color: var(--warn); }
+.cq td.aus.disp, .cq-l.cq-ld { box-shadow: inset 0 0 0 3px #f2b33d; }
+.cq-l.cq-ld { background: #1f5fa8; }
+.cq tfoot td .cq-mas { display: block; font-size: 10px; line-height: 1; opacity: .85; }

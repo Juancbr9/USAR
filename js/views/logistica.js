@@ -69,10 +69,10 @@ function viewLogistica() {
     ${sec('personal', 'Personal', `Quién hay ${esc(diaTxt)} y qué capacidades suman.`, `
       <div class="panel">
         <div class="between"><h3>Presentes</h3><button class="link" onclick="${irPers('peloton')}">Ver todos</button></div>
-        <div class="log-fig ${logCls(pres.length, ops.length)}"><b>${pres.length}</b><span>de ${ops.length} presentes ${esc(diaTxt)}</span></div>
+        <div class="log-fig ${logCls(pres.length, ops.length)}"><b>${pres.length}</b><span>de ${ops.length} presentes ${esc(diaTxt)}${(n => n ? ` y ${n} disponible${n === 1 ? '' : 's'} si hay intervención` : '')(aus.filter(o => dispEl(o, dia)).length)}</span></div>
         ${PELOTONES.filter(k => ops.some(o => o.peloton === k)).map(k => logMeter(k, ...cuenta(o => o.peloton === k), irPers('peloton'))).join('')}
         ${ops.some(o => !o.peloton) && ops.some(o => o.peloton) ? logMeter('Sin pelotón', ...cuenta(o => !o.peloton), irPers('peloton')) : ''}
-        ${aus.length ? `<div class="log-rows">${aus.map(o => logRow(conEmpleo(o), ausDe(o, dia).hasta ? 'hasta ' + fmtDate(ausDe(o, dia).hasta) : 'sin fecha', 'bad', `openPerson('${o.id}')`, ' ' + [ausDe(o, dia).motivo || 'Ausente', ausDe(o, dia).lugar].filter(Boolean).join(' · '))).join('')}</div>` : ''}
+        ${aus.length ? `<div class="log-rows">${aus.map(o => logRow(conEmpleo(o), ausDe(o, dia).hasta ? 'hasta ' + fmtDate(ausDe(o, dia).hasta) : 'sin fecha', ausDe(o, dia).disp ? 'warn' : 'bad', `openPerson('${o.id}')`, ' ' + [ausDe(o, dia).motivo || 'Ausente', ausDe(o, dia).disp ? 'disponible' : '', ausDe(o, dia).lugar].filter(Boolean).join(' · '))).join('')}</div>` : ''}
         <div class="log-foot">${esHoy ? `<button class="btn btn-a" onclick="pasarLista()">${ic('check')} Pasar lista</button>` : ''}
           <button class="btn btn-g" onclick="shareText(sierParte(), 'Parte de personal')">${ic('chat')} Parte</button></div>
       </div>
