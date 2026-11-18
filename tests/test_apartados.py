@@ -69,6 +69,13 @@ with sync_playwright() as p:
     assert a.evaluate("apRevistas('agua')[0].items.map(x => [x.name, x.st, x.nota])") == [['Moto de agua', 'roto', ''], ['Remos', 'falta', 'Falta un remo']]
     assert a.evaluate("needsAbiertas('agua').map(n => n.text + ' | ' + n.nota)") == ['Moto de agua (roto) | Agua', 'Remos | Agua: Falta un remo'], 'lo que falta o está roto pasa a Necesidades'
     a.evaluate("needsAbiertas('agua').forEach(x => stamp('needs', { id: x.id, _del: true })); commit()")
+    # Lo que tiene problemas se ve de un vistazo (franja roja) y con un toque se queda solo eso en la lista
+    assert a.locator('#view .mat-row.mat-st-bad').count() == 2, a.evaluate("[...document.querySelectorAll('#view .mat-row')].map(e => e.className + ' ' + e.innerText.split('\\n')[0])")
+    mal = sorted(t.split('\n')[0] for t in a.locator('#view .mat-row.mat-st-bad b, #view .mat-row.mat-st-warn b').all_inner_texts())
+    assert {'Moto de agua', 'Remos'} <= set(mal) and a.inner_text('#view .mat-fil-b.hay b') == str(len(mal)), (mal, a.inner_text('#view .mat-fil'))
+    a.click('#view .mat-fil-b:has-text("Con problemas")'); a.wait_for_timeout(150)
+    assert sorted(t.split('\n')[0] for t in a.locator('#view .list .mat-row b').all_inner_texts()) == mal
+    a.click('#view .mat-fil-b:has-text("Todo")'); a.wait_for_timeout(150); assert a.locator('#view .list .mat-row').count() == n
     rev = a.evaluate("apRevistas('agua')[0]"); assert rev['total'] == n and rev['fails'] == ['Moto de agua', 'Remos'] and rev['by'] == 'GRANADOS', rev
     assert 'Última revista' in a.inner_text('#view') and 'Fallos: Moto de agua, Remos' in a.inner_text('#view') and a.locator('#view .sier-kpi b').nth(2).inner_text() != '—'
     # Otra revista con todo bien lo devuelve a operativo

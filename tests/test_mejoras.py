@@ -71,7 +71,7 @@ with sync_playwright() as p:
     prox = ' '.join(a.inner_text('#view .panel:has(h3:text-is("Próximos cambios"))').split()); assert 'Res. Acuático baja del mínimo' in prox and 'SDO BUZO' in prox and 'Curso' in prox, prox
     assert 'La Palma' in a.evaluate("sierParte()")
     a.evaluate(f"openPerson('{op('BUZO')}')"); a.wait_for_timeout(200)
-    assert 'Ausente: Vacaciones en La Palma' in a.inner_text('#view .carne') and 'Vacaciones y permisos (2)' in a.inner_text('#view .carne')
+    assert 'Vacaciones en La Palma' in a.inner_text('#view .carne .disp-band.disp-bad') and 'Vacaciones y permisos (2)' in a.inner_text('#view .carne')
     a.click('#view .carne button:has-text("Marcar presente")'); a.wait_for_timeout(200)
     plan = a.evaluate("operators().find(o => o.name === 'BUZO').plan"); assert len(plan) == 1 and plan[0]['motivo'] == 'Curso', 'las vacaciones que empezaban hoy se quitan; el curso sigue'
     assert not a.evaluate("esAusente(operators().find(o => o.name === 'BUZO'))")

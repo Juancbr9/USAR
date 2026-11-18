@@ -219,7 +219,7 @@ with sync_playwright() as p:
     a.evaluate("operators().filter(o => (o.plan || []).length).forEach(o => stamp('operators', { ...o, plan: [] })); commit(); setPref({ pview: 'peloton' }); scrollTo(0, 0)"); a.wait_for_timeout(200)
     a.evaluate("""(() => { go('agua'); apHabitual('agua'); const m = apMat('agua'); [[0, 1, 0], [1, 1, 1], [2, 1, 1], [3, 2, 2], [4, 3, 0], [5, 3, 0], [6, 2, 1], [7, 4, 2]].forEach(([i, mod, niv]) => stamp('matesp', { ...m[i], pas: 4, lado: 'I', mod, niv }));
       stamp('matesp', { ...apMat('agua')[6], status: 'REVISIÓN' }); commit(); setPref({ aptab: 'material' }); })()"""); a.wait_for_timeout(2600); tall(1000)
-    ann(a, 'apartado', [('#view .sier-res', 'i'), ('#view .ctabs', 'b', {'d': 30}), ('#view .px', 'i')]); tall(760)
+    ann(a, 'apartado', [('#view .sier-res', 'i'), ('#view .ctabs', 'b', {'d': 30}), ('#view .mat-fil', 'i')]); tall(760)
     # El Almacén (todos los pasillos) y la ventana de mover, con el material de Agua ya colocado en el pasillo 4
     a.evaluate("setPref({ tab: 'almacen', almPas: 4, pasLado: 'I' }); scrollTo(0, 0)"); a.wait_for_timeout(300); tall(900)
     ann(a, 'almacen', [('#view .pas-chips', 'i'), ('#view .alm-top .seg-row', 'r', {'d': 24}), ('#view .px', 'i')]); tall(760)

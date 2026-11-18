@@ -354,11 +354,11 @@ function renderSearch() {
     ...list('consumables').filter(c => hit(c.name, c.location)).map(c =>
       ['Stock', c.name, `${c.stock} ${c.unit} · ${consDoor(c) ? doorName(consDoor(c)) : 'sin ubicar'}`, `findGo('cons', '${c.id}')`]),
     ...operators().filter(o => hit(o.name, o.role, o.cell, o.phone, readiness(o.id).fullName, o.empleo, o.peloton, opEsp(o))).map(o =>
-      ['Personal', o.name, [o.role, o.phone].filter(Boolean).join(' · '), `openPerson('${o.id}')`]),
+      ['Personal', o.name, [dispDe(o).txt, o.peloton, o.role].filter(Boolean).join(' · '), `openPerson('${o.id}')`, dispDe(o).cls]),
     ...list('docs').filter(d => hit(d.type, d.number, d.notes, opName(d.op))).map(d =>
       ['Documento', `${d.type} de ${opName(d.op)}`, d.expires ? 'Caduca ' + fmtDate(d.expires) : 'Sin caducidad', `openPerson('${d.op}'); docDetail('${d.id}')`]),
     ...matTodo().filter(m => hit(m.name, m.place, m.serial, m.notes)).map(m =>
-      ['Material', m.name, [matDueno(m), huecoTxt(m), m.place].filter(Boolean).join(' · '), matIr(m)]),
+      ['Material', m.name, [matDueno(m), huecoTxt(m), m.place].filter(Boolean).join(' · '), matIr(m), matPeor(m)]),
     ...list('arcs').filter(x => hit(x.name, x.team)).map(x =>
       ['Arco', x.name, ['Apuntalar arcos', x.team].filter(Boolean).join(' · '), `openArc('${x.id}')`])
   ];
@@ -368,9 +368,9 @@ function renderSearch() {
     <div class="between" style="margin-bottom:10px"><h3 class="sec-title" style="margin:0">${ic('search')} ${mat.length + results.length} ${mat.length + results.length === 1 ? 'resultado' : 'resultados'}</h3>
       <button class="link" onclick="clearSearch()">Cerrar</button></div>
     ${mat.length ? `<div class="find-res" style="margin:0 0 12px; box-shadow:none">${findItems(mat)}</div>` : ''}
-    <div class="grid g3">${results.map(([where, name, detail, go]) => `
-      <button class="item" style="display:block" onclick="clearSearch(); ${go}">
-        <small style="font-weight:700; color:var(--ic)">${esc(where)}</small><b>${esc(name)}</b><small>${esc(detail)}</small>
+    <div class="grid g3">${results.map(([where, name, detail, go, st]) => `
+      <button class="item res-item ${st ? 'res-st-' + st : ''}" style="display:block" onclick="clearSearch(); ${go}">
+        <small class="res-k">${esc(where)}</small><b>${st ? `<i class="disp-dot" aria-hidden="true"></i>` : ''}${esc(name)}</b><small class="res-d">${esc(detail)}</small>
       </button>`).join('') || (mat.length ? '' : '<p class="muted">Sin coincidencias.</p>')}</div>`;
 }
 function clearSearch() { $('search').value = ''; renderSearch(); $('searchbar').classList.add('hidden'); }

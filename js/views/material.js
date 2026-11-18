@@ -64,9 +64,21 @@ function revCadaSet(owner, dias) {
   matVuelve(owner);
 }
 
+// Cómo está, en una palabra para el color de la fila: «bad» (falta, roto, caducado o revisión pasada), «warn» (en revisión o
+// le toca pronto) u «ok»; lo dado de baja no cuenta
+function matPeor(m) {
+  if (!matVivo(m)) return 'neutral';
+  const cls = (AP_ESTADOS[m.status] || AP_ESTADOS.OPERATIVO)[1], n = m.review ? daysTo(m.review) : null, c = m.caduca ? daysTo(m.caduca) : null;
+  return cls === 'bad' || (c != null && c < 0) || (n != null && n < 0) ? 'bad' : cls === 'warn' || (c != null && c <= 60) || (n != null && n <= 30) ? 'warn' : 'ok';
+}
+const matSinSitio = m => !m.veh && !matSitio(m);
+// Filtro rápido de la lista: todo, lo que tiene algún problema o lo que está sin colocar (se recuerda por dueño)
+const MAT_FIL = [['todo', 'Todo'], ['mal', 'Con problemas'], ['sin', 'Sin colocar']];
+const matFil = owner => (prefs.matFil || {})[owner] || 'todo';
+const matFiltra = (f, m) => f === 'mal' ? ['bad', 'warn'].includes(matPeor(m)) : f === 'sin' ? matVivo(m) && matSinSitio(m) : true;
 function matRow(owner, m) {
   const [txt, cls] = AP_ESTADOS[m.status] || AP_ESTADOS.OPERATIVO, n = m.review ? daysTo(m.review) : null, c = m.caduca ? daysTo(m.caduca) : null;
-  return `<button class="item ${matVivo(m) ? '' : 'mat-baja'}" onclick="matForm('${owner}', '${m.id}')">${m.photo ? `<div class="who-row"><img class="thumb mat-foto" data-img="mat:${m.id}" alt="">` : ''}<div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
+  return `<button class="item mat-row mat-st-${matPeor(m)} ${matVivo(m) ? '' : 'mat-baja'}" onclick="matForm('${owner}', '${m.id}')">${m.photo ? `<div class="who-row"><img class="thumb mat-foto" data-img="mat:${m.id}" alt="">` : ''}<div><b>${esc(m.name)}${(+m.qty || 1) > 1 ? ` <span class="muted nw">× ${+m.qty}</span>` : ''}</b>
     <small>${esc([m.holder && get('operators', m.holder) ? 'Lo tiene ' + opName(m.holder) : '', (duenoDe(owner).unit && m.unit ? [huecoTxt(m), matCofre(m), m.place].filter(Boolean).join(' · ') : matSitio(m)) || (m.veh ? '' : 'Sin colocar'), m.precinto ? 'Precinto ' + m.precinto : '', m.serial ? 'n.º ' + m.serial : '', m.notes].filter(Boolean).join(' · ') || 'Toca para completarlo')}</small></div>${m.photo ? '</div>' : ''}
     <span class="row tags" style="justify-content:flex-end">${c != null && c <= 60 ? `<span class="tag ${c < 0 ? 'bad' : 'warn'}">${c < 0 ? 'Caducado' : c === 0 ? 'Caduca hoy' : `Caduca en ${c} d`}</span>` : ''}
       ${n != null && n <= 30 ? `<span class="tag ${n < 0 ? 'bad' : 'warn'}">${n < 0 ? 'Revisión pasada' : n === 0 ? 'Revisión hoy' : `Revisión en ${n} d`}</span>` : ''}
@@ -84,7 +96,10 @@ function matBloque(owner, vacio) {
         ${mat.some(matVivo) || conVcheck(d) ? `<button class="btn btn-g btn-sm" onclick="checklistForm('${owner}')">${ic('clipboard')} ${hacer}</button>` : ''}</div>` : ''}</div>
     ${falta != null && falta <= 0 ? `<div class="callout"><span>${ic('clock', 'i-sm')} Toca ${chk ? 'hacer el checklist' : 'pasar revista'} (${REV_CADA.find(r => r[0] === revCada(owner))?.[1].toLowerCase()}).</span></div>` : ''}
     ${!mat.length && conVcheck(d) ? linea + cada : ''}
-    ${mat.length ? `<div class="list">${mat.map(m => matRow(owner, m)).join('')}</div>
+    ${mat.length ? `${(() => { const vivos = mat.filter(matVivo), nMal = vivos.filter(m => matFiltra('mal', m)).length, nSin = vivos.filter(matSinSitio).length, f = matFil(owner), ver = mat.filter(m => matFiltra(f, m));
+      return `${vivos.length > 2 ? `<div class="mat-fil" role="group" aria-label="Ver">${MAT_FIL.map(([k, l]) => { const nn = k === 'todo' ? vivos.length : k === 'mal' ? nMal : nSin;
+          return `<button class="mat-fil-b ${f === k ? 'on' : ''} ${k === 'mal' && nMal ? 'hay' : ''}" aria-pressed="${f === k}" onclick="setPref({ matFil: { ...(prefs.matFil || {}), [${jsq(owner)}]: '${k}' } })"><b>${nn}</b> ${l}</button>`; }).join('')}</div>` : ''}
+      ${ver.length ? `<div class="list">${ver.map(m => matRow(owner, m)).join('')}</div>` : `<p class="muted mat-fil-vacio">${f === 'mal' ? 'Nada con problemas: todo operativo y al día.' : 'Todo está colocado.'} <button class="link" onclick="setPref({ matFil: { ...(prefs.matFil || {}), [${jsq(owner)}]: 'todo' } })">Ver todo</button></p>`}`; })()}
       ${linea}
       ${puede ? `<label class="lbl mat-cada">${chk ? 'Avisar para hacer el checklist' : 'Avisar para pasar revista'}<select class="input" onchange="revCadaSet('${owner}', this.value)">${REV_CADA.map(([d, l]) => `<option value="${d}" ${d === revCada(owner) ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
       <div class="row mat-mas">${puede && d.veh ? `<button class="link" onclick="matCopiar('${owner}')">${ic('layers', 'i-sm')} Copiar de otra matrícula</button>` : ''}<button class="link" onclick="matInventario('${owner}')">${ic('printer', 'i-sm')} Imprimir inventario</button>
