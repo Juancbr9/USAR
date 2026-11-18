@@ -71,6 +71,16 @@ with sync_playwright() as p:
     assert a.evaluate("bajoMinimos(1).some(b => b.grupo === 'PIEN 1' && b.min === 99)") and not a.evaluate("bajoMinimos(1).some(b => b.grupo === 'SIER 242')")
     assert 'PIEN 1 mín. 99' in ' '.join(a.inner_text('#view table.cq tfoot').split())
     a.evaluate("put('meta', { id: 'minimos', value: { ...minimos(), 'pel:PIEN 1': 0, todos: 0 } })"); a.wait_for_timeout(200)
+    # De permiso pero disponible si hay intervención: cuenta para el mínimo (no avisa), sale con «+1» y en ámbar; si no, vuelve a avisar
+    pid = a.evaluate(f"operators().find(o => o.name === 'RIO').plan.find(p => p.motivo === 'Permiso').id")
+    a.evaluate(f"planForm('{op('RIO')}', '{pid}')"); a.wait_for_selector('#modal [name=disp]'); a.select_option('[name=disp]', '1'); save()
+    assert a.evaluate("operators().find(o => o.name === 'RIO').plan.find(p => p.motivo === 'Permiso').disp") is True and a.evaluate("bajoMinimos(30).length") == 0
+    assert a.evaluate(f"dispEl(get('operators', '{op('RIO')}'), '{dia(1)}') && cubreEl(get('operators', '{op('RIO')}'), '{dia(1)}')")
+    a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    if (hoy + datetime.timedelta(days=1)).month == hoy.month:
+        assert a.locator('#view table.cq tfoot td.bajo').count() == 0 and a.locator('#view table.cq tbody td.aus.disp').count() == 1 and '+1' in a.inner_text('#view table.cq tfoot')
+    a.evaluate(f"planForm('{op('RIO')}', '{pid}')"); a.wait_for_selector('#modal [name=disp]'); a.select_option('[name=disp]', ''); save(); a.evaluate("closeModal()"); a.wait_for_timeout(250)
+    assert a.evaluate("bajoMinimos(30).length") == 1
     seen('cuadrante'); wide('cuadrante'); a.screenshot(path=f'{OUT}/mejoras-cuadrante.png', full_page=True)
     # Mes siguiente y vuelta
     mes = a.inner_text('#view .cq-mes'); a.click('#view button[aria-label="Mes siguiente"]'); a.wait_for_timeout(150); assert a.inner_text('#view .cq-mes') != mes

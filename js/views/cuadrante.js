@@ -28,7 +28,8 @@ function bajoMinimos(dias = 30) {
   const min = minimos(), ops = operators(), out = [];
   for (let i = 0; i < dias; i++) {
     const dia = new Date(Date.now() + i * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
-    cuadGrupos().forEach(([k, nombre, f]) => { if (!min[k]) return; const n = ops.filter(o => f(o) && !ausenteEl(o, dia)).length; if (n < min[k]) out.push({ dia, grupo: nombre, n, min: min[k] }); });
+    // Cuentan los que están en base y los que, aunque estén de vacaciones o de permiso, están disponibles para intervenir
+    cuadGrupos().forEach(([k, nombre, f]) => { if (!min[k]) return; const n = ops.filter(o => f(o) && cubreEl(o, dia)).length; if (n < min[k]) out.push({ dia, grupo: nombre, n, min: min[k] }); });
   }
   return out;
 }
@@ -38,9 +39,9 @@ function cuadrantePanel(ops) {
   const dias = Array.from({ length: nd }, (_, i) => { const iso = ym + '-' + String(i + 1).padStart(2, '0'), wd = new Date(iso + 'T12:00').getDay(); return { n: i + 1, iso, finde: wd === 0 || wd === 6, hoy: iso === hoy }; });
   const cls = d => (d.finde ? ' fs' : '') + (d.hoy ? ' hoy' : '');
   const fila = o => `<tr><th scope="row"><button class="cq-nombre" onclick="planDe('${o.id}')">${o.empleo ? `<small>${esc(o.empleo)}</small> ` : ''}${esc(o.name)}</button></th>
-    ${dias.map(d => { const a = ausDe(o, d.iso); return `<td class="${cls(d).trim()}${a ? ' aus m-' + letraDe(a.motivo) : ''}" ${a ? `title="${esc(o.name)}: ${esc(a.motivo || 'Ausente')}"` : ''}>${a ? letraDe(a.motivo) : ''}</td>`; }).join('')}</tr>`;
+    ${dias.map(d => { const a = ausDe(o, d.iso); return `<td class="${cls(d).trim()}${a ? ' aus m-' + letraDe(a.motivo) + (a.disp ? ' disp' : '') : ''}" ${a ? `title="${esc(o.name)}: ${esc(a.motivo || 'Ausente')}${a.disp ? ', disponible para intervenir' : ''}"` : ''}>${a ? letraDe(a.motivo) : ''}</td>`; }).join('')}</tr>`;
   const grupos = cuadGrupos().map(([k, nombre, f]) => [k, nombre, operators().filter(f)]).filter(g => g[2].length);
-  const usados = [...new Set(ops.flatMap(o => dias.map(d => ausDe(o, d.iso)?.motivo).filter(Boolean)))];
+  const usados = [...new Set(ops.flatMap(o => dias.map(d => ausDe(o, d.iso)?.motivo).filter(Boolean)))], hayDisp = ops.some(o => dias.some(d => dispEl(o, d.iso)));
   return `<div class="panel span2 cq-panel">
     <div class="between wrap-row sec-head"><div class="row"><button class="btn btn-g btn-sm" aria-label="Mes anterior" onclick="setPref({ cuadMes: mesMas(cuadMes(), -1) })">${ic('back')}</button>
         <h3 class="cq-mes">${MESES[m - 1][0].toUpperCase() + MESES[m - 1].slice(1)} de ${y}</h3>
@@ -51,9 +52,10 @@ function cuadrantePanel(ops) {
       <thead><tr><th scope="col">Persona</th>${dias.map(d => `<th scope="col" class="${cls(d).trim()}">${d.n}</th>`).join('')}</tr></thead>
       <tbody>${ops.map(fila).join('') || `<tr><td colspan="${nd + 1}">Nadie con esa búsqueda.</td></tr>`}</tbody>
       <tfoot>${grupos.map(([k, nombre, gente]) => `<tr><th scope="row"><span class="cq-nombre cq-grupo">${esc(nombre)}${min[k] ? ` <small>mín. ${min[k]}</small>` : ''}</span></th>
-        ${dias.map(d => { const n = gente.filter(o => !ausenteEl(o, d.iso)).length; return `<td class="${cls(d).trim()}${min[k] && n < min[k] ? ' bajo' : ''}">${n}</td>`; }).join('')}</tr>`).join('')}</tfoot>
+        ${dias.map(d => { const n = gente.filter(o => !ausenteEl(o, d.iso)).length, dd = gente.filter(o => dispEl(o, d.iso)).length;
+          return `<td class="${cls(d).trim()}${min[k] && n + dd < min[k] ? ' bajo' : ''}"${dd ? ` title="${n} en base y ${dd} disponible${dd === 1 ? '' : 's'}"` : ''}>${n}${dd ? `<small class="cq-mas">+${dd}</small>` : ''}</td>`; }).join('')}</tr>`).join('')}</tfoot>
     </table></div>
-    <p class="muted cq-ley">${usados.length ? usados.map(u => `<span class="cq-l m-${letraDe(u)}">${letraDe(u)}</span> ${esc(u)}`).join(' · ') + '. ' : ''}Toca un nombre para ver o apuntar sus ausencias. Abajo, los presentes de cada día${Object.values(min).some(Boolean) ? ' (en rojo, por debajo del mínimo)' : ''}.</p>
+    <p class="muted cq-ley">${usados.length ? usados.map(u => `<span class="cq-l m-${letraDe(u)}">${letraDe(u)}</span> ${esc(u)}`).join(' · ') + '. ' : ''}${hayDisp ? '<span class="cq-l cq-ld">V</span> recuadro amarillo: está fuera pero disponible si hay intervención. ' : ''}Toca un nombre para ver o apuntar sus ausencias. Abajo, los presentes de cada día${hayDisp ? ' y, con «+», los disponibles' : ''}${Object.values(min).some(Boolean) ? ' (en rojo, por debajo del mínimo; los disponibles cuentan)' : ''}.</p>
   </div>`;
 }
 
@@ -61,7 +63,7 @@ function cuadrantePanel(ops) {
 function planDe(id) {
   const o = get('operators', id); if (!o) return;
   const hoy = todayISO(), plan = [...(o.plan || [])].sort((a, b) => b.desde.localeCompare(a.desde)), y = new Date().getFullYear();
-  const fila = p => `<button class="item" onclick="planForm('${id}', '${p.id}')"><div><b>${esc(p.motivo)}${p.lugar ? ' · ' + esc(p.lugar) : ''}</b>
+  const fila = p => `<button class="item" onclick="planForm('${id}', '${p.id}')"><div><b>${esc(p.motivo)}${p.lugar ? ' · ' + esc(p.lugar) : ''}${p.disp ? ' · disponible' : ''}</b>
     <small>Del ${fmtDate(p.desde)} al ${fmtDate(p.hasta)}${p.nota ? ' · ' + esc(p.nota) : ''}</small></div><span class="tag ${p.hasta < hoy ? 'neutral' : p.desde <= hoy ? 'bad' : 'warn'}">${p.hasta < hoy ? 'Pasada' : p.desde <= hoy ? 'En curso' : 'Prevista'}</span></button>`;
   openModal(`Ausencias de ${o.name}`, `
     <p class="muted">Vacaciones de ${y}: <b>${diasDe(o, 'Vacaciones', y)} días</b> apuntados${diasDe(o, 'Permiso', y) ? ` · Permisos: <b>${diasDe(o, 'Permiso', y)} días</b>` : ''}.</p>
@@ -78,13 +80,14 @@ function planForm(id = '', pid = '') {
     { k: 'motivo', label: 'Motivo', value: p.motivo || 'Vacaciones', options: MOTIVOS_AUSENCIA.map(m => [m, m]), required: true, wide: true },
     { k: 'desde', label: 'Desde', type: 'date', value: p.desde || base, required: true },
     { k: 'hasta', label: 'Hasta (ese día incluido)', type: 'date', value: p.hasta || base, required: true },
+    { k: 'disp', label: 'Durante estos días, ¿está disponible si hay intervención?', value: p.disp ? '1' : '', wide: true, options: [['', 'No, no está disponible'], ['1', 'Sí, disponible para intervenir (cuenta para los mínimos)']] },
     { k: 'lugar', label: 'Dónde está (opcional)', value: p.lugar || '', wide: true },
     { k: 'nota', label: 'Nota', value: p.nota || '', wide: true }
   ], v => {
     const quien = o || get('operators', v.op); if (!quien) return toast('Elige a la persona', 'bad');
     if (v.hasta < v.desde) return toast('La fecha de fin es anterior a la de inicio', 'bad');
-    const rec = { id: pid || uid('AU'), motivo: v.motivo, desde: v.desde, hasta: v.hasta, lugar: v.lugar || '', nota: v.nota || '' };
-    put('operators', { ...quien, plan: [...(quien.plan || []).filter(x => x.id !== rec.id), rec] }, `${quien.name}: ${v.motivo.toLowerCase()} del ${fmtDate(v.desde)} al ${fmtDate(v.hasta)}`);
+    const rec = { id: pid || uid('AU'), motivo: v.motivo, desde: v.desde, hasta: v.hasta, lugar: v.lugar || '', nota: v.nota || '', disp: v.disp === '1' };
+    put('operators', { ...quien, plan: [...(quien.plan || []).filter(x => x.id !== rec.id), rec] }, `${quien.name}: ${v.motivo.toLowerCase()} del ${fmtDate(v.desde)} al ${fmtDate(v.hasta)}${rec.disp ? ' (disponible)' : ''}`);
     // Lo que quedaría por debajo del mínimo se avisa al guardar (no se impide: decide quien organiza)
     const bajo = bajoMinimos(120).filter(b => b.dia >= v.desde && b.dia <= v.hasta);
     if (bajo.length) toast(`Ojo: ${bajo[0].grupo} baja del mínimo (${bajo[0].n} de ${bajo[0].min}) el ${fmtDate(bajo[0].dia)}${bajo.length > 1 ? ` y ${bajo.length - 1} ${bajo.length === 2 ? 'día' : 'días'} más` : ''}`, 'bad');

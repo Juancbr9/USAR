@@ -7,7 +7,7 @@ const ESP_NINGUNA = 'Sin especialidad';
 const espLabel = o => opEsp(o) || ESP_NINGUNA;
 const opEquipos = o => [...(o.eq || []).map(k => EQUIPOS[k]).filter(Boolean), ...(o.moto ? [`Motosierra ${o.moto.tipo === 'S' ? 'suplente' : 'titular'}`] : [])];
 const motoTxt = m => m ? `${m.tipo === 'S' ? 'Suplente' : 'Titular'}${m.eq ? ` · equipo ${m.eq}` : ''}${m.aut ? ` (AUT. ${m.aut})` : ''}` : '';
-const ausTxt = o => { const a = ausHoy(o); return a ? [a.motivo || 'Ausente', a.lugar ? 'en ' + a.lugar : '', a.hasta ? 'hasta el ' + fmtDate(a.hasta) : ''].filter(Boolean).join(' ') : ''; };
+const ausTxt = o => { const a = ausHoy(o); return a ? [a.motivo || 'Ausente', a.lugar ? 'en ' + a.lugar : '', a.hasta ? 'hasta el ' + fmtDate(a.hasta) : ''].filter(Boolean).join(' ') + (a.disp ? ' (disponible si hay intervención)' : '') : ''; };
 // Dónde está cada uno: «En base» o el motivo de su ausencia
 const EN_BASE = 'En base';
 const situacion = o => ausHoy(o) ? ausHoy(o).motivo || 'Ausente' : EN_BASE;
@@ -19,7 +19,8 @@ const PVIEWS = [['peloton', 'Pelotones'], ['situacion', 'Situación'], ['cuadran
 const fechaCorta = iso => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '';
 function dispDe(o) {
   const a = ausHoy(o);
-  if (a) return { cls: 'bad', txt: (a.motivo || 'Ausente') + (a.hasta ? ' · hasta ' + fechaCorta(a.hasta) : ''), largo: 'Fuera: ' + ausTxt(o) };
+  // De vacaciones o de permiso pero disponible si hay intervención: fuera, en ámbar (cuenta para los mínimos)
+  if (a) return { cls: a.disp ? 'warn' : 'bad', txt: (a.motivo || 'Ausente') + (a.disp ? ' · disponible' : a.hasta ? ' · hasta ' + fechaCorta(a.hasta) : ''), largo: 'Fuera: ' + ausTxt(o) };
   if (ausPrevista(o)) return { cls: 'warn', txt: 'Sale el ' + fechaCorta(o.aus.desde), largo: 'En base. Ausencia prevista: ' + ausPrevTxt(o) };
   return { cls: 'ok', txt: EN_BASE, largo: EN_BASE };
 }
@@ -76,7 +77,7 @@ function viewPersonal() {
         <div class="sier-kpi ${aus.length ? 'bad' : ''}"><small>Fuera</small><b>${aus.length}</b></div>
         <div class="disp-barra" aria-hidden="true"><i class="ok" style="flex:${todos.length - aus.length}"></i><i class="bad" style="flex:${aus.length}"></i></div>
       </div>
-      ${aus.length ? `<div class="disp-fuera" role="group" aria-label="Fuera hoy">${aus.map(p => `<button class="disp-chip" onclick="openPerson('${p.id}')" title="${esc(ausTxt(p))}"><b>${esc(p.name)}</b> ${esc(dispDe(p).txt)}</button>`).join('')}</div>` : ''}
+      ${aus.length ? `<div class="disp-fuera" role="group" aria-label="Fuera hoy">${aus.map(p => `<button class="disp-chip disp-${dispDe(p).cls}" onclick="openPerson('${p.id}')" title="${esc(ausTxt(p))}"><b>${esc(p.name)}</b> ${esc(dispDe(p).txt)}</button>`).join('')}</div>` : ''}
       ${haySier ? `<p class="sier-cuenta">${cuenta(PELOTONES, p => p.peloton)}</p><p class="sier-cuenta">${cuenta(ESPECIALIDADES, opEsp)}</p>` : ''}
       <div class="pers-tools">
         <input class="input" type="search" aria-label="Buscar una persona" placeholder="Buscar por nombre, empleo, pelotón…" value="${esc(prefs.persQ || '')}"
@@ -104,9 +105,10 @@ function ausenciaForm(id) {
     { k: 'motivo', label: 'Motivo', value: a.motivo || MOTIVOS_AUSENCIA[0], options: MOTIVOS_AUSENCIA.map(m => [m, m]), required: true, wide: true },
     { k: 'desde', label: 'Desde (hoy, o una fecha futura si es una ausencia prevista)', type: 'date', value: ausPrevista(o) || esAusente(o) ? a.desde || todayISO() : todayISO(), required: true },
     { k: 'hasta', label: 'Hasta (ese día incluido; vacío: hasta que se marque presente)', type: 'date', value: a.hasta || '' },
+    { k: 'disp', label: '¿Está disponible si hay intervención?', value: a.disp ? '1' : '', wide: true, options: [['', 'No, no está disponible'], ['1', 'Sí, disponible para intervenir (cuenta para los mínimos)']] },
     { k: 'lugar', label: 'Dónde está (opcional)', value: a.lugar || '', wide: true, placeholder: 'Ej.: Academia de Logística, Calatayud' },
     { k: 'nota', label: 'Nota', value: a.nota || '', wide: true }
-  ], v => put('operators', { ...o, aus: { motivo: v.motivo, hasta: v.hasta || '', lugar: v.lugar || '', nota: v.nota || '', desde: v.desde || todayISO() } }, `${o.name}: ${v.desde > todayISO() ? 'ausencia prevista desde el ' + fmtDate(v.desde) : 'ausente'} (${v.motivo}${v.hasta ? ' hasta ' + fmtDate(v.hasta) : ''})`));
+  ], v => put('operators', { ...o, aus: { motivo: v.motivo, hasta: v.hasta || '', lugar: v.lugar || '', nota: v.nota || '', desde: v.desde || todayISO(), disp: v.disp === '1' } }, `${o.name}: ${v.desde > todayISO() ? 'ausencia prevista desde el ' + fmtDate(v.desde) : 'ausente'} (${v.motivo}${v.hasta ? ' hasta ' + fmtDate(v.hasta) : ''})`));
 }
 // Vuelve hoy: se quita la ausencia en curso; si venía del cuadrante, se acorta hasta ayer (o se quita si empezaba hoy)
 function ponerPresente(o) {
