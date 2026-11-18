@@ -2473,3 +2473,80 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .veh-mant .log-row { width: 100%; text-align: left; }
 .est-pre { grid-column: 1 / -1; display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
 .veh-mant .log-row > b { max-width: 58%; white-space: normal; text-align: right; overflow: visible; text-overflow: clip; }
+
+/* ==================== PANEL TÁCTICO: disponibilidad y estado de un vistazo ==================== */
+/* Un solo código en toda la app: verde, en base u operativo; ámbar, previsto o pronto; rojo, fuera o con un problema.
+   Va en un punto (personas), en una franja a la izquierda de la fila (solo si hay que atender) y en la etiqueta con el texto. */
+.disp-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--ok); border: 2px solid var(--surface); box-sizing: content-box; }
+.disp-warn .disp-dot, .res-st-warn .disp-dot { background: var(--warn); }
+.disp-bad .disp-dot, .res-st-bad .disp-dot { background: var(--bad); }
+.res-st-neutral .disp-dot { background: var(--line-2); }
+.disp-av { position: relative; display: inline-flex; flex: none; }
+.disp-av .disp-dot { position: absolute; right: -4px; bottom: -4px; }
+.pers-row, .mat-row { position: relative; }
+.pers-row.disp-bad::before, .pers-row.disp-warn::before, .mat-row.mat-st-bad::before, .mat-row.mat-st-warn::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 0 4px 4px 0; background: var(--bad); }
+.pers-row.disp-warn::before, .mat-row.mat-st-warn::before { background: var(--warn); }
+.pers-aus .who-row { opacity: 1; }
+.pers-row b, .mat-row b { overflow-wrap: break-word; }
+.pers-row .who-row > div { flex: 1; }
+.disp-tag { font-weight: 600; }
+
+/* Personal: lo primero, cuántos hay en base y quién está fuera; después buscar y la lista */
+.disp-res { grid-template-columns: repeat(3, 1fr); }
+.disp-res .sier-kpi b { font: 600 30px/1.05 var(--num); letter-spacing: -.5px; }
+.disp-barra { grid-column: 1 / -1; display: flex; gap: 2px; height: 6px; background: var(--sunk); }
+.disp-barra i { display: block; min-width: 0; }
+.disp-barra i.ok { background: var(--ok); } .disp-barra i.bad { background: var(--bad); }
+.disp-fuera { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.disp-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border-radius: 9px; background: var(--bad-soft); color: var(--bad);
+  font: 500 13.5px/1.25 var(--sans); text-align: left; transition: transform var(--t-press, 140ms) ease; }
+.disp-chip b { color: var(--ink); font-weight: 600; }
+.disp-chip:active { transform: scale(.97); }
+.pers-tools { margin-top: 12px; display: grid; gap: 10px; }
+.pers-tools .pers-views { display: flex; flex-wrap: wrap; }
+.pers-views .chip { min-height: 40px; }
+.pers-views .chip.on { background: var(--frame); border-color: var(--frame); color: #ffffff; }
+.pers-mas { gap: 2px 16px; margin-top: 6px; }
+.pers-mas .link { min-height: 40px; font-weight: 500; }
+
+/* Ficha de una persona: su disponibilidad es lo primero que se lee, con la acción que toca al lado */
+.disp-band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; margin-top: 12px; padding: 10px 12px;
+  border-radius: 12px; background: var(--ok-soft); }
+.disp-band.disp-bad { background: var(--bad-soft); } .disp-band.disp-warn { background: var(--warn-soft); }
+.disp-band-t { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; row-gap: 2px; min-width: 0; flex: 1 1 200px; }
+.disp-band-t b { font: 600 17px/1.2 var(--sans); color: var(--ok); }
+.disp-band.disp-bad .disp-band-t b { color: var(--bad); } .disp-band.disp-warn .disp-band-t b { color: var(--warn); }
+.disp-band-t small { grid-column: 2; font-size: 13.5px; color: var(--ink); }
+.disp-band .disp-dot { border-color: transparent; }
+.disp-act { flex: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
+
+/* Material: cuántas cosas hay, cuántas con problemas y cuántas sin colocar; cada cifra filtra la lista */
+.mat-fil { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 2px 0 10px; }
+.mat-fil-b { display: grid; justify-items: start; gap: 2px; min-height: 56px; padding: 8px 10px; border-radius: 10px; background: var(--sunk); color: var(--muted);
+  font: 500 13px/1.2 var(--sans); text-align: left; transition: background-color var(--t-hover, 180ms) ease, transform var(--t-press, 140ms) ease; }
+.mat-fil-b b { font: 600 22px/1.05 var(--num); color: var(--ink); font-variant-numeric: tabular-nums; }
+.mat-fil-b.hay b { color: var(--bad); }
+.mat-fil-b.on { background: var(--frame); color: var(--frame-muted); }
+.mat-fil-b.on b { color: #ffffff; }
+.mat-fil-b:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) { .mat-fil-b:not(.on):hover { background: var(--line); } }
+.mat-fil-vacio { margin: 6px 0 4px; }
+
+/* Búsqueda: qué es, en gris pequeño; el nombre con su estado; y dónde está, en una línea */
+.res-item .res-k { font-weight: 500; color: var(--muted); font-size: 12px; }
+.res-item b { display: flex; align-items: center; gap: 8px; }
+.res-item .disp-dot { border-color: transparent; }
+.find-where { font-weight: 500; color: var(--ink); }
+
+/* Los avisos, en el móvil, salen abajo (encima de la barra) y no tapan la cabecera ni el buscador */
+@media (max-width: 1023px) {
+  .toast { top: auto; bottom: calc(var(--nav-h, 64px) + 12px + var(--sa-b)); transform: translateX(-50%) translateY(16px); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  body.login-on .toast { bottom: calc(16px + var(--sa-b)); }
+}
+.pers-row .disp-tag { margin-top: 6px; }
+.pers-top > .sec-head { flex-wrap: nowrap; align-items: flex-start; }
+/* Con una ventana abierta, el aviso va arriba para no tapar sus botones (Guardar, Cancelar) */
+@media (max-width: 1023px) { body:has(#modal:not(.hidden)) .toast { top: calc(12px + var(--sa-t)); bottom: auto; transform: translateX(-50%) translateY(-16px); }
+  body:has(#modal:not(.hidden)) .toast.show { transform: translateX(-50%) translateY(0); } }

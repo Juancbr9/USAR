@@ -68,6 +68,11 @@
 - Movimiento y acabados: bloque «ACABADOS» al final de `styles.css` (respuesta al toque, indicadores que se deslizan,
   barras que crecen, destello del hueco de destino, asa de las ventanas). Las animaciones solo corren con `html.motion`
   (`motion()` en `js/ui.js`: nunca con movimiento reducido ni en las pruebas). Sin degradados, cristal ni sombras en reposo.
+- Disponibilidad y estado de un vistazo (bloque «PANEL TÁCTICO» al final de `styles.css`): un solo código de color, verde
+  (en base, operativo), ámbar (previsto, pronto) y rojo (fuera, con un problema). Personas: `dispDe(o)` y `dispFoto` (punto en la
+  foto; franja y motivo en la fila; banda «En base»/«Fuera» con su botón en la ficha). Material: `matPeor(m)` (franja de la fila)
+  y las tres cifras que filtran la lista (`MAT_FIL`, `prefs.matFil` por dueño). En el móvil los avisos salen abajo, salvo con una
+  ventana abierta. En un apartado, la lista del material va antes que el dibujo del pasillo.
 - Ver cómo está todo de un vistazo (bloque «ORGANIZACIÓN» al final de `styles.css`): Inicio lleva una tabla con una fila
   por especialidad y cuatro datos alineados (gente, material, revista y lo que falta; `espTiles` en `js/ui.js`), con color
   solo en lo que hay que atender; Logística, un resumen de cuatro cifras que lleva a sus tres bloques (Personal, Vehículos

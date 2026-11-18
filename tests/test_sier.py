@@ -111,9 +111,15 @@ with sync_playwright() as p:
     seen('ficha'); wide('ficha'); a.screenshot(path=f'{OUT}/sier-ficha.png', full_page=True)
     # Ausente con motivo y vuelta a presente
     a.click('#view button:has-text("Marcar ausente")'); a.select_option('#modalForm [name=motivo]', 'Curso'); a.click('#modalForm button:has-text("Guardar")'); a.wait_for_timeout(200)
-    assert 'Ausente: Curso' in a.inner_text('#view') and a.evaluate("esAusente(operators().find(o => o.name === 'CUERDAS'))")
+    assert 'Curso' in a.inner_text('#view .carne .disp-band.disp-bad') and a.locator('#view .disp-band button:has-text("Marcar presente")').count() == 1 and a.evaluate("esAusente(operators().find(o => o.name === 'CUERDAS'))")
     a.click('#view button.link:has-text("Todo el personal")'); a.wait_for_timeout(150)
     assert a.locator('.sier-kpi b').all_inner_texts() == ['18', '17', '1']
+    # Disponibilidad de un vistazo: arriba, quién está fuera (un toque abre su ficha); en la lista, su punto, su franja y su motivo
+    assert [' '.join(t.split()) for t in a.locator('#view .disp-fuera .disp-chip').all_inner_texts()] == ['CUERDAS Curso']
+    a.click('.pers-views .chip:has-text("Pelotones")'); a.wait_for_timeout(150)
+    fila = a.locator('#view .pers-row:has-text("CUERDAS")').first; assert 'disp-bad' in fila.get_attribute('class') and fila.locator('.disp-tag').inner_text() == 'Curso'
+    assert a.locator('#view .pers-row.disp-ok').count() == 17 and a.locator('#view .pers-row.disp-bad').count() == 1
+    a.click('#view .disp-fuera .disp-chip'); a.wait_for_selector('#view .carne .disp-band'); a.click('#view button.link:has-text("Todo el personal")'); a.wait_for_timeout(150)
     parte = a.evaluate("sierParte()"); assert 'PARTE DE PERSONAL' in parte and 'Presentes: *17*' in parte and 'CBO 1º CUERDAS (PIEN 1): Curso' in parte and 'PIEN 1: 1/2' in parte, parte
     a.evaluate("marcarPresente(operators().find(o => o.name === 'CUERDAS').id)"); a.wait_for_timeout(150)
     assert a.locator('.sier-kpi b').all_inner_texts() == ['18', '18', '0'] and 'Sin ausencias' in a.evaluate("sierParte()")

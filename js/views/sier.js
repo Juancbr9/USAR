@@ -15,13 +15,24 @@ const conEmpleo = o => [o.empleo, o.name].filter(Boolean).join(' ');
 // Vistas del personal
 const PVIEWS = [['peloton', 'Pelotones'], ['situacion', 'Situación'], ['cuadrante', 'Vacaciones'], ['esp', 'Especialidades'], ['equipos', 'Equipos'], ['puestos', 'Puestos USAR']];
 
+// Disponibilidad de una persona, de un vistazo: en base («ok»), fuera hoy («bad») o con una salida ya prevista («warn»)
+const fechaCorta = iso => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '';
+function dispDe(o) {
+  const a = ausHoy(o);
+  if (a) return { cls: 'bad', txt: (a.motivo || 'Ausente') + (a.hasta ? ' · hasta ' + fechaCorta(a.hasta) : ''), largo: 'Fuera: ' + ausTxt(o) };
+  if (ausPrevista(o)) return { cls: 'warn', txt: 'Sale el ' + fechaCorta(o.aus.desde), largo: 'En base. Ausencia prevista: ' + ausPrevTxt(o) };
+  return { cls: 'ok', txt: EN_BASE, largo: EN_BASE };
+}
+// La foto o la inicial, con el punto de su disponibilidad en la esquina
+const dispFoto = (p, d = dispDe(p)) => `<span class="disp-av disp-${d.cls}">${personPhoto(p)}<i class="disp-dot" aria-hidden="true"></i></span>`;
 function personRow(p, sub) {
-  const issues = readinessIssues(p.id), eb = list('epis').filter(e => e.holder === p.id && epiState(e).cls !== 'ok').length, n = issues.length + (eb ? 1 : 0), aus = esAusente(p);
-  return `<button class="item ${aus ? 'pers-aus' : ''}" onclick="openPerson('${p.id}')">
-    <div class="who-row">${personPhoto(p)}<div><b>${p.empleo ? `<span class="pers-emp">${esc(p.empleo)}</span> ` : ''}${esc(p.name)}</b>
+  const issues = readinessIssues(p.id), eb = list('epis').filter(e => e.holder === p.id && epiState(e).cls !== 'ok').length, n = issues.length + (eb ? 1 : 0), aus = esAusente(p), d = dispDe(p);
+  return `<button class="item pers-row disp-${d.cls} ${aus ? 'pers-aus' : ''}" onclick="openPerson('${p.id}')">
+    <div class="who-row">${dispFoto(p, d)}<div><b>${p.empleo ? `<span class="pers-emp">${esc(p.empleo)}</span> ` : ''}${esc(p.name)}</b>
       <small>${esc(sub ?? [espLabel(p) === ESP_NINGUNA ? '' : espLabel(p), ...opEquipos(p)].filter(Boolean).join(' · '))}</small>
-      ${readiness(p.id).fullName ? `<small class="pers-full">${esc(readiness(p.id).fullName)}</small>` : ''}</div></div>
-    ${aus ? `<span class="tag bad">${esc(ausTxt(p))}</span>` : n ? `<span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : 'warn'}">${n + (n === 1 ? ' aviso' : ' avisos')}</span>` : ic('chev', 'i-sm')}
+      ${readiness(p.id).fullName ? `<small class="pers-full">${esc(readiness(p.id).fullName)}</small>` : ''}
+      ${aus || d.cls === 'warn' ? `<span class="tag ${d.cls} disp-tag" title="${esc(d.largo)}">${esc(d.txt)}</span>` : ''}</div></div>
+    ${aus || d.cls === 'warn' ? ic('chev', 'i-sm') : n ? `<span class="tag ${issues.some(i => i[0] === 'bad') ? 'bad' : 'warn'}">${n + (n === 1 ? ' aviso' : ' avisos')}</span>` : ic('chev', 'i-sm')}
   </button>`;
 }
 const persPanel = (title, members, sub, extra = '') => `
@@ -56,24 +67,26 @@ function viewPersonal() {
         ${cells.map(c => persPanel(c, us.filter(x => (x.cell || 'Sin célula') === c), p => [p.role, ...(p.funcs || [])].filter(Boolean).join(' · '))).join('')}`; }
   };
   return `
-    <div class="panel">
-      <div class="between wrap-row sec-head"><div><h2>Personal</h2><p class="muted">${UNIDAD}: toda la sección.</p></div>
-        <div class="pers-acts"><button class="btn btn-a" onclick="newPersonForm()">${ic('plus')} Persona</button>
-          <button class="btn btn-g" onclick="pasarLista()">Pasar lista</button>
-          <button class="btn btn-g" onclick="shareText(sierParte(), 'Parte de personal')">Parte</button>
-</div></div>
-      <div class="sier-res">
+    <div class="panel pers-top">
+      <div class="between sec-head"><div><h2>Personal</h2><p class="muted">${UNIDAD}: toda la sección.</p></div>
+        <button class="btn btn-a" onclick="newPersonForm()">${ic('plus')} Persona</button></div>
+      <div class="sier-res disp-res" role="group" aria-label="Disponibilidad hoy">
         <div class="sier-kpi"><small>Total</small><b>${todos.length}</b></div>
-        <div class="sier-kpi ok"><small>Presentes</small><b>${todos.length - aus.length}</b></div>
-        <div class="sier-kpi ${aus.length ? 'bad' : ''}"><small>Ausentes</small><b>${aus.length}</b></div>
+        <div class="sier-kpi ok"><small>En base</small><b>${todos.length - aus.length}</b></div>
+        <div class="sier-kpi ${aus.length ? 'bad' : ''}"><small>Fuera</small><b>${aus.length}</b></div>
+        <div class="disp-barra" aria-hidden="true"><i class="ok" style="flex:${todos.length - aus.length}"></i><i class="bad" style="flex:${aus.length}"></i></div>
       </div>
+      ${aus.length ? `<div class="disp-fuera" role="group" aria-label="Fuera hoy">${aus.map(p => `<button class="disp-chip" onclick="openPerson('${p.id}')" title="${esc(ausTxt(p))}"><b>${esc(p.name)}</b> ${esc(dispDe(p).txt)}</button>`).join('')}</div>` : ''}
       ${haySier ? `<p class="sier-cuenta">${cuenta(PELOTONES, p => p.peloton)}</p><p class="sier-cuenta">${cuenta(ESPECIALIDADES, opEsp)}</p>` : ''}
-      ${aus.length ? `<div class="list" style="margin-top:8px">${aus.map(p => `<button class="item" onclick="openPerson('${p.id}')"><div><b>${esc(conEmpleo(p))}</b><small>${esc(p.peloton || '')}</small></div><span class="tag bad">${esc(ausTxt(p))}</span></button>`).join('')}</div>` : ''}
-      <input class="input" type="search" style="margin-top:10px" aria-label="Buscar una persona" placeholder="Buscar por nombre, empleo, pelotón…" value="${esc(prefs.persQ || '')}"
-        oninput="PERS_Q_POS = this.selectionStart; setPref({ persQ: this.value })">
-      <div class="row pers-mas"><button class="link" onclick="printPersonCards()">${ic('printer', 'i-sm')} Tarjetas QR</button>
+      <div class="pers-tools">
+        <input class="input" type="search" aria-label="Buscar una persona" placeholder="Buscar por nombre, empleo, pelotón…" value="${esc(prefs.persQ || '')}"
+          oninput="PERS_Q_POS = this.selectionStart; setPref({ persQ: this.value })">
+        <div class="chips pers-views" role="group" aria-label="Ver por">${PVIEWS.map(([k, l]) => `<button class="chip ${view === k ? 'on' : ''}" aria-pressed="${view === k}" onclick="setPref({ pview: '${k}' })">${l}</button>`).join('')}</div>
+      </div>
+      <div class="row pers-mas"><button class="link" onclick="pasarLista()">${ic('check', 'i-sm')} Pasar lista</button>
+        <button class="link" onclick="shareText(sierParte(), 'Parte de personal')">${ic('chat', 'i-sm')} Parte</button>
+        <button class="link" onclick="printPersonCards()">${ic('printer', 'i-sm')} Tarjetas QR</button>
         ${puedeImportar() ? `<button class="link" onclick="importPersonalForm()">${ic('upload', 'i-sm')} Importar el listado</button>` : ''}</div>
-      <div class="row chips pers-views" style="margin-top:10px" role="group" aria-label="Ver por">${PVIEWS.map(([k, l]) => `<button class="chip ${view === k ? 'on' : ''}" aria-pressed="${view === k}" onclick="setPref({ pview: '${k}' })">${l}</button>`).join('')}</div>
     </div>
     <div class="grid g3">${paneles[view]() || `<div class="panel span2">${emptyState('users', 'Nadie con esa búsqueda', 'Prueba con otra palabra.')}</div>`}</div>
     ${(() => { const gone = allOperators().filter(x => x.active === false); return gone.length ? `

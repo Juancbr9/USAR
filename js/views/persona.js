@@ -34,13 +34,14 @@ function viewPerson(o) {
           ${[opEsp(o) === 'USAR' ? 'USAR' : '', ...opEquipos(o), ...(o.funcs || [])].filter(Boolean).length ? `<div class="row tags" style="margin-top:6px">${[opEsp(o) === 'USAR' ? 'USAR' : '', ...opEquipos(o), ...(o.funcs || [])].filter(Boolean).map(f => `<span class="tag info">${esc(f)}</span>`).join('')}</div>` : ''}</div>
         ${md.blood ? `<span class="carne-blood" title="Grupo sanguíneo">${esc(md.blood)}</span>` : ''}
       </div>
-      ${esAusente(o) ? `<div class="callout bad" style="margin-top:12px"><p>${ic('alert', 'i-sm')} Ausente: ${esc(ausTxt(o))}${ausHoy(o).nota ? ' · ' + esc(ausHoy(o).nota) : ''}</p></div>` : ''}
-      ${ausPrevista(o) ? `<div class="callout" style="margin-top:12px"><p>${ic('calendar', 'i-sm')} Ausencia prevista: ${esc(ausPrevTxt(o))}${o.aus.nota ? ' · ' + esc(o.aus.nota) : ''} <button class="link" onclick="marcarPresente('${o.id}')">Anular</button></p></div>` : ''}
+      ${(d => `<div class="disp-band disp-${d.cls}" role="status"><span class="disp-band-t"><i class="disp-dot" aria-hidden="true"></i><b>${esAusente(o) ? 'Fuera' : EN_BASE}</b>
+          <small>${esAusente(o) ? esc(ausTxt(o) + (ausHoy(o).nota ? ' · ' + ausHoy(o).nota : '')) : ausPrevista(o) ? `Ausencia prevista: ${esc(ausPrevTxt(o) + (o.aus.nota ? ' · ' + o.aus.nota : ''))} <button class="link" onclick="marcarPresente('${o.id}')">Anular</button>` : 'Disponible hoy'}</small></span>
+        ${esAusente(o) ? `<button class="btn btn-sm disp-act" onclick="marcarPresente('${o.id}')">${ic('check', 'i-sm')} Marcar presente</button>`
+          : `<button class="btn btn-sm disp-act" onclick="ausenciaForm('${o.id}')">${ic('out', 'i-sm')} Marcar ausente</button>`}</div>`)(dispDe(o))}
       ${issues.length ? `<div class="stack" style="margin-top:12px">${issues.map(([cls, t]) => `<span class="tag ${cls}">${esc(t)}</span>`).join(' ')}</div>` : ''}
       <div class="row carne-acts" style="margin-top:12px">
         ${o.phone ? `<a class="btn btn-a" href="tel:${esc(o.phone.replace(/\s/g, ''))}">${ic('phone')} Llamar</a>
           <a class="btn btn-g" target="_blank" rel="noopener" href="https://wa.me/${esc(o.phone.replace(/\D/g, '').replace(/^(?!34)(\d{9})$/, '34$1'))}">${ic('chat')} WhatsApp</a>` : ''}
-        ${esAusente(o) ? `<button class="btn btn-g" onclick="marcarPresente('${o.id}')">${ic('check')} Marcar presente</button>` : `<button class="btn btn-g" onclick="ausenciaForm('${o.id}')">${ic('out')} Marcar ausente</button>`}
         <button class="btn btn-g" onclick="planDe('${o.id}')">${ic('calendar')} Vacaciones y permisos${(o.plan || []).filter(p => p.hasta >= todayISO()).length ? ` (${(o.plan || []).filter(p => p.hasta >= todayISO()).length})` : ''}</button>
         <button class="btn btn-g" onclick="personForm('${o.id}')">${ic('pencil')} Editar datos</button>
         <button class="btn btn-g" onclick="readinessForm('${o.id}')">${ic('flag')} Pasaporte y emergencia</button>

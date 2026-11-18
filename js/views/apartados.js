@@ -27,7 +27,7 @@ function viewApartado(k) {
       : a.moto ? ['T', 'S'].map(t => { const m = gente.filter(p => (p.moto.tipo === 'S') === (t === 'S')).sort((x, y) => (+x.moto.eq || 99) - (+y.moto.eq || 99));
           return m.length ? persPanel(t === 'S' ? 'Suplentes' : 'Titulares', m, sub) : ''; }).join('')
       : persPanel(a.largo, gente, sub),
-    material: () => `${pasilloPanel(k)}<div class="panel">${matBloque('ap:' + k, `Apunta aquí el material de ${a.largo.toLowerCase()}: qué es, cuántos hay, dónde está y cuándo toca revisarlo.`)}</div>`,
+    material: () => `<div class="panel">${matBloque('ap:' + k, `Apunta aquí el material de ${a.largo.toLowerCase()}: qué es, cuántos hay, dónde está y cuándo toca revisarlo.`)}</div>${pasilloPanel(k)}`,
     necesidades: () => `<div class="panel">${needsBloque(k)}</div>`,
     notas: () => `<div class="panel">
         <div class="between sec-head"><h3>Notas</h3>${puede ? `<button class="btn btn-g btn-sm" onclick="apNotaForm('${k}')">${ic('pencil')} Editar</button>` : ''}</div>
