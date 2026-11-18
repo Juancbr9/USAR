@@ -36,7 +36,10 @@ with sync_playwright() as p:
     pin(a, '0000'); assert 'Usuario o contraseña incorrectos' in msg(a) and a.locator('.topbar').is_hidden()
     pin(a, '1357'); a.wait_for_selector('.topbar:visible')
     assert a.evaluate("[prefs.activeOperator, Sync.role, Sync.pinName, Sync.email]") == ['CABRERA', 'miembro', 'CABRERA', '']
-    assert '1357' not in a.evaluate("JSON.stringify(localStorage)"), 'no se guarda el PIN'
+    # El PIN no se guarda en ningún sitio como valor (se busca «1357» entre comillas o tras «:»; suelto podría salir por casualidad
+    # dentro de una hora o de un identificador)
+    _ls = a.evaluate("JSON.stringify(Object.fromEntries(Object.entries(localStorage)))").replace('\\"', '"')
+    assert not any(x in _ls for x in ['"1357"', ':1357,', ':1357}']), 'no se guarda el PIN'
     a.wait_for_timeout(1500); assert a.evaluate("list('gear').length") > 0, 'descarga los datos del equipo'
     a.keyboard.press('Escape')
     # Al volver a abrir: solo el PIN, comprobado en el móvil (también sin cobertura)

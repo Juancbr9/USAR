@@ -2499,16 +2499,16 @@ img.esp-art { border-radius: 50%; background: var(--frame); }
 .disp-barra i { display: block; min-width: 0; }
 .disp-barra i.ok { background: var(--ok); } .disp-barra i.bad { background: var(--bad); }
 .disp-fuera { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.disp-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border-radius: 9px; background: var(--bad-soft); color: var(--bad);
+.disp-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px; border-radius: 9px; background: var(--bad-soft); color: var(--bad);
   font: 500 13.5px/1.25 var(--sans); text-align: left; transition: transform var(--t-press, 140ms) ease; }
 .disp-chip b { color: var(--ink); font-weight: 600; }
 .disp-chip:active { transform: scale(.97); }
 .pers-tools { margin-top: 12px; display: grid; gap: 10px; }
 .pers-tools .pers-views { display: flex; flex-wrap: wrap; }
-.pers-views .chip { min-height: 40px; }
+.pers-views .chip { min-height: 44px; }
 .pers-views .chip.on { background: var(--frame); border-color: var(--frame); color: #ffffff; }
 .pers-mas { gap: 2px 16px; margin-top: 6px; }
-.pers-mas .link { min-height: 40px; font-weight: 500; }
+.pers-mas .link { min-height: 44px; font-weight: 500; }
 
 /* Ficha de una persona: su disponibilidad es lo primero que se lee, con la acción que toca al lado */
 .disp-band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; margin-top: 12px; padding: 10px 12px;
