@@ -80,7 +80,9 @@ with sync_playwright() as p:
       stamp('events', { id: 'E-A', type: 'Formación', title: 'Apuntalamiento', start: todayISO() + 'T09:00', end: todayISO() + 'T13:00', people: ['OP-01'] });
       commit(); })()""")
     pages = [(f"go('{t}')", t) for t in a.evaluate("Object.keys(VIEWS)")]
-    pages += [("openPerson('OP-01')", 'persona'), ("go('contenedor')", 'dibujo'), ("go('revision')", 'revisión'), ("go('armarios')", 'armarios'), ("go('pasillo')", 'pasillo'),
+    pages += [("go('guia'); guiaAbre('asr')", 'guía: niveles ASR'), ("prefs.asr = { team: 'ESP01', id: 'A-1', vic: 'viva', h12: 'si', mas: true, ops: ['B'] }; go('guia'); guiaAbre('asrtool')", 'guía: asistente ASR'),
+              ("prefs.asr = { vic: 'posible' }; go('guia'); guiaAbre('asrtool')", 'guía: asistente ASR, C'), ("prefs.asr = { vic: 'nadie' }; go('guia'); guiaAbre('asrtool')", 'guía: asistente ASR, nadie'),
+              ("openPerson('OP-01')", 'persona'), ("go('contenedor')", 'dibujo'), ("go('revision')", 'revisión'), ("go('armarios')", 'armarios'), ("go('pasillo')", 'pasillo'),
               ("(() => { const o = operators(), h = todayISO(); stamp('operators', { ...o[1], plan: [{ id: 'PL-A', motivo: 'Vacaciones', desde: h, hasta: h }] }); stamp('operators', { ...o[2], plan: [{ id: 'PL-B', motivo: 'Curso', desde: h, hasta: h }] });"
                " stamp('operators', { ...o[3], plan: [{ id: 'PL-C', motivo: 'Baja médica', desde: h, hasta: h }] }); stamp('meta', { id: 'minimos', value: { todos: 99 } }); commit(); setPref({ tab: 'personal', person: null, pview: 'cuadrante' }); })()", 'cuadrante'),
               ("(() => { ['falta', 'pedir', 'pedido', 'recibido'].forEach((s, i) => stamp('needs', { id: 'NE-A' + i, ap: 'agua', text: 'Cosa ' + i, qty: 2, state: s, by: 'GRANADOS', ts: 1 })); commit(); setPref({ tab: 'agua', aptab: 'necesidades' }); })()", 'necesidades'),

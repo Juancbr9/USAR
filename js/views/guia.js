@@ -58,21 +58,51 @@ const GUIDE = [
     'Distancia de seguridad: <b>2 × la altura</b> de lo que queda en pie.',
     'Tres círculos: jefe de equipo dentro (EPI específico), jefe de pelotón en la puerta (EPI general), jefe ByR fuera.'])],
 
-  ['triaje', 'building', 'Triaje de estructuras', () => `
-    ${tbl(['Cat.', 'Situación'], Object.entries(TRIAGE).map(([k, [d]]) => [`<b>${k}</b>`, d]))}
-    ${ul(['Sin víctimas: no es worksite. Marcaje rápido C.', 'Ajustar prioridad por: nº de víctimas, construcción, tamaño, recursos y tiempo, réplicas, edad (colegio, residencia) y lo que pida la autoridad local.',
-      'Guías 2015 (A–F): cruza víctimas confirmadas o no, huecos grandes (se puede gatear) o pequeños (tumbado) y nivel ASR 3 o 4 necesario.'])}`],
+  ['asr', 'layers', 'ASR: los cinco niveles', () => `
+    <p class="asr-lema">${ASR.map(a => `<span><b>${a.n}</b> ${a.corto}</span>`).join('')}</p>
+    <p><b>A nuestro nivel</b> (un pelotón o la sección USAR): lo nuestro es el <b>ASR 2 y el ASR 3</b> en el sector que nos asignen. El ASR 4, con relevos o con apoyo de otro equipo. El ASR 1 suele venir hecho y el ASR 5 solo se hace por orden.</p>
+    <p class="muted">Van en orden, pero nos pueden mandar directamente a cualquiera, y en una misma catástrofe hay zonas en niveles distintos a la vez.</p>
+    ${ASR.map(a => `<div class="asr-niv"><div class="asr-niv-h"><span class="asr-num">${a.n}</span><div><b>${a.name}</b><small>${a.quien}</small></div></div>
+      <p>${a.que}</p>${ul(a.nos)}<p class="asr-sale"><b>Se entrega:</b> ${a.sale}</p></div>`).join('')}
+    <button class="btn btn-g" onclick="guiaAbre('asrtool')">${ic('clipboard')} Hacer el triaje de un sitio</button>`],
 
-  ['asr', 'layers', 'Niveles ASR', () => tbl(['Nivel', 'Qué es'], ASR.map(([n, name, d]) => [`<b>${n}</b>`, `<b>${name}.</b> ${d}`]))],
+  ['asrtool', 'clipboard', 'Asistente ASR: triaje y marcaje de un sitio', () => `
+    <p class="muted" style="margin-bottom:10px">Para el ASR 2, delante de cada edificio o sitio. Dos preguntas y dice la categoría, qué se pinta y qué se hace después. Vale igual para un terremoto que para una explosión o un derrumbe aislado.</p>
+    ${asrToolHtml()}`],
+
+  ['triaje', 'building', 'Triaje de worksites: A, B, C, D', () => `
+    ${tbl(['Cat.', 'Víctimas', 'Rescate'], Object.entries(TRIAGE).map(([k, [d, t]]) => [`<b>${k}</b>`, d, t]))}
+    <b>Primero mandan las víctimas</b>${ul(['Todos los sitios con vivas confirmadas (A y B) van antes que los de posibles (C).', 'A igual categoría, primero donde haya más víctimas.',
+      'Las 12 horas son una estimación a ojo: depende de dónde está la víctima, del material y tamaño del edificio y de nuestros medios.',
+      'Sin víctimas no es worksite. Con solo fallecidos (D) se le da ID para que conste, pero no es prioridad.'])}
+    <b>Si hay que desempatar, el edificio y los medios</b>${ul(['Uso: vivienda, oficina, colegio, hospital… dice cuánta gente puede haber dentro según la hora.', 'Tamaño y construcción: cuanto más grande y más pesado el material, más largo el trabajo.',
+      'Huecos grandes (se puede gatear): más opciones de sobrevivir. Huecos pequeños (solo cabe tumbado): más riesgo para la víctima.', 'Medios disponibles y distancia al sitio: con pocos medios o lejos, todo tarda más.'])}
+    <b>Tipos de colapso</b>${ul(ASR_COLAPSOS.map(([n, d]) => `<b>${n}:</b> ${d}.`))}`],
 
   ['marcaje', 'pencil', 'Marcaje INSARAG', () => `
-    <div class="grid g2"><div class="mark">${worksiteMarkSvg({ code: 'B-2b', hazards: 'Amianto', cat: 'A', status: 'active', asr: [{ team: 'ESP-1', level: 2, date: todayISO() }, { team: 'ESP-1', level: 3, date: todayISO() }] })}</div>
+    <div class="grid g2"><div class="mark">${worksiteMarkSvg({ code: 'A-2', hazards: 'Amianto', cat: 'A', status: 'active', asr: [{ team: 'ESP01', level: 2, date: todayISO() }, { team: 'ESP01', level: 3, date: todayISO() }] })}</div>
       <div class="grid g2"><div class="mark small">${victimMarkSvg([{ state: 'viva', status: 'entregada' }, { state: 'viva', status: 'localizada' }, { state: 'fallecida', status: 'localizada' }])}</div>
-      <div class="mark small">${rcmSvg('C', 'ESP-1', todayISO())}</div></div></div>
-    ${ul(['Spray naranja. Sectores con letra (A, B, C…; no se usan I ni O). Worksites: A-1, A-2; si es grande, A-2a, A-2b.',
-      'Caja 1,2 × 1 m junto a la entrada: código de 40 cm, equipo, ASR y fecha. Arriba riesgos, abajo categoría. Al acabar, línea horizontal.',
-      'V de 50 cm donde haya víctimas no visibles. Debajo L-n (vivas) y D-n (fallecidas); se tacha y se reescribe según se rescatan.',
-      'Marcaje rápido: rombo de 20 cm con C (despejado) o D (solo fallecidos), equipo y fecha. Al retirar los fallecidos se añade una C.'])}`],
+      <div class="mark small">${rcmSvg('C', 'ESP01', todayISO())}</div></div></div>
+    <b>Caja del worksite (obligatoria)</b>${ul(['Se pinta en el ASR 2, cuando el sitio se clasifica como worksite, junto a la entrada y en un color que contraste.',
+      'Caja de 1,2 × 1 m. Dentro: el ID (unos 40 cm de alto), el equipo, el nivel ASR terminado y la fecha. Encima, los riesgos (amianto, gas…). Debajo, la categoría. Una flecha si hace falta señalar la entrada.',
+      'Cada equipo que termina un nivel añade su línea: equipo, ASR y fecha.', 'Cuando ya no queda nada por hacer: una raya horizontal que cruza toda la caja.'])}
+    <b>ID del worksite</b>${ul(['Sectores con letra: A, B, C… (no se usan la I ni la O). Si la autoridad tiene los suyos, se usan los suyos.',
+      'Intervención nacional o sin la aplicación de coordinación (ICMS): sector y número, A-1, A-2, A-3…',
+      'Guías 2026–2030, con ICMS: código del equipo, guion y cuatro cifras (ESP01-0056); el sector se pone delante solo (A-ESP01-0056). El equipo reparte los números entre sus pelotones para no repetirlos.'])}
+    <b>Víctimas: la V (obligatoria)</b>${ul(['V de unos 50 cm lo más cerca posible de donde está la víctima, cuando no se ve y el equipo se va del sitio. Una flecha si hace falta.',
+      'Debajo, L y el número de vivas (L-2) y D y el número de fallecidos (D-1). Al sacar a alguien se tacha y se escribe lo que queda.', 'No se pone en la fachada junto a la caja, salvo que la víctima esté ahí.'])}
+    <b>Marcaje rápido: el rombo (solo si lo decide la autoridad)</b>${ul(['Rombo de 20 × 20 cm con una C (despejado) o una D (solo fallecidos); debajo, el equipo y la fecha.',
+      'Solo en sitios que se pueden registrar enteros deprisa o donde está claro que no queda nadie vivo. Vale también para coches, casetas o montones de escombro.'])}`],
+
+  ['insarag', 'book', 'Guías INSARAG 2026–2030: qué cambia', () => `
+    ${ul(['Se presentaron el 9 de julio en la reunión global de INSARAG y entran en vigor el <b>1 de enero de 2027</b>. Hasta entonces siguen valiendo las de 2020.',
+      'Ahora son cinco volúmenes (Política, Capacitación nacional, Operaciones, Clasificación IEC/R y Guía de campo operativa) y se consultan en una web propia, enlazada desde insarag.org → Methodology → Guidelines.'])}
+    <b>Lo que sigue igual</b>${ul(['Los cinco niveles ASR y sus nombres.', 'Las categorías de triaje A, B, C y D.', 'La caja del worksite, la V de víctimas y el rombo de marcaje rápido.',
+      'Las señales: evacuar, tres cortas; silencio, una larga; reanudar, una larga y una corta.'])}
+    <b>Lo nuevo para nosotros</b>${ul(['El ID del worksite lo da el equipo con la aplicación ICMS: código del equipo y cuatro cifras (ESP01-0056). Antes era sector y número (A-1).',
+      'Zonas: si en un sector hay muchos más sitios que equipos, se reparte en zonas, una por equipo (ESP01-1Z), y se pasa a respuesta rápida. Las zonas no se pintan: solo van en los informes.',
+      'Código de equipo: las tres letras olímpicas del país y dos cifras; del 01 al 09, equipos clasificados.',
+      'Quién hace cada nivel: ASR 3, equipos ligeros, medios y pesados; ASR 4, medios y pesados; ASR 5, normalmente los medios locales.'])}`],
 
   ['estructuras', 'building', 'Lados, cuadrantes y colapsos', () => `
     <div class="mark small">${orientationSvg()}</div>
@@ -162,8 +192,10 @@ function viewGuia() {
   return `
     <div class="panel">
       <h2>Guía de campo</h2>
-      <p class="muted" style="margin:4px 0 12px">Fichas rápidas del Manual de Campo USAR UME 2023 y de las guías INSARAG. Funcionan sin conexión.</p>
-      <input class="input" type="search" aria-label="Buscar en la guía" placeholder="Buscar: apuntalar, O₂, START, marcaje…" value="${esc(prefs.guideQ || '')}"
+      <p class="muted" style="margin:4px 0 12px">Fichas rápidas del Manual de Campo USAR UME 2023 y de las guías INSARAG (2026–2030). Funcionan sin conexión.</p>
+      <div class="row guia-atajos"><button class="btn btn-a" onclick="guiaAbre('asrtool')">${ic('clipboard')} Triaje de un sitio (ASR 2)</button>
+        <button class="btn btn-g" onclick="guiaAbre('asr')">${ic('layers')} Niveles ASR</button></div>
+      <input class="input" type="search" aria-label="Buscar en la guía" placeholder="Buscar: ASR, triaje, marcaje, apuntalar, O₂…" value="${esc(prefs.guideQ || '')}"
         oninput="prefs.guideQ = this.value; clearTimeout(window._gq); window._gq = setTimeout(() => { const p = this.selectionStart; render(); const i = document.querySelector('#view input[type=search]'); i.focus(); i.setSelectionRange(p, p); }, 250)">
     </div>
     <div class="guide-grid">${cards.map(([id, icon, title, html]) => `

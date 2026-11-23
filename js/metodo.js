@@ -98,20 +98,50 @@ const RISK_CATALOG = ['Colapso secundario o derrumbe', 'Caída de objetos o esco
   'Réplicas', 'Tráfico y maquinaria pesada'];
 
 /* ==================== WORKSITES ==================== */
+// Los cinco niveles ASR (evaluación, búsqueda y rescate) de las guías INSARAG 2026–2030 (Operaciones; en vigor el 1-1-2027;
+// los niveles y sus nombres son los mismos que en 2020). De cada uno: una palabra para recordarlo, qué es, quién lo hace,
+// qué hacemos nosotros y qué se entrega.
 const ASR = [
-  [1, 'Evaluación extensa del área', 'Estudio previo para sectorizar, situar la BoO y hacer el plan de acción.'],
-  [2, 'Evaluación del sector', 'Identificar y clasificar worksites viables dentro del sector.'],
-  [3, 'Búsqueda y rescate rápido', 'ByR ligera, material no especializado y poco tiempo.'],
-  [4, 'Búsqueda y rescate completo', 'ByR exhaustiva con material especializado y mucho tiempo.'],
-  [5, 'Búsqueda y recuperación total', 'Desescombro y recuperación de fallecidos (normalmente autoridad local).']
+  { n: 1, corto: 'Mirar', name: 'Evaluación del área', que: 'Reconocimiento rápido de toda la zona afectada: qué ha pasado, dónde está el daño y por dónde empezar.',
+    quien: 'Casi siempre la autoridad local o el primer equipo que llega.',
+    nos: ['Recorrer la zona en vehículo o a pie, sin pararse a rescatar, e informar cuanto antes.', 'Anotar tipos de daño, riesgos generales, accesos cortados y sitios para la base.',
+      'Proponer sectores (A, B, C…; sin I ni O) y prioridades. Si la autoridad ya tiene los suyos, se usan los suyos.'],
+    sale: 'Sectores, prioridades y lugar de la base.' },
+  { n: 2, corto: 'Clasificar', name: 'Triaje de worksites', que: 'Recorrer el sector asignado, rápido pero con método, para encontrar los sitios donde se puede rescatar a alguien con vida y ordenarlos por prioridad.',
+    quien: 'El primer equipo que entra en el sector, si no lo ha hecho ya la autoridad local.',
+    nos: ['Preguntar a vecinos y a los primeros intervinientes: es la mejor información.', 'Un triaje por cada sitio (con el asistente de abajo): categoría A, B, C o D, marcarlo y seguir.',
+      'Aquí normalmente no se rescata. Si aparece alguien vivo: avisar, pedir refuerzo y seguir con el sector; o, si vamos bastantes, una parte rescata y la otra sigue (equipo partido).',
+      'Perros y búsqueda técnica dan más detalle pero frenan: usarlos lo justo. Se puede repetir de noche (más silencio) o con perros.',
+      'Si hay muchos más sitios que equipos, el sector se reparte en zonas (una por equipo) y se pasa a respuesta rápida.'],
+    sale: 'Un triaje por worksite, cada worksite con su ID y marcado, y un croquis del sector con lo recorrido.' },
+  { n: 3, corto: 'Rápido', name: 'Búsqueda y rescate rápido', que: 'Trabajo ligero y rápido en cada worksite para sacar a quien esté accesible. Unas horas por sitio (un periodo de trabajo).',
+    quien: 'Equipos ligeros, medios y pesados, y los equipos locales.',
+    nos: ['Búsqueda física, con perro o técnica.', 'Retirar escombro, apuntalamiento limitado y rompimiento ligero; se entra poco en la estructura.',
+      'No alargarse más de un periodo de trabajo en un sitio, salvo indicios claros de vida.', 'Apuntar los sitios donde merece la pena un ASR 4.',
+      'Víctima viva muy atrapada: pedir permiso para pasar a ASR 4 o pedir refuerzo. El resto de sitios asignados hay que terminarlos.'],
+    sale: 'Informe de cada worksite, marcaje actualizado y ficha de cada víctima extraída.' },
+  { n: 4, corto: 'A fondo', name: 'Búsqueda y rescate completo', que: 'Trabajo a fondo para llegar a los pocos supervivientes muy atrapados que no se alcanzaron antes. Dura más de un periodo de trabajo.',
+    quien: 'Equipos medios y pesados.',
+    nos: ['Entrar en casi todos los huecos donde alguien puede seguir vivo.', 'Todas las técnicas de búsqueda, repetidas cada vez que se gana acceso.',
+      'Apuntalamiento extenso, rompimiento y corte pesado, levantar y mover cargas, espacios confinados.', 'Mando y control completo del worksite: puede haber varios equipos y hacen falta relevos.'],
+    sale: 'Informe de cada worksite, marcaje actualizado y ficha de cada víctima extraída.' },
+  { n: 5, corto: 'Recuperar', name: 'Cobertura total y recuperación', que: 'Recuperar a los fallecidos y despejar por completo, con maquinaria pesada. Va después de la fase de rescate.',
+    quien: 'Normalmente los medios locales. Un equipo USAR, solo si se lo piden y lo acepta.',
+    nos: ['Solo por orden expresa.', 'Despeje de zona: registrar todas las habitaciones de todas las estructuras y anotar con detalle lo despejado.',
+      'Acordar antes qué se hace si aparece alguien vivo o un fallecido.'],
+    sale: 'Informe del trabajo y plano de lo despejado.' }
 ];
-// Triaje de worksites según el Manual de Campo USAR 2023 (INSARAG 2020)
+// Triaje de worksites (INSARAG 2026–2030, igual que en 2020): la categoría sale solo de lo que se sabe de las víctimas
 const TRIAGE = {
-  A: ['Vivas confirmadas, rescate de menos de 12 h', 'bad'],
-  B: ['Vivas confirmadas, rescate de más de 12 h', 'warn'],
-  C: ['Posibles víctimas vivas sin confirmar', 'info'],
-  D: ['Solo víctimas fallecidas', 'neutral']
+  A: ['Víctimas vivas confirmadas', 'Menos de 12 h', 'bad'],
+  B: ['Víctimas vivas confirmadas', 'Más de 12 h', 'warn'],
+  C: ['Posibles víctimas vivas (sin confirmar)', 'Sin estimar', 'info'],
+  D: ['Solo fallecidos', 'Sin estimar', 'neutral']
 };
+// Tipos de colapso de las guías 2026–2030 (para el triaje) y lo que significan
+const ASR_COLAPSOS = [['Inclinado', 'fallan pilares o muros y los forjados quedan en pendiente'], ['Vuelco', 'el edificio, o parte, ha caído de lado'],
+  ['Pancake', 'los forjados han caído unos sobre otros'], ['Montón de escombros', 'forjados, pilares y muros hechos un montón'],
+  ['Voladizo', 'ha cedido la parte de abajo y la de arriba queda colgando']];
 const WS_STATUS = { pending: ['Pendiente', 'warn'], active: ['En trabajo', 'bad'], done: ['Terminado', 'ok'] };
 const COLLAPSE = ['Inclinado', 'Total (pancake)', 'Voladizo', 'En A', 'En V', 'Parcial', 'En pie con daños'];
 const BUILD_USE = ['Vivienda', 'Edificio de viviendas', 'Oficinas', 'Comercial', 'Industrial', 'Escuela', 'Hospital', 'Residencia', 'Otro'];

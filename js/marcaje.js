@@ -29,7 +29,7 @@ function worksiteMarkSvg(ws) {
   return wallSvg(W, H, `
     ${hazards ? `<text x="${W / 2}" y="32" font-size="20" stroke="none" text-anchor="middle">${esc(hazards)}</text>` : ''}
     <rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="none" stroke-width="6" stroke-linejoin="round"/>
-    <text x="${W / 2}" y="${y + 92}" font-size="78" stroke="none" text-anchor="middle">${esc(ws.code || '?')}</text>
+    <text x="${W / 2}" y="${y + 92}" font-size="${Math.min(78, Math.floor(290 / (String(ws.code || '?').length * .52)))}" stroke="none" text-anchor="middle">${esc(ws.code || '?')}</text>
     ${rows.length ? `<path d="M${x} ${y + 108}h${bw}" stroke-width="3"/>` : ''}
     ${rowsSvg}
     ${ws.status === 'done' ? `<path d="M${x - 14} ${y + bh / 2}h${bw + 28}" stroke-width="7"/>` : ''}

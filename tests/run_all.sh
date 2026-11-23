@@ -68,6 +68,7 @@ run test_dibujos_veh.py
 run test_funciones.py
 run test_arcos.py
 run test_apuntalamientos.py
+run test_asr.py
 
 echo
 if [ $status -eq 0 ]; then echo "✓ Todas las pruebas pasaron"; else echo "✗ Alguna prueba falló"; fi
