@@ -98,10 +98,10 @@ const GUIDE = [
     ${ul(['Se presentaron el 9 de julio en la reunión global de INSARAG y entran en vigor el <b>1 de enero de 2027</b>. Hasta entonces siguen valiendo las de 2020.',
       'Ahora son cinco volúmenes (Política, Capacitación nacional, Operaciones, Clasificación IEC/R y Guía de campo operativa) y se consultan en una web propia, enlazada desde insarag.org → Methodology → Guidelines.'])}
     <b>Lo que sigue igual</b>${ul(['Los cinco niveles ASR y sus nombres.', 'Las categorías de triaje A, B, C y D.', 'La caja del worksite, la V de víctimas y el rombo de marcaje rápido.',
-      'Las señales: evacuar, tres cortas; silencio, una larga; reanudar, una larga y una corta.'])}
+      'Las señales: evacuar, tres cortas; silencio, una larga; reanudar, una larga y una corta.',
+      'El código de equipo: las tres letras olímpicas del país y dos cifras (del 01 al 09, equipos clasificados).'])}
     <b>Lo nuevo para nosotros</b>${ul(['El ID del worksite lo da el equipo con la aplicación ICMS: código del equipo y cuatro cifras (ESP01-0056). Antes era sector y número (A-1).',
       'Zonas: si en un sector hay muchos más sitios que equipos, se reparte en zonas, una por equipo (ESP01-1Z), y se pasa a respuesta rápida. Las zonas no se pintan: solo van en los informes.',
-      'Código de equipo: las tres letras olímpicas del país y dos cifras; del 01 al 09, equipos clasificados.',
       'Quién hace cada nivel: ASR 3, equipos ligeros, medios y pesados; ASR 4, medios y pesados; ASR 5, normalmente los medios locales.'])}`],
 
   ['estructuras', 'building', 'Lados, cuadrantes y colapsos', () => `
