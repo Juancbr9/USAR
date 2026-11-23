@@ -27,7 +27,7 @@ addEventListener('scroll', () => document.body.classList.toggle('scrolled', scro
 // Al cambiar de pantalla (no en cada actualización de datos) el contenido entra con una transición corta
 let LAST_SCREEN = '', LAST_SUB = '';
 // Lo que cambia dentro de una misma pantalla (pestañas, vistas, pasillo y lado, mes…)
-const SUB_KEYS = ['aptab', 'pview', 'ptab', 'almPas', 'pasN', 'pasLado', 'cuadMes', 'cside', 'cview', 'logDia', 'vehVista', 'vehGrupo'];
+const SUB_KEYS = ['aptab', 'pview', 'ptab', 'almPas', 'pasN', 'pasLado', 'cuadMes', 'cside', 'cview', 'logDia', 'vehVista', 'vehGrupo', 'asrTab'];
 // Dónde estaba la pestaña (o el botón) activo de cada grupo antes de redibujar, para que su marca se deslice hasta el nuevo
 const IND_SEL = '.ctabs, .seg-row, .tabs';
 function indSnap() {
