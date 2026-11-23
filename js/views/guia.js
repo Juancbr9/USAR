@@ -58,17 +58,8 @@ const GUIDE = [
     'Distancia de seguridad: <b>2 × la altura</b> de lo que queda en pie.',
     'Tres círculos: jefe de equipo dentro (EPI específico), jefe de pelotón en la puerta (EPI general), jefe ByR fuera.'])],
 
-  ['asr', 'layers', 'ASR: los cinco niveles', () => `
-    <p class="asr-lema">${ASR.map(a => `<span><b>${a.n}</b> ${a.corto}</span>`).join('')}</p>
-    <p><b>A nuestro nivel</b> (un pelotón o la sección USAR): lo nuestro es el <b>ASR 2 y el ASR 3</b> en el sector que nos asignen. El ASR 4, con relevos o con apoyo de otro equipo. El ASR 1 suele venir hecho y el ASR 5 solo se hace por orden.</p>
-    <p class="muted">Van en orden, pero nos pueden mandar directamente a cualquiera, y en una misma catástrofe hay zonas en niveles distintos a la vez.</p>
-    ${ASR.map(a => `<div class="asr-niv"><div class="asr-niv-h"><span class="asr-num">${a.n}</span><div><b>${a.name}</b><small>${a.quien}</small></div></div>
-      <p>${a.que}</p>${ul(a.nos)}<p class="asr-sale"><b>Se entrega:</b> ${a.sale}</p></div>`).join('')}
-    <button class="btn btn-g" onclick="guiaAbre('asrtool')">${ic('clipboard')} Hacer el triaje de un sitio</button>`],
-
-  ['asrtool', 'clipboard', 'Asistente ASR: triaje y marcaje de un sitio', () => `
-    <p class="muted" style="margin-bottom:10px">Para el ASR 2, delante de cada edificio o sitio. Dos preguntas y dice la categoría, qué se pinta y qué se hace después. Vale igual para un terremoto que para una explosión o un derrumbe aislado.</p>
-    ${asrToolHtml()}`],
+  ['asr', 'layers', 'ASR: los cinco niveles', () => `${asrNivelesHtml()}
+    <button class="btn btn-g" onclick="go('asr')">${ic('building')} Abrir la herramienta ASR</button>`],
 
   ['triaje', 'building', 'Triaje de worksites: A, B, C, D', () => `
     ${tbl(['Cat.', 'Víctimas', 'Rescate'], Object.entries(TRIAGE).map(([k, [d, t]]) => [`<b>${k}</b>`, d, t]))}
@@ -193,7 +184,7 @@ function viewGuia() {
     <div class="panel">
       <h2>Guía de campo</h2>
       <p class="muted" style="margin:4px 0 12px">Fichas rápidas del Manual de Campo USAR UME 2023 y de las guías INSARAG (2026–2030). Funcionan sin conexión.</p>
-      <div class="row guia-atajos"><button class="btn btn-a" onclick="guiaAbre('asrtool')">${ic('clipboard')} Triaje de un sitio (ASR 2)</button>
+      <div class="row guia-atajos"><button class="btn btn-a" onclick="go('asr')">${ic('building')} ASR: sitios y marcaje</button>
         <button class="btn btn-g" onclick="guiaAbre('asr')">${ic('layers')} Niveles ASR</button></div>
       <input class="input" type="search" aria-label="Buscar en la guía" placeholder="Buscar: ASR, triaje, marcaje, apuntalar, O₂…" value="${esc(prefs.guideQ || '')}"
         oninput="prefs.guideQ = this.value; clearTimeout(window._gq); window._gq = setTimeout(() => { const p = this.selectionStart; render(); const i = document.querySelector('#view input[type=search]'); i.focus(); i.setSelectionRange(p, p); }, 250)">

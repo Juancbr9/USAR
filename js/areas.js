@@ -25,7 +25,7 @@ const MENU = ['#Sección', 'avisos', 'recursos', 'personal', 'calendario', '#Mat
 const BARRA = [['avisos', 'home', 'Inicio'], ['personal', 'users', 'Personal'], ['vehiculos', 'truck', 'Vehículos'], ['almacen', 'layers', 'Almacén']];
 // Partes de la sección con sus pantallas (cada pantalla conserva el color de su área). USAR es la primera;
 // las demás especialidades se añadirán aquí cuando tengan sus propias pantallas.
-const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'guia', 'apuntalamientos'] } };
+const MENU_PARTES = { usar: { name: 'USAR', icon: 'hardhat', items: ['contenedor', 'fuera', 'revision', 'revista', 'epi', 'asr', 'guia', 'apuntalamientos'] } };
 // [id, icono, título, descripción, área, grupo, oculta (no sale en el menú: se llega desde otra pantalla)]
 const SECTIONS = [
   ['avisos', 'home', 'Inicio', 'Resumen del día, avisos y vencimientos', 'home'],
@@ -48,6 +48,7 @@ const SECTIONS = [
   ['epi', 'hardhat', 'EPI', 'Qué lleva cada uno y la reserva', 'team'],
   // Un apartado por especialidad o equipo: su gente, su material y su revista
   ...Object.entries(APARTADOS).map(([k, a]) => [k, a.icon, a.name, `${a.largo}: su gente, su material y su revista`, 'team']),
+  ['asr', 'building', 'ASR', 'Los sitios del sector por prioridad, con su triaje, su marcaje y sus informes', 'help'],
   ['guia', 'book', 'Guía de campo', 'Señales, marcaje, triaje, apuntalamiento, confinados y calculadoras', 'help'],
   ['apuntalamientos', 'wrench', 'Apuntalamientos', 'Todos los tipos de los temas de la UME: dibujo, piezas, datos y montaje', 'help'],
   // La calculadora de arcos se abre desde «Apuntalamientos» (tipo «Apuntalamiento de arcos»)

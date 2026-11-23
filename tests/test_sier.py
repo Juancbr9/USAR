@@ -45,7 +45,7 @@ with sync_playwright() as p:
     assert tops == ['Inicio', 'Logística', 'Personal', 'Calendario', 'Almacén', 'Parque', 'Vehículos', 'USAR', 'Agua', 'Cuerdas', 'RPAS', 'SVA', 'Motosierras', 'Ajustes'], tops
     a.click('#drawer .dr-group-head:has-text("USAR")'); a.wait_for_timeout(100)
     dentro = a.locator('#drawer .dr-group[data-area=usar] .dr-item.sub b').all_inner_texts()
-    assert dentro == ['Contenedor', 'Fuera', 'Revisión', 'Revista', 'EPI', 'Guía de campo', 'Apuntalamientos'], dentro
+    assert dentro == ['Contenedor', 'Fuera', 'Revisión', 'Revista', 'EPI', 'ASR', 'Guía de campo', 'Apuntalamientos'], dentro
     a.click('#drawer .dr-item.sub:has-text("Apuntalamientos")'); a.wait_for_timeout(150); assert a.evaluate("prefs.tab") == 'apuntalamientos'
     a.click('#menuBtn'); a.wait_for_timeout(150)
     assert a.locator('#drawer .dr-group[data-area=usar] .dr-group-head').get_attribute('aria-expanded') == 'true', 'el grupo USAR se abre solo estando dentro'

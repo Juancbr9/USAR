@@ -77,11 +77,14 @@
   por especialidad y cuatro datos alineados (gente, material, revista y lo que falta; `espTiles` en `js/ui.js`), con color
   solo en lo que hay que atender; Logística, un resumen de cuatro cifras que lleva a sus tres bloques (Personal, Vehículos
   y almacén, Material); y el Almacén, un plano de los pasillos con lo llena que está cada estantería (`pasSelector`).
-- ASR (Guía de campo de USAR, `js/views/guia.js` y `js/views/asr.js`): fichas con los cinco niveles ASR, el triaje A–D, el
-  marcaje y lo que cambia con las guías INSARAG 2026–2030 (en vigor el 1-1-2027; datos en `ASR`, `TRIAGE` y `ASR_COLAPSOS`
-  de `js/metodo.js`), y un asistente de triaje de un sitio (`asrToolHtml`, `asrCat`, `asrTexto`) que dice la categoría, dibuja
-  lo que se pinta y prepara el informe para WhatsApp. Lo pidió el usuario como guía y ayuda de campo: no guarda worksites
-  ni víctimas en la base de datos (solo `prefs.asr`, en el móvil), así que no es volver a las actividades.
+- ASR (pestaña `asr` de USAR, `js/views/asr.js`; lo pidió el usuario): la herramienta de campo del ASR según las guías INSARAG
+  2026–2030 (en vigor el 1-1-2027). Sitios del sector como registros `asr` (compartidos): triaje en dos preguntas (`asrTriaje`,
+  borrador en `prefs.asr`; la categoría A–D sale de `asrCat`), lista ordenada sola por prioridad (`asrOrden`: primero por
+  orden del mando, categoría, víctimas y antigüedad), ficha (`asrSitio`: estado, niveles terminados, víctimas y el dibujo de
+  lo que tiene que estar pintado), informe del worksite y parte del sector (`asrInforme`, `asrParte`), marcaje libre
+  (`asrMarcajeHtml`, `prefs.asrM`) y los cinco niveles (`asrNivelesHtml`, datos `ASR`, `TRIAGE` y `ASR_COLAPSOS` en
+  `js/metodo.js`). Las fichas de consulta siguen en la Guía de campo. Son solo los sitios del ASR: no añadir de nuevo
+  misiones, ejercicios ni registro de víctimas una a una.
 - Necesidades (`js/views/necesidades.js`, registros `needs`): lo que falta o hay que pedir, por apartado, USAR, vehículos
   o general; pestaña en cada apartado y panel en Logística.
 - Situación del personal: cada persona está «En base» o ausente con motivo, lugar y fechas (`aus`); se ve en Personal →

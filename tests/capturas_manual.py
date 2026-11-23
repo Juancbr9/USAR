@@ -241,6 +241,12 @@ with sync_playwright() as p:
     a.evaluate("setPref({ tab: 'avisos', vwin: 365 })"); a.wait_for_timeout(200); shot(a, 'vencimientos', '#venc')
     a.evaluate("setPref({ tab: 'listas' }); catalogEditor('docTypes')"); a.wait_for_timeout(200); shot(a, 'listas'); esc()
     a.evaluate("setPref({ tab: 'guia' })"); a.wait_for_timeout(300); shot(a, 'guia')
+    # ASR: unos sitios de ejemplo, ordenados por prioridad (se quitan después)
+    a.evaluate("""(() => { const h = todayISO(), n = l => [{ team: 'USAR-242', level: 2, date: h }, ...(l ? [{ team: 'USAR-242', level: 3, date: h }] : [])];
+      putMany('asr', [{ id: 'AS-M1', id2: 'A-1', lugar: 'Calle Mayor 3', vic: 'viva', h12: 'no', vivas: 2, st: 'trab', niveles: n(1), ts: 1 }, { id: 'AS-M2', id2: 'A-2', lugar: 'Colegio', vic: 'viva', h12: 'si', vivas: 3, resc: 1, st: 'pend', niveles: n(0), ts: 2 },
+        { id: 'AS-M3', id2: 'A-3', lugar: 'Nave del puente', vic: 'posible', desap: 4, st: 'pend', niveles: n(0), ts: 3 }]); setPref({ tab: 'asr', asrTab: 'sitios' }); })()"""); a.wait_for_timeout(300)
+    ann(a, 'asr', [('#view button.btn-a:has-text("Sitio")', 'l', {'d': 24}), ('#view .asr-kpis', 'i'), ('#view .asr-sitio >> nth=0', 'i')])
+    a.evaluate("['AS-M1', 'AS-M2', 'AS-M3'].forEach(id => stamp('asr', { id, _del: true })); commit()"); a.wait_for_timeout(200)
     a.evaluate("setPref({ tab: 'arcos', arc: null, arcTab: 'alzado' }); arcExample()"); a.wait_for_timeout(300)
     ann(a, 'arcos', [('#view .panel .row:has(button:has-text("Medidas"))', 'i'), ('#view .arc-kpis', 'i'), ('#view .arc-tabs', 'b', {'d': 30})], scroll='#view .arc-kpis', top=330)
     a.evaluate("remove('arcs', prefs.arc); setPref({ arc: null })")
